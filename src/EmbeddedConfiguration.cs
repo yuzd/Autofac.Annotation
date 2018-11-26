@@ -17,7 +17,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 缓存 key为path
         /// </summary>
-        public static ConcurrentDictionary<string,IConfiguration> Configurations = new ConcurrentDictionary<string, IConfiguration>();
+        private static ConcurrentDictionary<string,IConfiguration> Configurations = new ConcurrentDictionary<string, IConfiguration>();
 
 
         /// <summary>

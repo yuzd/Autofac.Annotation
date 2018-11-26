@@ -1,15 +1,17 @@
-﻿using Autofac.Builder;
+﻿using Autofac.Annotation.Util;
+using Autofac.Builder;
 using Autofac.Core;
+using Autofac.Features.AttributeFilters;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Autofac.Configuration;
-using Autofac.Features.AttributeFilters;
 
 namespace Autofac.Annotation
 {
+    /// <inheritdoc />
     /// <summary>
     /// autofac模块用注解的模式注册
     /// </summary>
@@ -18,7 +20,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// ComponentModel缓存
         /// </summary>
-        public static Dictionary<Type, ComponentModel> ComponentModelCache = new Dictionary<Type, ComponentModel>();
+        internal static ConcurrentDictionary<Type, ComponentModel> ComponentModelCache = new ConcurrentDictionary<Type, ComponentModel>();
 
         private readonly Assembly[] _assemblyList;
 
@@ -72,9 +74,82 @@ namespace Autofac.Annotation
 
                 //构造方法的参数注入采用autofac原生支持的 ParameterFilterAttribute
 
+                //property注入
+                RegisterComponentProperties(component, registrar);
 
 
 
+
+            }
+        }
+
+        /// <summary>
+        /// 注册property注入
+        /// </summary>
+        /// <typeparam name="TReflectionActivatorData"></typeparam>
+        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
+        /// <param name="component"></param>
+        /// <param name="registrar"></param>
+        protected virtual void RegisterComponentProperties<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component, IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+            where TReflectionActivatorData : ReflectionActivatorData
+            where TSingleRegistrationStyle : SingleRegistrationStyle
+        {
+            if (component == null)
+            {
+                throw new ArgumentNullException(nameof(component));
+            }
+
+            if (registrar == null)
+            {
+                throw new ArgumentNullException(nameof(registrar));
+            }
+
+            //foreach (var prop in component.GetProperties("properties"))
+            //{
+            //    registrar.WithProperty(prop);
+            //}
+
+
+            var properties = (from p in component.CurrentType.GetAllProperties()
+                             let va = p.GetCustomAttribute<Value>()
+                             where va != null
+                             select new
+                             {
+                                 Property = p,
+                                 Value = va
+                             }).ToList();
+
+            foreach (var property in properties)
+            {
+                var resolvedParameter = new ResolvedParameter(
+                    (pi, c) =>
+                    {
+                        PropertyInfo prop;
+                        return pi.TryGetDeclaringProperty(out prop) && string.Equals(prop.Name, property.Property.Name, StringComparison.OrdinalIgnoreCase);
+                    },
+                    (pi, c) => property.Value.ResolveParameter(pi, c));
+                registrar.WithProperty(resolvedParameter);
+            }
+
+            var fields = (from p in component.CurrentType.GetAllFields()
+                let va = p.GetCustomAttribute<Value>()
+                where va != null
+                select new
+                {
+                    Property = p,
+                    Value = va
+                }).ToList();
+
+            foreach (var property in fields)
+            {
+                var resolvedParameter = new ResolvedParameter(
+                    (pi, c) =>
+                    {
+                        PropertyInfo prop;
+                        return pi.TryGetDeclaringProperty(out prop) && string.Equals(prop.Name, property.Property.Name, StringComparison.OrdinalIgnoreCase);
+                    },
+                    (pi, c) => property.Value.ResolveParameter(pi, c));
+                registrar.WithProperty(resolvedParameter);
             }
         }
 
@@ -131,7 +206,7 @@ namespace Autofac.Annotation
                 var types = assembly.GetExportedTypes();
                 //找到类型中含有 Component 标签的类 排除掉抽象类
                 var beanTypeList = (from type in types
-                                    let bean = type.GetCustomAttribute<Component>()
+                                    let bean = type.GetCustomAttribute<Bean>()
                                     where type.IsClass && !type.IsAbstract && bean != null
                                     select new
                                     {
@@ -153,85 +228,65 @@ namespace Autofac.Annotation
         /// <summary>
         /// 根据注解解析
         /// </summary>
-        /// <param name="component"></param>
+        /// <param name="bean"></param>
         /// <param name="currentType"></param>
         /// <returns></returns>
-        private ComponentModel EnumerateComponentServices(Component component, Type currentType)
+        private ComponentModel EnumerateComponentServices(Bean bean, Type currentType)
         {
-            if (component == null)
+            if (bean == null)
             {
-                throw new ArgumentNullException(nameof(component));
+                throw new ArgumentNullException(nameof(bean));
             }
             var result = new ComponentModel
             {
-                AutoActivate = component.AutoActivate,
-                AutofacScope = component.AutofacScope,
+                AutoActivate = bean.AutoActivate,
+                AutofacScope = bean.AutofacScope,
                 CurrentType = currentType,
-                InjectProperties = component.InjectProperties,
-                InjectPropertyType = component.InjectPropertyType,
-                Ownership = component.Ownership
+                InjectProperties = bean.InjectProperties,
+                InjectPropertyType = bean.InjectPropertyType,
+                Ownership = bean.Ownership
             };
 
             #region 解析注册对应的类的列表
             var re = new List<ComponentServiceModel>();
-            if (!string.IsNullOrEmpty(component.Key) && component.Service == null)
+
+
+            if (bean.Service != null)
             {
-                if (component.Services == null)
+                //本身有指定注册类型
+                re.Add(new ComponentServiceModel
                 {
-                    component.Services = new Type[] {currentType};
-                }
-                else
-                {
-                    var _li = component.Services.ToList();
-                    _li.Add(currentType);
-                    component.Services = _li.ToArray();
-                }
+                    Type = bean.Service,
+                    Key = bean.Key
+                });
             }
-            if (component.Service != null)
+            else if (!string.IsNullOrEmpty(bean.Key))
             {
-                if (component.Services == null)
+                //指定了key 默认为本身
+                re.Add(new ComponentServiceModel
                 {
-                    component.Services = new Type[] {component.Service};
-                }
-                else
-                {
-                    var _li = component.Services.ToList();
-                    _li.Add(component.Service);
-                    component.Services = _li.ToArray();
-                }
+                    Type = currentType,
+                    Key = bean.Key
+                });
             }
 
-            if (component.Services != null && component.Services.Length > 0)
+            if (bean.Services != null && bean.Services.Length > 0)
             {
-                component.Services = component.Services.Distinct().ToArray();
-                var keyList = new string[component.Services.Length];
-                if (!string.IsNullOrEmpty(component.Key))
+                var keyList = new string[bean.Services.Length];
+                if (bean.Keys != null && bean.Keys.Length > 0 && bean.Keys.Length <= bean.Services.Length)
                 {
-                    if (component.Keys == null)
+                    for (int i = 0; i < bean.Keys.Length; i++)
                     {
-                        component.Keys = new string[] {component.Key};
-                    }
-                    else
-                    {
-                        var _li = component.Keys.ToList();
-                        _li.Add(component.Key);
-                        component.Keys = _li.ToArray();
-                    }
-                }
-                if (component.Keys != null && component.Keys.Length > 0 && component.Keys.Length <= component.Services.Length)
-                {
-                    for (int i = 0; i < component.Keys.Length; i++)
-                    {
-                        keyList[i] = component.Keys[i];
+                        keyList[i] = bean.Keys[i];
                     }
                 }
 
-                for (int i = 0; i < component.Services.Length; i++)
+                for (int i = 0; i < bean.Services.Length; i++)
                 {
                     var serviceKey = keyList[i];
                     re.Add(new ComponentServiceModel
                     {
-                        Type = component.Services[i],
+                        Type = bean.Services[i],
                         Key = serviceKey
                     });
                 }

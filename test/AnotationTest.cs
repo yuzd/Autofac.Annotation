@@ -1,7 +1,6 @@
-﻿using Autofac.Annotation;
-using Xunit;
+﻿using Xunit;
 
-namespace Autofac.Configuration.Test
+namespace Autofac.Annotation.Test
 {
     public class AnotationTest
     {
@@ -36,7 +35,7 @@ namespace Autofac.Configuration.Test
 
             Assert.NotNull(a1);
 
-            Assert.Equal("测试",a1.GetSchool());
+            Assert.Equal("A14", a1.GetSchool());
 
         }
 
@@ -135,6 +134,79 @@ namespace Autofac.Configuration.Test
             Assert.Single(a2.dic.Keys);
             Assert.Equal("aaaaaaaaa1",a2.GetSchool());
            
+        }
+
+        [Fact]
+        public void Test_Type_08()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+
+            var a2 = container.Resolve<A12>();
+            var a3 = container.ResolveKeyed<B>("A12");
+            Assert.Equal("A12", a2.GetSchool());
+            Assert.Equal("A12", a3.GetSchool());
+
+        }
+
+        [Fact]
+        public void Test_Type_09()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+
+            var a2 = container.ResolveKeyed<A13>("aa12");
+            var a3 = container.ResolveKeyed<B>("A13");
+            Assert.Equal("A13", a2.GetSchool());
+            Assert.Equal("A13", a3.GetSchool());
+
+        }
+
+
+        [Fact]
+        public void Test_Type_10()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+
+            var a2 = container.ResolveKeyed<A14>("aa14");
+            var a3 = container.Resolve<B>();
+            container.TryResolveKeyed("aa14",typeof(B),out object aa);
+            Assert.Null(aa);
+            Assert.Equal("A14", a2.GetSchool());
+            Assert.Equal("A14", a3.GetSchool());
+
+        }
+
+        [Fact]
+        public void Test_Type_11()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+
+            var a3 = container.Resolve<A15>();
+            Assert.Equal("aaaaaaaaa", a3.School);
+
         }
     }
 }

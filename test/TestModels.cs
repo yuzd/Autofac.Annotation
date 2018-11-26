@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using Autofac.Annotation;
 
-namespace Autofac.Configuration.Test
+namespace Autofac.Annotation.Test
 {
-    [Component]
+    [Bean]
     public class A
     {
         public string Name { get; set; }
@@ -18,7 +17,7 @@ namespace Autofac.Configuration.Test
         }
     }
 
-    [Component(Services = new []{typeof(B)})]
+    [Bean(Services = new []{typeof(B)})]
     public class A1:B
     {
         public string School { get; set; } = "测试";
@@ -29,7 +28,7 @@ namespace Autofac.Configuration.Test
         }
     }
 
-    [Component(Services = new []{typeof(B)},Keys = new []{"B1"})]
+    [Bean(Services = new []{typeof(B)},Keys = new []{"B1"})]
     public class A2:B
     {
         public string School { get; set; } = "测试1";
@@ -39,7 +38,7 @@ namespace Autofac.Configuration.Test
             return this.School;
         }
     }
-    [Component(Services = new []{typeof(B)},Keys = new []{"B2"})]
+    [Bean(Services = new []{typeof(B)},Keys = new []{"B2"})]
     public class A3:B
     {
         public string School { get; set; } = "测试2";
@@ -50,13 +49,13 @@ namespace Autofac.Configuration.Test
         }
     }
 
-    [Component("a4")]
+    [Bean("a4")]
     public class A4
     {
         public string School { get; set; } = "测试2";
     }
 
-    [Component(typeof(B),"a5")]
+    [Bean(typeof(B),"a5")]
     public class A5:B
     {
         public string School { get; set; } = "测试a5";
@@ -66,7 +65,7 @@ namespace Autofac.Configuration.Test
         }
     }
 
-    [Component(typeof(B))]
+    [Bean(typeof(B))]
     public class A6:B
     {
         public string School { get; set; } = "测试a6";
@@ -76,7 +75,7 @@ namespace Autofac.Configuration.Test
         }
     }
 
-    [Component(typeof(B))]
+    [Bean(typeof(B))]
     public class A7:B
     {
         public string School { get; set; } = "测试a7";
@@ -86,7 +85,7 @@ namespace Autofac.Configuration.Test
         }
     }
 
-    [Component]
+    [Bean]
     public class A8
     {
         public A8([Value("a8")]string school)
@@ -99,7 +98,7 @@ namespace Autofac.Configuration.Test
             return this.School;
         }
     }
-    [Component]
+    [Bean]
     public class A9
     {
         public A9([Value("#{a9}")]string school,[Value("#{list}")]List<int> list,[Value("#{dic}")]Dictionary<string,string> dic)
@@ -118,8 +117,8 @@ namespace Autofac.Configuration.Test
         }
     }
 
-    [Component]
-    [PropertySource(@"E:\WorkSpace\github\Autofac\Autofac.Annotation\test\file\appsettings1.json")]
+    [Bean]
+    [PropertySource("/file/appsettings1.json")]
     public class A10
     {
         public A10([Value("#{a10}")]string school,[Value("#{list}")]List<int> list,[Value("#{dic}")]Dictionary<string,string> dic,[Value("")]int dddd)
@@ -138,7 +137,7 @@ namespace Autofac.Configuration.Test
         }
     }
 
-    [Component]
+    [Bean]
     [PropertySource("/file/appsettings1.xml")]
     public class A11
     {
@@ -158,4 +157,47 @@ namespace Autofac.Configuration.Test
         }
     }
 
+    [Bean(typeof(A12),Services = new[] { typeof(B) }, Keys = new[] { "A12" })]
+    public class A12 : B
+    {
+        public string School { get; set; } = "A12";
+
+        public override string GetSchool()
+        {
+            return this.School;
+        }
+    }
+    [Bean(typeof(A13),"aa12", Services = new[] { typeof(B) }, Keys = new[] { "A13" })]
+    public class A13 : B
+    {
+        public string School { get; set; } = "A13";
+
+        public override string GetSchool()
+        {
+            return this.School;
+        }
+    }
+
+    [Bean(typeof(A14), "aa14", Services = new[] { typeof(B) })]
+    public class A14 : B
+    {
+        public string School { get; set; } = "A14";
+
+        public override string GetSchool()
+        {
+            return this.School;
+        }
+    }
+
+    [Bean]
+    public class A15
+    {
+        [Value("#{a9}")]
+        private string test;
+
+        [Value("#{a9}")]
+        public string School { get; set; } = "A14";
+
+       
+    }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
-using Autofac.Annotation;
 
-namespace Autofac.Configuration
+namespace Autofac.Annotation
 {
     /// <summary>
     /// 会扫描有该注解的类 自动装配到autofac容器内
@@ -10,20 +9,21 @@ namespace Autofac.Configuration
     /// 打在父类上子类没打的话子类就获取不到
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public class Component : System.Attribute
+    public class Bean : System.Attribute
     {
+        #region Constructor
         /// <summary>
         /// 构造函数
         /// </summary>
-        public Component()
+        public Bean()
         {
-            
+
         }
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="_service"></param>
-        public Component(Type _service)
+        public Bean(Type _service)
         {
             Service = _service;
         }
@@ -33,7 +33,7 @@ namespace Autofac.Configuration
         /// </summary>
         /// <param name="_service"></param>
         /// <param name="key"></param>
-        public Component(Type _service,string key):this(_service)
+        public Bean(Type _service, string key) : this(_service)
         {
             this.Key = key;
         }
@@ -42,10 +42,13 @@ namespace Autofac.Configuration
         /// 构造函数
         /// </summary>
         /// <param name="key"></param>
-        public Component(string key)
+        public Bean(string key)
         {
             this.Key = key;
         }
+
+        #endregion
+
         #region Services
         /// <summary>
         /// 注册的类型

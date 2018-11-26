@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using Autofac.Configuration;
 
 namespace Autofac.Annotation
 {
@@ -21,20 +20,12 @@ namespace Autofac.Annotation
         public List<ComponentServiceModel> ComponentServiceList { get; set; }
 
 
-        /// <summary>
-        /// 注册Meta
-        /// </summary>
-        public List<MetaData> MetaDataList { get; set; }
 
         /// <summary>
         /// PropertySource
         /// </summary>
         public List<MetaSourceData> MetaSourceList { get; set; }
 
-        /// <summary>
-        /// 构造方法对应的
-        /// </summary>
-        public List<ComponentParameter> ComponentParameterList { get; set; }
 
 
         /// <summary>
@@ -154,33 +145,4 @@ namespace Autofac.Annotation
         public string Key { get; set; }
     }
 
-    /// <summary>
-    /// 注册构造方法的参数
-    /// </summary>
-    public class ComponentParameter
-    {
-        /// <summary>
-        /// 名称
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// 值
-        /// </summary>
-        public object Value { get; set; }
-    }
-
-    /// <summary>
-    /// 注册属性注入
-    /// </summary>
-    public class ComponentProperty
-    {  /// <summary>
-       /// 名称
-       /// </summary>
-        public string Name { get; set; }
-        /// <summary>
-        /// 名称
-        /// </summary>
-        public object Value { get; set; }
-    }
 }

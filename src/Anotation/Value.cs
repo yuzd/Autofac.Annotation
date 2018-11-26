@@ -1,4 +1,5 @@
-﻿using Autofac.Annotation.Util;
+﻿using System;
+using Autofac.Annotation.Util;
 using Autofac.Features.AttributeFilters;
 using Microsoft.Extensions.Configuration;
 using System.Linq;
@@ -58,9 +59,11 @@ namespace Autofac.Annotation
                             {
                                 IConfigurationSection metData = metaSource.Configuration.GetSection(key);
                                 var parameterValue = ConfigurationUtil.GetConfiguredParameterValue(metData);
-                                if (parameterValue is string e)
+                                
+                                if (parameterValue == null)
                                 {
-                                    if (string.IsNullOrEmpty(e)) continue;
+                                    //表示key不存在 从下一个source里面去寻找
+                                    continue;
                                 }
                                 var parseValue = TypeManipulation.ChangeToCompatibleType(parameterValue, parameter.ParameterType, parameter);
                                 return parseValue;

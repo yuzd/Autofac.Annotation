@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Castle.DynamicProxy;
 
 namespace Autofac.Annotation
 {
@@ -208,6 +209,7 @@ namespace Autofac.Annotation
                     //自定义方式
                     registrar.OnActivated(e =>
                     {
+                        
                         var instance = e.Instance;
                         if (instance == null) return;
                         foreach (var field in fields)
@@ -265,13 +267,19 @@ namespace Autofac.Annotation
             if (obj == null) return;
             try
             {
+                var instance = e.Instance;
+                if (ProxyUtil.IsProxy(instance))
+                {
+                    instance = ProxyUtil.GetUnproxiedInstance(instance);
+                }
+
                 if (fieldInfoValue != null)
                 {
-                    fieldInfoValue.SetValue(e.Instance, obj);
+                    fieldInfoValue.SetValue(instance, obj);
                 }
                 if (propertyInfoValue != null)
                 {
-                    propertyInfoValue.SetValue(e.Instance, obj);
+                    propertyInfoValue.SetValue(instance, obj);
                 }
             }
             catch (Exception)
@@ -376,7 +384,10 @@ namespace Autofac.Annotation
             {
                 var instance = e.Instance;
                 if (instance == null) return;
-
+                if (ProxyUtil.IsProxy(instance))
+                {
+                    instance = ProxyUtil.GetUnproxiedInstance(instance);
+                }
                 foreach (var field in fields)
                 {
                     try

@@ -281,10 +281,9 @@ namespace Autofac.Annotation.Test
     [Bean(typeof(IA23),Interceptor = typeof(AsyncInterceptor))]
     public class A23:IA23
     {
-        public A23([Value("name")]string name,[Autowired]A21 a21)
+        public A23([Value("name")]string name)
         {
             Name = name;
-            A21 = a21;
         }
 
 
@@ -295,7 +294,15 @@ namespace Autofac.Annotation.Test
 
 
         public string Name { get; set; }
+
+        [Autowired]
         public A21 A21 { get; set; }
+
+        [Autowired]
+        private A21 A221;
+
+        [Value("test")]
+        private string ttt;
     }
 
     [Bean(Interceptor = typeof(AsyncInterceptor),InterceptorType = InterceptorType.Class )]
@@ -321,10 +328,9 @@ namespace Autofac.Annotation.Test
     [Bean(Interceptor = typeof(AsyncInterceptor),InterceptorType = InterceptorType.Class,InterceptorKey = "log2")]
     public class A25
     {
-        public A25([Value("name")]string name,[Autowired]A21 a21)
+        public A25([Value("name")]string name)
         {
             Name = name;
-            A21 = a21;
         }
 
 
@@ -335,6 +341,7 @@ namespace Autofac.Annotation.Test
 
 
         public string Name { get; set; }
+        [Autowired]
         public A21 A21 { get; set; }
     }
 }

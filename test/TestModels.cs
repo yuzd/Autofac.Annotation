@@ -258,4 +258,17 @@ namespace Autofac.Annotation.Test
     {
        
     }
+
+    [Bean]
+    public class A22
+    {
+        public A22([Value("name")]string name,[Autowired]A21 a21)
+        {
+            Name = name;
+            A21 = a21;
+        }
+
+        public string Name { get; set; }
+        public A21 A21 { get; set; }
+    }
 }

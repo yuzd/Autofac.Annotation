@@ -1,4 +1,5 @@
-﻿using Autofac.Annotation.Util;
+﻿using AspectCore.Extensions.Reflection;
+using Autofac.Annotation.Util;
 using Autofac.Builder;
 using Autofac.Core;
 using Autofac.Extras.DynamicProxy;
@@ -276,11 +277,11 @@ namespace Autofac.Annotation
 
                 if (fieldInfoValue != null)
                 {
-                    fieldInfoValue.SetValue(instance, obj);
+                    fieldInfoValue.GetReflector().SetValue(instance, obj);
                 }
                 if (propertyInfoValue != null)
                 {
-                    propertyInfoValue.SetValue(instance, obj);
+                    propertyInfoValue.GetReflector().SetValue(instance, obj);
                 }
             }
             catch (Exception ex)
@@ -394,7 +395,7 @@ namespace Autofac.Annotation
                     try
                     {
                         var value = field.Value.ResolveFiled(field.Property, e.Context);
-                        field.Property.SetValue(instance, value);
+                        field.Property.GetReflector().SetValue(instance, value);
                     }
                     catch (Exception ex)
                     {

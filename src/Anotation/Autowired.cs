@@ -1,4 +1,5 @@
-﻿using Autofac.Core;
+﻿using AspectCore.Extensions.Reflection;
+using Autofac.Core;
 using Autofac.Features.AttributeFilters;
 using System;
 using System.Reflection;
@@ -53,7 +54,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public override object ResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
-            var autowired = parameter.GetCustomAttribute<Autowired>();
+            var autowired = parameter.GetReflector().GetCustomAttribute<Autowired>();
             if (autowired == null)
             {
                 return null;

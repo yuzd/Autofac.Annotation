@@ -19,7 +19,7 @@ namespace Autofac.Annotation.Util
         public static bool TryGetDeclaringProperty(this ParameterInfo pi, out PropertyInfo prop)
         {
             var mi = pi.Member as MethodInfo;
-            if (mi != null && mi.IsSpecialName && mi.Name.StartsWith("set_", System.StringComparison.Ordinal))
+            if (mi != null && mi.DeclaringType!=null && mi.IsSpecialName && mi.Name.StartsWith("set_", System.StringComparison.Ordinal))
             {
                 prop = mi.DeclaringType.GetProperty(mi.Name.Substring(4));
                 return true;

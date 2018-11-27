@@ -353,6 +353,8 @@ namespace Autofac.Annotation.Test
 
             var a1 = container.Resolve<A25>();
             var aaa = a1.GetSchool();
+            Assert.NotNull(a1.A23);
+            var a2= a1.A23.GetSchool();
             Assert.Equal("b",aaa);
 
         }

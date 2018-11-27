@@ -3,13 +3,13 @@ using Autofac.Builder;
 using Autofac.Core;
 using Autofac.Extras.DynamicProxy;
 using Autofac.Features.AttributeFilters;
+using Castle.DynamicProxy;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Castle.DynamicProxy;
 
 namespace Autofac.Annotation
 {
@@ -209,17 +209,17 @@ namespace Autofac.Annotation
                     //自定义方式
                     registrar.OnActivated(e =>
                     {
-                        
+
                         var instance = e.Instance;
                         if (instance == null) return;
                         foreach (var field in fields)
                         {
-                            Autowired(field.Property, field.Value, e);
+                            Autowired(component.CurrentType,field.Property, field.Value, e);
                         }
 
                         foreach (var property in properties)
                         {
-                            Autowired(property.Property, property.Value, e);
+                            Autowired(component.CurrentType,property.Property, property.Value, e);
                         }
                     });
                 }
@@ -229,10 +229,11 @@ namespace Autofac.Annotation
         /// <summary>
         /// 装配打了Autowired标签的
         /// </summary>
+        /// <param name="currentType"></param>
         /// <param name="member"></param>
         /// <param name="autowired"></param>
         /// <param name="e"></param>
-        protected virtual void Autowired(MemberInfo member, Autowired autowired, IActivatedEventArgs<object> e)
+        protected virtual void Autowired(Type currentType,MemberInfo member, Autowired autowired, IActivatedEventArgs<object> e)
         {
             Type type = null;
             FieldInfo fieldInfoValue = null;
@@ -261,7 +262,7 @@ namespace Autofac.Annotation
 
             if (obj == null && autowired.Required)
             {
-                throw new DependencyResolutionException($"can not resolve type:{type.FullName} " + (!string.IsNullOrEmpty(autowired.Name) ? $" with key:{autowired.Name}" : ""));
+                throw new DependencyResolutionException($"class :{currentType.FullName},can not resolve member:{type.FullName} " + (!string.IsNullOrEmpty(autowired.Name) ? $" with key:{autowired.Name}" : ""));
             }
 
             if (obj == null) return;
@@ -282,9 +283,9 @@ namespace Autofac.Annotation
                     propertyInfoValue.SetValue(instance, obj);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                //ignore
+                throw new DependencyResolutionException($"class :{currentType.FullName},can not resolve member:{type.FullName} " + (!string.IsNullOrEmpty(autowired.Name) ? $" with key:{autowired.Name}" : ""),ex);
             }
         }
 
@@ -392,11 +393,12 @@ namespace Autofac.Annotation
                 {
                     try
                     {
-                        field.Property.SetValue(instance, field.Value.ResolveFiled(field.Property, e.Context));
+                        var value = field.Value.ResolveFiled(field.Property, e.Context);
+                        field.Property.SetValue(instance, value);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        //ignore
+                        throw new DependencyResolutionException($"class:{ component.CurrentType.FullName},fail resolve field value:{field.Property.Name} ", ex);
                     }
                 }
             });

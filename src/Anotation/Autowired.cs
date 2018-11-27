@@ -69,7 +69,7 @@ namespace Autofac.Annotation
             }
             if (obj == null && autowired.Required)
             {
-                throw new DependencyResolutionException($"can not resolve type:{parameter.ParameterType.FullName} " + (!string.IsNullOrEmpty(autowired.Name) ? $" with key:{autowired.Name}" : ""));
+                throw new DependencyResolutionException($"Autowired on ResolveParameter,can not resolve type:{parameter.ParameterType.FullName} " + (!string.IsNullOrEmpty(autowired.Name) ? $" with key:{autowired.Name}" : ""));
             }
             return obj;
         }

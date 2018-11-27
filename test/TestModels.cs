@@ -343,5 +343,8 @@ namespace Autofac.Annotation.Test
         public string Name { get; set; }
         [Autowired]
         public A21 A21 { get; set; }
+
+        [Autowired]
+        public IA23 A23 { get; set; }
     }
 }

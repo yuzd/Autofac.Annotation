@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Autofac.Features.AttributeFilters;
+using Castle.DynamicProxy;
 
 namespace Autofac.Annotation.Test
 {
@@ -267,6 +268,71 @@ namespace Autofac.Annotation.Test
             Name = name;
             A21 = a21;
         }
+
+        public string Name { get; set; }
+        public A21 A21 { get; set; }
+    }
+
+    public interface IA23
+    {
+        string GetSchool();
+    }
+
+    [Bean(typeof(IA23),Interceptor = typeof(AsyncInterceptor))]
+    public class A23:IA23
+    {
+        public A23([Value("name")]string name,[Autowired]A21 a21)
+        {
+            Name = name;
+            A21 = a21;
+        }
+
+
+        public  string GetSchool()
+        {
+            return "cc";
+        }
+
+
+        public string Name { get; set; }
+        public A21 A21 { get; set; }
+    }
+
+    [Bean(Interceptor = typeof(AsyncInterceptor),InterceptorType = InterceptorType.Class )]
+    public class A24
+    {
+        public A24([Value("name")]string name,[Autowired]A21 a21)
+        {
+            Name = name;
+            A21 = a21;
+        }
+
+
+        public virtual  string GetSchool()
+        {
+            return "cc";
+        }
+
+
+        public string Name { get; set; }
+        public A21 A21 { get; set; }
+    }
+
+    [Bean(Interceptor = typeof(AsyncInterceptor),InterceptorType = InterceptorType.Class,InterceptorKey = "log2")]
+    public class A25
+    {
+        public A25([Value("name")]string name,[Autowired]A21 a21)
+        {
+            Name = name;
+            A21 = a21;
+        }
+
+
+        public virtual  string GetSchool()
+        {
+            return "cc";
+        }
+
 
         public string Name { get; set; }
         public A21 A21 { get; set; }

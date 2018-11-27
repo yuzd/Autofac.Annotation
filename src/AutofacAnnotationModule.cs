@@ -1,6 +1,7 @@
 ﻿using Autofac.Annotation.Util;
 using Autofac.Builder;
 using Autofac.Core;
+using Autofac.Extras.DynamicProxy;
 using Autofac.Features.AttributeFilters;
 using System;
 using System.Collections.Concurrent;
@@ -91,6 +92,50 @@ namespace Autofac.Annotation
 
                 //activation
                 SetAutoActivate(component, registrar);
+
+                //拦截器
+                SetIntercept(component, registrar);
+            }
+        }
+
+        /// <summary>
+        /// 拦截器
+        /// </summary>
+        /// <typeparam name="TLimit"></typeparam>
+        /// <typeparam name="TConcreteReflectionActivatorData"></typeparam>
+        /// <typeparam name="TRegistrationStyle"></typeparam>
+        /// <param name="component"></param>
+        /// <param name="registrar"></param>
+        protected virtual void SetIntercept<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle>(ComponentModel component, IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> registrar)
+            where TConcreteReflectionActivatorData : ConcreteReflectionActivatorData
+        {
+            if (registrar == null)
+            {
+                throw new ArgumentNullException(nameof(registrar));
+            }
+
+            if (component.Interceptor != null)
+            {
+                switch (component.InterceptorType)
+                {
+                    case InterceptorType.Interface:
+                        if (!string.IsNullOrEmpty(component.InterceptorKey))
+                        {
+                            registrar.EnableInterfaceInterceptors().InterceptedBy(new KeyedService(component.InterceptorKey, component.Interceptor));
+                            return;
+                        }
+                        registrar.EnableInterfaceInterceptors().InterceptedBy(component.Interceptor);
+                        return;
+                    case InterceptorType.Class:
+                        if (!string.IsNullOrEmpty(component.InterceptorKey))
+                        {
+                            registrar.EnableClassInterceptors().InterceptedBy(new KeyedService(component.InterceptorKey, component.Interceptor));
+                            return;
+                        }
+                        registrar.EnableClassInterceptors().InterceptedBy(component.Interceptor);
+                        return;
+                }
+
             }
         }
 
@@ -483,7 +528,10 @@ namespace Autofac.Annotation
                 CurrentType = currentType,
                 InjectProperties = bean.InjectProperties,
                 InjectPropertyType = bean.InjectPropertyType,
-                Ownership = bean.Ownership
+                Ownership = bean.Ownership,
+                Interceptor = bean.Interceptor,
+                InterceptorKey = bean.InterceptorKey,
+                InterceptorType = bean.InterceptorType
             };
 
             #region 解析注册对应的类的列表

@@ -53,6 +53,20 @@ namespace Autofac.Annotation
         /// </summary>
         public Ownership Ownership { get; set; }
 
+        /// <summary>
+        /// 指定拦截器类型
+        /// </summary>
+        public Type Interceptor { get; set; }
+
+        /// <summary>
+        /// 如果同一个类型的拦截器有多个 可以指定Key
+        /// </summary>
+        public string InterceptorKey { get; set; }
+
+        /// <summary>
+        /// 拦截器类型
+        /// </summary>
+        public InterceptorType InterceptorType { get; set; } 
     }
 
     /// <summary>

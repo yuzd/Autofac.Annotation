@@ -307,5 +307,54 @@ namespace Autofac.Annotation.Test
             Assert.Equal("name",a1.Name);
 
         }
+
+        [Fact]
+        public void Test_Type_18()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<IA23>();
+            var aaa = a1.GetSchool();
+            Assert.Equal("a",aaa);
+
+        }
+
+        
+        [Fact]
+        public void Test_Type_19()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<A24>();
+            var aaa = a1.GetSchool();
+            Assert.Equal("a",aaa);
+
+        }
+
+        [Fact]
+        public void Test_Type_20()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<A25>();
+            var aaa = a1.GetSchool();
+            Assert.Equal("b",aaa);
+
+        }
     }
 }

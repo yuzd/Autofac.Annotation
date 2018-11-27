@@ -51,7 +51,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 如果设置值为external代表需要自己管理dispose
         /// </summary>
-        public string Ownership { get; set; }
+        public Ownership Ownership { get; set; }
 
     }
 

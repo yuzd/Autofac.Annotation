@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Autofac.Features.AttributeFilters;
 
 namespace Autofac.Annotation.Test
 {
@@ -193,11 +194,68 @@ namespace Autofac.Annotation.Test
     public class A15
     {
         [Value("#{a9}")]
-        private string test;
+        public string test = "t";
 
         [Value("#{a9}")]
         public string School { get; set; } = "A14";
 
+    }
+
+    [Bean]
+    public class A16
+    {
+        [Autowired("A13")]
+        public B b1;
+        public string School { get; set; } = "A16";
+
+        [Autowired]
+        public B B { get; set; }
+    }
+
+    [Bean]
+    public class A17
+    {
+        [Autowired("A131111")]
+        public B b1;
+        public string School { get; set; } = "A17";
+
+        [Autowired]
+        public B B { get; set; }
+    }
+
+    [Bean]
+    public class A18
+    {
+        [Autowired("adadada",Required = false)]
+        public B b1;
+        public string School { get; set; } = "A18";
+
+        [Autowired]
+        public B B { get; set; }
+    }
+
+    public class A19
+    {
+        [Autowired("A13",Required = false)]
+        public B b1;
+       
+        [Autowired("A13",Required = false)]
+        public B b2;
+
+        [Autowired("A13",Required = false)]
+        private B b3;
+    }
+
+    [Bean]
+    public class A20:A19
+    {
+        [Value("aaaa")]
+        public string Name { get; set; }
+    }
+
+    [Bean]
+    public class A21:A20
+    {
        
     }
 }

@@ -24,16 +24,9 @@ namespace Autofac.Annotation
         /// </summary>
         InstancePerLifetimeScope,
         /// <summary>
-        /// 这个还没用到过
-        /// </summary>
-        InstancePerMatchingLifetimeScope,
-        /// <summary>
         /// 根据每个请求一个实例
         /// </summary>
-        InstancePerRequest,
-        /// <summary>
-        /// 根据别的实例的生命周期
-        /// </summary>
-        InstancePerOwned
+        InstancePerRequest
+      
     }
 }

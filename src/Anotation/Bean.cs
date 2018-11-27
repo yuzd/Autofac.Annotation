@@ -82,12 +82,12 @@ namespace Autofac.Annotation
         /// <summary>
         /// A Boolean indicating whether property (setter) injection for the component should be enabled.
         /// </summary>
-        public bool InjectProperties { get; set; }
+        public bool InjectProperties { get; set; } = true;
 
         /// <summary>
         /// 属性自动装配的类型
         /// </summary>
-        public InjectPropertyType InjectPropertyType { get; set; } = InjectPropertyType.ALL;
+        public InjectPropertyType InjectPropertyType { get; set; } = InjectPropertyType.Autowired;
 
         /// <summary>
         /// 作用域
@@ -97,7 +97,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 如果设置值为external代表需要自己管理dispose
         /// </summary>
-        public string Ownership { get; set; }
+        public Ownership Ownership { get; set; }
 
     }
 

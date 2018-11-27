@@ -11,7 +11,7 @@ namespace Autofac.Annotation
     /// 注入值
     /// 只能打一个标签 可以继承父类
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property| AttributeTargets.Parameter| AttributeTargets.Field)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter | AttributeTargets.Field)]
     public class Value : ParameterFilterAttribute
     {
         /// <summary>
@@ -40,8 +40,7 @@ namespace Autofac.Annotation
             var valueAttr = parameter.GetCustomAttribute<Value>();
             if (valueAttr == null)
             {
-                var prop = (PropertyInfo)null;
-                parameter.TryGetDeclaringProperty(out prop);
+                parameter.TryGetDeclaringProperty(out var prop);
                 if (prop == null)
                 {
                     return null;
@@ -55,17 +54,47 @@ namespace Autofac.Annotation
                     }
                 }
             }
+            return Resolve(valueAttr, parameter.Member.DeclaringType, parameter.ParameterType, null, parameter);
+        }
+
+        /// <summary>
+        /// 注入Filed值
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public object ResolveFiled(FieldInfo parameter, IComponentContext context)
+        {
+            var valueAttr = parameter.GetCustomAttribute<Value>();
+            return Resolve(valueAttr, parameter.DeclaringType, parameter.FieldType, parameter);
+        }
+
+        /// <summary>
+        /// 对于memberInfo 或者  parameterInfo 进行设值
+        /// </summary>
+        /// <param name="valueAttr"></param>
+        /// <param name="classType"></param>
+        /// <param name="memberType"></param>
+        /// <param name="memberInfo"></param>
+        /// <param name="parameterInfo"></param>
+        /// <returns></returns>
+        private object Resolve(Value valueAttr, Type classType, Type memberType, MemberInfo memberInfo, ParameterInfo parameterInfo = null)
+        {
+            if (valueAttr == null)
+            {
+                return null;
+            }
             if (string.IsNullOrEmpty(valueAttr.value)) return null;
             if (!valueAttr.value.StartsWith("#{") || !valueAttr.value.EndsWith("}"))
             {
                 var parameterValue = valueAttr.value;
-                var parseValue = TypeManipulation.ChangeToCompatibleType(parameterValue, parameter.ParameterType, parameter);
+                var parseValue = parameterInfo == null ? TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, memberInfo) :
+                    TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, parameterInfo);
                 return parseValue;
             }
             else
             {
                 var key = valueAttr.value.Substring(2, valueAttr.value.Length - 3)?.Trim();
-                var classType = parameter.Member.DeclaringType;
                 if (classType == null) return null;
                 if (AutofacAnnotationModule.ComponentModelCache.TryGetValue(classType, out var component))
                 {
@@ -77,21 +106,22 @@ namespace Autofac.Annotation
                             {
                                 IConfigurationSection metData = metaSource.Configuration.GetSection(key);
                                 var parameterValue = ConfigurationUtil.GetConfiguredParameterValue(metData);
-                                
+
                                 if (parameterValue == null)
                                 {
                                     //表示key不存在 从下一个source里面去寻找
                                     continue;
                                 }
-                                var parseValue = TypeManipulation.ChangeToCompatibleType(parameterValue, parameter.ParameterType, parameter);
+                                var parseValue = parameterInfo == null ? TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, memberInfo) :
+                                    TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, parameterInfo);
                                 return parseValue;
                             }
                         }
                     }
                 }
             }
+
             return null;
         }
-
     }
 }

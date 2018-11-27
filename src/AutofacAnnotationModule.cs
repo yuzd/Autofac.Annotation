@@ -74,14 +74,279 @@ namespace Autofac.Annotation
 
                 //构造方法的参数注入采用autofac原生支持的 ParameterFilterAttribute
 
-                //property注入
+                //property注入动态值
                 RegisterComponentProperties(component, registrar);
 
+                //field注入动态值
+                RegisterComponentFields(component, registrar);
 
+                //设置生命周期
+                SetLifetimeScope(component, registrar);
 
+                //设置Ownership
+                SetComponentOwnership(component, registrar);
 
+                //属性依赖注入
+                SetInjectProperties(component, registrar);
+
+                //activation
+                SetAutoActivate(component, registrar);
             }
         }
+
+        /// <summary>
+        /// Sets the auto activation mode for the component.
+        /// </summary>
+        /// <typeparam name="TReflectionActivatorData"></typeparam>
+        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
+        /// <param name="component"></param>
+        /// <param name="registrar"></param>
+        protected virtual void SetAutoActivate<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component, IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+            where TReflectionActivatorData : ReflectionActivatorData
+            where TSingleRegistrationStyle : SingleRegistrationStyle
+        {
+            if (registrar == null)
+            {
+                throw new ArgumentNullException(nameof(registrar));
+            }
+
+            if (component.AutoActivate)
+            {
+                registrar.AutoActivate();
+            }
+        }
+
+        /// <summary>
+        /// 设置属性自动注入
+        /// </summary>
+        /// <typeparam name="TReflectionActivatorData"></typeparam>
+        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
+        /// <param name="component"></param>
+        /// <param name="registrar"></param>
+        protected virtual void SetInjectProperties<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component, IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+            where TReflectionActivatorData : ReflectionActivatorData
+            where TSingleRegistrationStyle : SingleRegistrationStyle
+        {
+            if (registrar == null)
+            {
+                throw new ArgumentNullException(nameof(registrar));
+            }
+
+            if (component.InjectProperties)
+            {
+                if (component.InjectPropertyType.Equals(InjectPropertyType.ALL))
+                {
+                    //保留autofac原本的方式
+                    registrar.PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies);
+                    return;
+                }
+                else
+                {
+                    var properties = (from p in component.CurrentType.GetAllProperties()
+                                      let va = p.GetCustomAttribute<Autowired>()
+                                      where va != null
+                                      select new
+                                      {
+                                          Property = p,
+                                          Value = va
+                                      }).ToList();
+
+                    var fields = (from p in component.CurrentType.GetAllFields()
+                                  let va = p.GetCustomAttribute<Autowired>()
+                                  where va != null
+                                  select new
+                                  {
+                                      Property = p,
+                                      Value = va
+                                  }).ToList();
+
+                    //自定义方式
+                    registrar.OnActivated(e =>
+                    {
+                        var instance = e.Instance;
+                        if (instance == null) return;
+                        foreach (var field in fields)
+                        {
+                            Autowired(field.Property, field.Value, e);
+                        }
+
+                        foreach (var property in properties)
+                        {
+                            Autowired(property.Property, property.Value, e);
+                        }
+                    });
+                }
+            }
+        }
+
+        /// <summary>
+        /// 装配打了Autowired标签的
+        /// </summary>
+        /// <param name="member"></param>
+        /// <param name="autowired"></param>
+        /// <param name="e"></param>
+        protected virtual void Autowired(MemberInfo member, Autowired autowired, IActivatedEventArgs<object> e)
+        {
+            Type type = null;
+            FieldInfo fieldInfoValue = null;
+            PropertyInfo propertyInfoValue = null;
+            if (member is FieldInfo fieldInfo)
+            {
+                type = fieldInfo.FieldType;
+                fieldInfoValue = fieldInfo;
+            }
+            else if (member is PropertyInfo propertyInfo)
+            {
+                type = propertyInfo.PropertyType;
+                propertyInfoValue = propertyInfo;
+            }
+
+            if (type == null) return;
+            object obj = null;
+            if (!string.IsNullOrEmpty(autowired.Name))
+            {
+                e.Context.TryResolveKeyed(autowired.Name, type, out obj);
+            }
+            else
+            {
+                e.Context.TryResolve(type, out obj);
+            }
+
+            if (obj == null && autowired.Required)
+            {
+                throw new DependencyResolutionException($"can not resolve type:{type.FullName} " + (!string.IsNullOrEmpty(autowired.Name) ? $" with key:{autowired.Name}" : ""));
+            }
+
+            if (obj == null) return;
+            try
+            {
+                if (fieldInfoValue != null)
+                {
+                    fieldInfoValue.SetValue(e.Instance, obj);
+                }
+                if (propertyInfoValue != null)
+                {
+                    propertyInfoValue.SetValue(e.Instance, obj);
+                }
+            }
+            catch (Exception)
+            {
+                //ignore
+            }
+        }
+
+
+        /// <summary>
+        /// 设置Ownership
+        /// </summary>
+        /// <typeparam name="TReflectionActivatorData"></typeparam>
+        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
+        /// <param name="component"></param>
+        /// <param name="registrar"></param>
+        protected virtual void SetComponentOwnership<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component, IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+            where TReflectionActivatorData : ReflectionActivatorData
+            where TSingleRegistrationStyle : SingleRegistrationStyle
+        {
+            if (registrar == null)
+            {
+                throw new ArgumentNullException(nameof(registrar));
+            }
+
+            switch (component.Ownership)
+            {
+                case Ownership.External:
+                    registrar.ExternallyOwned();
+                    return;
+                case Ownership.LifetimeScope:
+                    registrar.OwnedByLifetimeScope();
+                    return;
+            }
+
+        }
+
+        /// <summary>
+        /// 设置scope
+        /// </summary>
+        /// <typeparam name="TReflectionActivatorData"></typeparam>
+        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
+        /// <param name="component"></param>
+        /// <param name="registrar"></param>
+        protected virtual void SetLifetimeScope<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component, IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+            where TReflectionActivatorData : ReflectionActivatorData
+            where TSingleRegistrationStyle : SingleRegistrationStyle
+        {
+            if (registrar == null)
+            {
+                throw new ArgumentNullException(nameof(registrar));
+            }
+
+            switch (component.AutofacScope)
+            {
+                case AutofacScope.InstancePerDependency:
+                    registrar.InstancePerDependency();
+                    return;
+                case AutofacScope.SingleInstance:
+                    registrar.SingleInstance();
+                    return;
+                case AutofacScope.InstancePerLifetimeScope:
+                    registrar.InstancePerLifetimeScope();
+                    return;
+                case AutofacScope.InstancePerRequest:
+                    registrar.InstancePerRequest();
+                    return;
+            }
+        }
+
+        /// <summary>
+        /// 注册Field注入
+        /// </summary>
+        /// <typeparam name="TReflectionActivatorData"></typeparam>
+        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
+        /// <param name="component"></param>
+        /// <param name="registrar"></param>
+        protected virtual void RegisterComponentFields<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component, IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+            where TReflectionActivatorData : ReflectionActivatorData
+            where TSingleRegistrationStyle : SingleRegistrationStyle
+        {
+            if (component == null)
+            {
+                throw new ArgumentNullException(nameof(component));
+            }
+
+            if (registrar == null)
+            {
+                throw new ArgumentNullException(nameof(registrar));
+            }
+            var fields = (from p in component.CurrentType.GetAllFields()
+                          let va = p.GetCustomAttribute<Value>()
+                          where va != null
+                          select new
+                          {
+                              Property = p,
+                              Value = va
+                          }).ToList();
+
+            //创建对象之后调用
+            registrar.OnActivated(e =>
+            {
+                var instance = e.Instance;
+                if (instance == null) return;
+
+                foreach (var field in fields)
+                {
+                    try
+                    {
+                        field.Property.SetValue(instance, field.Value.ResolveFiled(field.Property, e.Context));
+                    }
+                    catch (Exception)
+                    {
+                        //ignore
+                    }
+                }
+            });
+
+        }
+
 
         /// <summary>
         /// 注册property注入
@@ -104,20 +369,14 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(registrar));
             }
 
-            //foreach (var prop in component.GetProperties("properties"))
-            //{
-            //    registrar.WithProperty(prop);
-            //}
-
-
             var properties = (from p in component.CurrentType.GetAllProperties()
-                             let va = p.GetCustomAttribute<Value>()
-                             where va != null
-                             select new
-                             {
-                                 Property = p,
-                                 Value = va
-                             }).ToList();
+                              let va = p.GetCustomAttribute<Value>()
+                              where va != null
+                              select new
+                              {
+                                  Property = p,
+                                  Value = va
+                              }).ToList();
 
             foreach (var property in properties)
             {
@@ -131,26 +390,6 @@ namespace Autofac.Annotation
                 registrar.WithProperty(resolvedParameter);
             }
 
-            var fields = (from p in component.CurrentType.GetAllFields()
-                let va = p.GetCustomAttribute<Value>()
-                where va != null
-                select new
-                {
-                    Property = p,
-                    Value = va
-                }).ToList();
-
-            foreach (var property in fields)
-            {
-                var resolvedParameter = new ResolvedParameter(
-                    (pi, c) =>
-                    {
-                        PropertyInfo prop;
-                        return pi.TryGetDeclaringProperty(out prop) && string.Equals(prop.Name, property.Property.Name, StringComparison.OrdinalIgnoreCase);
-                    },
-                    (pi, c) => property.Value.ResolveParameter(pi, c));
-                registrar.WithProperty(resolvedParameter);
-            }
         }
 
         /// <summary>
@@ -335,7 +574,7 @@ namespace Autofac.Annotation
                     }
                     else
                     {
-                        metaSource.Path = metaSource.Origin.StartsWith("/") ? Path.Combine(GetAssemblyLocation(), metaSource.Origin.Substring(1,metaSource.Origin.Length-1)) : metaSource.Origin;
+                        metaSource.Path = metaSource.Origin.StartsWith("/") ? Path.Combine(GetAssemblyLocation(), metaSource.Origin.Substring(1, metaSource.Origin.Length - 1)) : metaSource.Origin;
                     }
 
                     metaSource.Configuration = EmbeddedConfiguration.Load(componentModel.CurrentType, metaSource.Path, metaSource.MetaSourceType, metaSourceAttribute.Embedded);

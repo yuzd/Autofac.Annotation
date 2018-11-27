@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using Autofac.Core;
+using Xunit;
 
 namespace Autofac.Annotation.Test
 {
@@ -206,6 +207,88 @@ namespace Autofac.Annotation.Test
 
             var a3 = container.Resolve<A15>();
             Assert.Equal("aaaaaaaaa", a3.School);
+            Assert.Equal("aaaaaaaaa", a3.test);
+
+        }
+
+        [Fact]
+        public void Test_Type_12()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+
+            var a3 = container.Resolve<A16>();
+            Assert.NotNull(a3.B);
+            Assert.NotNull(a3.b1);
+            Assert.Equal("A13",a3.b1.GetSchool());
+
+        }
+
+        [Fact]
+        public void Test_Type_13()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+            Assert.Throws<DependencyResolutionException>(() => container.Resolve<A17>());
+
+        }
+
+        
+        [Fact]
+        public void Test_Type_14()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<A18>();
+            Assert.Null(a1.b1);
+
+        }
+
+        [Fact]
+        public void Test_Type_15()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<A20>();
+            Assert.NotNull(a1.b1);
+            Assert.NotNull(a1.b2);
+
+        }
+
+        [Fact]
+        public void Test_Type_16()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<A21>();
+            Assert.NotNull(a1.b1);
+            Assert.NotNull(a1.b2);
+            Assert.Equal("aaaa",a1.Name);
 
         }
     }

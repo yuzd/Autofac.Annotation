@@ -358,5 +358,21 @@ namespace Autofac.Annotation.Test
             Assert.Equal("b",aaa);
 
         }
+
+        
+        [Fact]
+        public void Test_Type_21()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<A263>();
+             a1.say();
+
+        }
     }
 }

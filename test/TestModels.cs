@@ -347,4 +347,23 @@ namespace Autofac.Annotation.Test
         [Autowired]
         public IA23 A23 { get; set; }
     }
+
+    
+    public class A26
+    {
+        [Autowired]
+        private IA23 A23;
+    }
+    public class A262:A26
+    {
+        
+    }
+    [Bean]
+    public class A263:A262
+    {
+        public void say()
+        {
+
+        }
+    }
 }

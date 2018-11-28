@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Autofac.Annotation.Util
 {
-     /// <summary>
+    /// <summary>
     /// Utilities for converting string configuration values into strongly-typed objects.
     /// </summary>
     internal class TypeManipulation

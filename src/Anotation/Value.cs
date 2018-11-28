@@ -1,4 +1,5 @@
-﻿using Autofac.Annotation.Util;
+﻿using AspectCore.Extensions.Reflection;
+using Autofac.Annotation.Util;
 using Autofac.Features.AttributeFilters;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -37,7 +38,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public override object ResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
-            var valueAttr = parameter.GetCustomAttribute<Value>();
+            var valueAttr = parameter.GetReflector().GetCustomAttribute<Value>();
             if (valueAttr == null)
             {
                 parameter.TryGetDeclaringProperty(out var prop);
@@ -47,7 +48,7 @@ namespace Autofac.Annotation
                 }
                 else
                 {
-                    valueAttr = prop.GetCustomAttribute<Value>();
+                    valueAttr = prop.GetReflector().GetCustomAttribute<Value>();
                     if (valueAttr == null)
                     {
                         return null;
@@ -65,7 +66,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public object ResolveFiled(FieldInfo parameter, IComponentContext context)
         {
-            var valueAttr = parameter.GetCustomAttribute<Value>();
+            var valueAttr = parameter.GetReflector().GetCustomAttribute<Value>();
             return Resolve(valueAttr, parameter.DeclaringType, parameter.FieldType, parameter);
         }
 

@@ -443,5 +443,25 @@ namespace Autofac.Annotation.Test
             Assert.Equal("bbbbb",a2.A282.Test);
             Assert.Equal("bbbbb",a2.Test);
         }
+        
+        [Fact]
+        public void Test_Type_25()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).InstancePerLifetimeScope());
+
+            var container = builder.Build();
+
+            A29 a29 = null;
+            using (var scope = container.BeginLifetimeScope())
+            {
+                a29 = scope.Resolve<A29>();
+                Assert.Equal("bbbb",a29.Test);
+            }
+            Assert.NotNull(a29);
+            Assert.Null(a29.Test);
+        }
     }
 }

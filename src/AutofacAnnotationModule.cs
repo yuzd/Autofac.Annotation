@@ -142,9 +142,84 @@ namespace Autofac.Annotation
 
                 //拦截器
                 SetIntercept(component, registrar);
+                
+                //方法注册
+                RegisterMethods(component, registrar);
             }
         }
 
+        /// <summary>
+        /// init方法和Release方法
+        /// </summary>
+        /// <typeparam name="TReflectionActivatorData"></typeparam>
+        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
+        /// <param name="component"></param>
+        /// <param name="registrar"></param>
+        protected virtual void RegisterMethods<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component, IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+            where TReflectionActivatorData : ReflectionActivatorData
+            where TSingleRegistrationStyle : SingleRegistrationStyle
+        {
+            MethodInfo AssertMethod(Type type,string methodName)
+            {
+                MethodInfo method = null;
+                try
+                {
+                    BindingFlags flags = BindingFlags.Public |
+                                         BindingFlags.NonPublic |
+                                         BindingFlags.Static |
+                                         BindingFlags.Instance |
+                                         BindingFlags.DeclaredOnly;
+                    method = type.GetMethod(methodName,flags);
+                }
+                catch (Exception)
+                {
+                    //如果有多个就抛出异常
+                    throw new DependencyResolutionException($"find method: {methodName} in type:{type.FullName} have more then one");
+                }
+
+                if (method == null)
+                {
+                    throw new DependencyResolutionException($"find method: {methodName} in type:{type.FullName} error");
+                }
+
+                if (method.GetParameters().Any())
+                {
+                    throw new DependencyResolutionException($"method: {methodName} in type:{type.FullName} must without any parameters");
+                }
+
+                return method;
+            }
+
+            if (component == null)
+            {
+                throw new ArgumentNullException(nameof(component));
+            }
+
+            if (registrar == null)
+            {
+                throw new ArgumentNullException(nameof(registrar));
+            }
+
+            if (!string.IsNullOrEmpty(component.InitMethod))
+            {
+                var method = AssertMethod(component.CurrentType,component.InitMethod);
+                registrar.OnActivated(e =>
+                {
+                    method.Invoke(e.Instance, null);
+                });
+            }
+
+            if (!string.IsNullOrEmpty(component.DestroyMetnod))
+            {
+                var method = AssertMethod(component.CurrentType,component.DestroyMetnod);
+                registrar.OnRelease(e =>
+                {
+                    method.Invoke(e, null);
+                });
+            }
+
+        }
+        
         /// <summary>
         /// 拦截器
         /// </summary>
@@ -253,7 +328,7 @@ namespace Autofac.Annotation
                                   }).ToList();
 
                     //自定义方式
-                    registrar.OnActivated(e =>
+                    registrar.OnActivating(e =>
                     {
 
                         var instance = e.Instance;
@@ -279,7 +354,7 @@ namespace Autofac.Annotation
         /// <param name="member"></param>
         /// <param name="autowired"></param>
         /// <param name="e"></param>
-        protected virtual void Autowired(Type currentType,MemberInfo member, Autowired autowired, IActivatedEventArgs<object> e)
+        protected virtual void Autowired(Type currentType,MemberInfo member, Autowired autowired, IActivatingEventArgs<object> e)
         {
             Type type = null;
             FieldInfo fieldInfoValue = null;
@@ -430,7 +505,7 @@ namespace Autofac.Annotation
                           }).ToList();
 
             //创建对象之后调用
-            registrar.OnActivated(e =>
+            registrar.OnActivating(e =>
             {
                 var instance = e.Instance;
                 if (instance == null) return;
@@ -593,7 +668,9 @@ namespace Autofac.Annotation
                 Ownership = bean.Ownership,
                 Interceptor = bean.Interceptor,
                 InterceptorKey = bean.InterceptorKey,
-                InterceptorType = bean.InterceptorType
+                InterceptorType = bean.InterceptorType,
+                InitMethod = bean.InitMethod,
+                DestroyMetnod = bean.DestroyMetnod
             };
 
             #region 解析注册对应的类的列表

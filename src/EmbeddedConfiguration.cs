@@ -12,7 +12,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// 资源
     /// </summary>
-    public static class EmbeddedConfiguration
+    internal static class EmbeddedConfiguration
     {
         /// <summary>
         /// 缓存 key为path

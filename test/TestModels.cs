@@ -398,4 +398,21 @@ namespace Autofac.Annotation.Test
         [Autowired]
         public A282 A282;    
     }
+    
+    [Bean(InitMethod = "start",DestroyMetnod = "destroy")]
+    public class A29
+    {
+        [Value("aaaaa")]
+        public string Test { get; set; }
+
+        void start()
+        {
+            this.Test = "bbbb";
+        }
+
+        void destroy()
+        {
+            this.Test = null;
+        }
+    }
 }

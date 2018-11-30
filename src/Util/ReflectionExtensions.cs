@@ -8,7 +8,7 @@ namespace Autofac.Annotation.Util
     /// <summary>
     /// 
     /// </summary>
-    public static class ReflectionExtensions
+    internal static class ReflectionExtensions
     {
         /// <summary>
         /// Maps from a property-set-value parameter to the declaring property.
@@ -29,6 +29,55 @@ namespace Autofac.Annotation.Util
             return false;
         }
 
+        /// <summary>
+        /// Get all the method of a class
+        /// </summary>
+        /// <param name="type">Type object of that class</param>
+        /// <returns></returns>
+        public static IEnumerable<MethodInfo> GetAllMethod(this Type type)
+        {
+            if (type == null)
+            {
+                return Enumerable.Empty<MethodInfo>();
+            }
+
+            BindingFlags flags = BindingFlags.Public |
+                                 BindingFlags.NonPublic |
+                                 BindingFlags.Static |
+                                 BindingFlags.Instance |
+                                 BindingFlags.DeclaredOnly;
+
+            return type.GetMethods(flags).Union(GetAllMethod(type.BaseType));
+        }
+        
+        /// <summary>
+        /// 先获取当前类的method，没有的话在找父类的
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="methodName"></param>
+        /// <returns></returns>
+        public static MethodInfo GetMethod(this Type type,string methodName)
+        {
+            if (type == null)
+            {
+                return null;
+            }
+
+            BindingFlags flags = BindingFlags.Public |
+                                 BindingFlags.NonPublic |
+                                 BindingFlags.Static |
+                                 BindingFlags.Instance |
+                                 BindingFlags.DeclaredOnly;
+
+            var method = type.GetMethod(methodName, flags);
+            if (method != null)
+            {
+                return method;
+            }
+            
+            return GetMethod(type.BaseType,methodName);
+        }
+        
         /// <summary>
         /// Get all the fields of a class
         /// </summary>

@@ -67,6 +67,15 @@ namespace Autofac.Annotation
         /// 拦截器类型
         /// </summary>
         public InterceptorType InterceptorType { get; set; } 
+        
+        /// <summary>
+        /// 被创建后执行的方法
+        /// </summary>
+        public string InitMethod { get; set; }
+        /// <summary>
+        /// 被Release时执行的方法
+        /// </summary>
+        public string DestroyMetnod { get; set; }
     }
 
     /// <summary>

@@ -113,6 +113,14 @@ namespace Autofac.Annotation
         /// 如果同一个类型的拦截器有多个 可以指定Key
         /// </summary>
         public string InterceptorKey { get; set; }
+        /// <summary>
+        /// 被创建后执行的方法
+        /// </summary>
+        public string InitMethod { get; set; }
+        /// <summary>
+        /// 被Release时执行的方法
+        /// </summary>
+        public string DestroyMetnod { get; set; }
 
     }
 

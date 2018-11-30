@@ -92,7 +92,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 作用域
         /// </summary>
-        public AutofacScope AutofacScope { get; set; } = AutofacScope.InstancePerLifetimeScope;
+        public AutofacScope AutofacScope { get; set; } = AutofacScope.InstancePerDependency;
 
         /// <summary>
         /// 如果设置值为external代表需要自己管理dispose

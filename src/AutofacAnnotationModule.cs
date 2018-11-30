@@ -28,6 +28,11 @@ namespace Autofac.Annotation
         private readonly Assembly[] _assemblyList;
 
         /// <summary>
+        /// 当前默认的Scope
+        /// </summary>
+        public AutofacScope AutofacScope { get; set; } = AutofacScope.Default;
+        
+        /// <summary>
         /// 根据程序集来实例化
         /// </summary>
         /// <param name="assemblyList"></param>
@@ -51,9 +56,49 @@ namespace Autofac.Annotation
                 throw new ArgumentException(nameof(assemblyNameList));
             }
 
-            _assemblyList = GetAssemblies().Where(assembly => assemblyNameList.Equals(assembly.GetName().Name)).ToArray();
+            _assemblyList = GetAssemblies().Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).ToArray();
         }
 
+        /// <summary>
+        /// 设置瞬时
+        /// </summary>
+        /// <returns></returns>
+        public AutofacAnnotationModule InstancePerDependency()
+        {
+            this.AutofacScope = AutofacScope.InstancePerDependency;
+            return this;
+        }
+
+        /// <summary>
+        /// 设置单例
+        /// </summary>
+        /// <returns></returns>
+        public AutofacAnnotationModule SingleInstance()
+        {
+            this.AutofacScope = AutofacScope.SingleInstance;
+            return this;
+        }
+        
+        /// <summary>
+        /// 设置作用域
+        /// </summary>
+        /// <returns></returns>
+        public AutofacAnnotationModule InstancePerLifetimeScope()
+        {
+            this.AutofacScope = AutofacScope.InstancePerLifetimeScope;
+            return this;
+        }
+        
+        /// <summary>
+        /// 设置请求作用域
+        /// </summary>
+        /// <returns></returns>
+        public AutofacAnnotationModule InstancePerRequest()
+        {
+            this.AutofacScope = AutofacScope.InstancePerRequest;
+            return this;
+        }
+        
         /// <summary>
         /// autofac加载
         /// </summary>
@@ -337,6 +382,9 @@ namespace Autofac.Annotation
 
             switch (component.AutofacScope)
             {
+                case AutofacScope.Default:
+                    registrar.InstancePerDependency();
+                    return;
                 case AutofacScope.InstancePerDependency:
                     registrar.InstancePerDependency();
                     return;
@@ -538,7 +586,7 @@ namespace Autofac.Annotation
             var result = new ComponentModel
             {
                 AutoActivate = bean.AutoActivate,
-                AutofacScope = bean.AutofacScope,
+                AutofacScope = this.AutofacScope.Equals(AutofacScope.Default)? bean.AutofacScope:this.AutofacScope,
                 CurrentType = currentType,
                 InjectProperties = bean.InjectProperties,
                 InjectPropertyType = bean.InjectPropertyType,

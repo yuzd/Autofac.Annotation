@@ -366,4 +366,36 @@ namespace Autofac.Annotation.Test
 
         }
     }
+    
+    [Bean()]
+    public class A27
+    {
+        [Value("aaaaa")]
+        public string Test { get; set; }
+    }
+    
+    [Bean(AutofacScope = AutofacScope.SingleInstance )]
+    public class A272
+    {
+        [Autowired]
+        public A27 a27;
+    }
+    
+     
+    [Bean(AutofacScope= AutofacScope.SingleInstance)]
+    public class A282
+    {
+        [Value("aaaaa")]
+        public string Test { get; set; }
+    }
+    
+    [Bean(AutofacScope = AutofacScope.InstancePerDependency)]
+    public class A28
+    {
+        [Value("aaaaa")]
+        public string Test { get; set; }
+        
+        [Autowired]
+        public A282 A282;    
+    }
 }

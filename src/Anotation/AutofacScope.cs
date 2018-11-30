@@ -12,7 +12,7 @@ namespace Autofac.Annotation
     public enum AutofacScope
     {
         /// <summary>
-        /// 每次请求获取
+        /// 瞬时
         /// </summary>
         InstancePerDependency,
         /// <summary>
@@ -26,7 +26,12 @@ namespace Autofac.Annotation
         /// <summary>
         /// 根据每个请求一个实例
         /// </summary>
-        InstancePerRequest
+        InstancePerRequest,
+        
+        /// <summary>
+        /// 默认是瞬时
+        /// </summary>
+        Default
       
     }
 }

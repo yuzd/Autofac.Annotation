@@ -374,5 +374,74 @@ namespace Autofac.Annotation.Test
              a1.say();
 
         }
+        [Fact]
+        public void Test_Type_22()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<A272>();
+            Assert.NotNull(a1);
+            Assert.NotNull(a1.a27);
+            Assert.Equal("aaaaa",a1.a27.Test);
+            a1.a27.Test = "bbbbb";
+            
+            //单例模式 属性都变成了单例的了
+            var a2 = container.Resolve<A272>();
+            Assert.True(a1==a2);
+            Assert.Equal("bbbbb",a2.a27.Test);
+        }
+        
+        [Fact]
+        public void Test_Type_23()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<A28>();
+            Assert.NotNull(a1);
+            Assert.NotNull(a1.A282);
+            Assert.Equal("aaaaa",a1.A282.Test);
+            Assert.Equal("aaaaa",a1.Test);
+            a1.A282.Test = "bbbbb";
+            a1.Test = "bbbbb";
+            
+            var a2 = container.Resolve<A28>();
+            Assert.False(a1==a2);
+            Assert.Equal("bbbbb",a2.A282.Test);
+            Assert.Equal("aaaaa",a2.Test);
+        }
+        
+        [Fact]
+        public void Test_Type_24()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).InstancePerLifetimeScope());
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<A28>();
+            Assert.NotNull(a1);
+            Assert.NotNull(a1.A282);
+            Assert.Equal("aaaaa",a1.A282.Test);
+            Assert.Equal("aaaaa",a1.Test);
+            a1.A282.Test = "bbbbb";
+            a1.Test = "bbbbb";
+            
+            var a2 = container.Resolve<A28>();
+            Assert.True(a1==a2);
+            Assert.Equal("bbbbb",a2.A282.Test);
+            Assert.Equal("bbbbb",a2.Test);
+        }
     }
 }

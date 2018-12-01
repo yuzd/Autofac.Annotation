@@ -1,0 +1,146 @@
+// Validating benchmarks:
+// ***** BenchmarkRunner: Start   *****
+// ***** Building 1 exe(s) in Parallel: Start   *****
+// start dotnet restore  /p:UseSharedCompilation=false in /Users/yuzd/workspace/Autofac.Annotation/Autofac.Annotation.Benchmark/bin/Release/netcoreapp2.1/a084b8c1-6ef6-4634-a2e2-1608afe20fa8
+// command took 3.87s and exited with 0
+// start dotnet build -c Release  /p:UseSharedCompilation=false in /Users/yuzd/workspace/Autofac.Annotation/Autofac.Annotation.Benchmark/bin/Release/netcoreapp2.1/a084b8c1-6ef6-4634-a2e2-1608afe20fa8
+// command took 6.39s and exited with 0
+// ***** Done, took 00:00:10 (10.41 sec)   *****
+// Found benchmarks:
+//   AutofacAutowiredResolveBenchmark.Test: DefaultJob
+
+// **************************
+// Benchmark: AutofacAutowiredResolveBenchmark.Test: DefaultJob
+// *** Execute ***
+// Launch: 1 / 1
+Failed to set up high priority. Make sure you have the right permissions. Message: Permission denied
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// Runtime=.NET Core 2.1.5 (CoreCLR 4.6.26919.02, CoreFX 4.6.26919.02), 64bit RyuJIT
+// GC=Concurrent Workstation
+// Job: DefaultJob
+
+OverheadJitting  1: 1 op, 558645.00 ns, 558.6450 us/op
+WorkloadJitting  1: 1 op, 102103500.00 ns, 102.1035 ms/op
+
+WorkloadPilot    1: 2 op, 1283702.00 ns, 641.8510 us/op
+WorkloadPilot    2: 3 op, 764362.00 ns, 254.7873 us/op
+WorkloadPilot    3: 4 op, 524717.00 ns, 131.1793 us/op
+WorkloadPilot    4: 5 op, 714998.00 ns, 142.9996 us/op
+WorkloadPilot    5: 6 op, 1042982.00 ns, 173.8303 us/op
+WorkloadPilot    6: 7 op, 1246715.00 ns, 178.1021 us/op
+WorkloadPilot    7: 8 op, 827501.00 ns, 103.4376 us/op
+WorkloadPilot    8: 9 op, 941772.00 ns, 104.6413 us/op
+WorkloadPilot    9: 10 op, 1008358.00 ns, 100.8358 us/op
+WorkloadPilot   10: 11 op, 1195031.00 ns, 108.6392 us/op
+WorkloadPilot   11: 12 op, 1523079.00 ns, 126.9233 us/op
+WorkloadPilot   12: 13 op, 1858091.00 ns, 142.9301 us/op
+WorkloadPilot   13: 14 op, 1664885.00 ns, 118.9204 us/op
+WorkloadPilot   14: 15 op, 2046262.00 ns, 136.4175 us/op
+WorkloadPilot   15: 16 op, 2653202.00 ns, 165.8251 us/op
+WorkloadPilot   16: 32 op, 4047795.00 ns, 126.4936 us/op
+WorkloadPilot   17: 64 op, 9026495.00 ns, 141.0390 us/op
+WorkloadPilot   18: 128 op, 21312605.00 ns, 166.5047 us/op
+WorkloadPilot   19: 256 op, 33635084.00 ns, 131.3870 us/op
+WorkloadPilot   20: 512 op, 54755164.00 ns, 106.9437 us/op
+WorkloadPilot   21: 1024 op, 103811116.00 ns, 101.3780 us/op
+WorkloadPilot   22: 2048 op, 222312491.00 ns, 108.5510 us/op
+WorkloadPilot   23: 4096 op, 500555251.00 ns, 122.2059 us/op
+
+WorkloadWarmup   1: 4096 op, 399002379.00 ns, 97.4127 us/op
+WorkloadWarmup   2: 4096 op, 404223358.00 ns, 98.6873 us/op
+WorkloadWarmup   3: 4096 op, 402750315.00 ns, 98.3277 us/op
+WorkloadWarmup   4: 4096 op, 406961522.00 ns, 99.3558 us/op
+WorkloadWarmup   5: 4096 op, 422214550.00 ns, 103.0797 us/op
+WorkloadWarmup   6: 4096 op, 401848794.00 ns, 98.1076 us/op
+
+// BeforeActualRun
+WorkloadActual   1: 4096 op, 397457888.00 ns, 97.0356 us/op
+WorkloadActual   2: 4096 op, 407149688.00 ns, 99.4018 us/op
+WorkloadActual   3: 4096 op, 411428433.00 ns, 100.4464 us/op
+WorkloadActual   4: 4096 op, 405688397.00 ns, 99.0450 us/op
+WorkloadActual   5: 4096 op, 399393423.00 ns, 97.5082 us/op
+WorkloadActual   6: 4096 op, 406004953.00 ns, 99.1223 us/op
+WorkloadActual   7: 4096 op, 401352620.00 ns, 97.9865 us/op
+WorkloadActual   8: 4096 op, 408884018.00 ns, 99.8252 us/op
+WorkloadActual   9: 4096 op, 422113134.00 ns, 103.0550 us/op
+WorkloadActual  10: 4096 op, 390980045.00 ns, 95.4541 us/op
+WorkloadActual  11: 4096 op, 395130422.00 ns, 96.4674 us/op
+WorkloadActual  12: 4096 op, 400993070.00 ns, 97.8987 us/op
+WorkloadActual  13: 4096 op, 400489589.00 ns, 97.7758 us/op
+WorkloadActual  14: 4096 op, 400635714.00 ns, 97.8115 us/op
+WorkloadActual  15: 4096 op, 395307352.00 ns, 96.5106 us/op
+
+// AfterActualRun
+WorkloadResult   1: 4096 op, 397457888.00 ns, 97.0356 us/op
+WorkloadResult   2: 4096 op, 407149688.00 ns, 99.4018 us/op
+WorkloadResult   3: 4096 op, 411428433.00 ns, 100.4464 us/op
+WorkloadResult   4: 4096 op, 405688397.00 ns, 99.0450 us/op
+WorkloadResult   5: 4096 op, 399393423.00 ns, 97.5082 us/op
+WorkloadResult   6: 4096 op, 406004953.00 ns, 99.1223 us/op
+WorkloadResult   7: 4096 op, 401352620.00 ns, 97.9865 us/op
+WorkloadResult   8: 4096 op, 408884018.00 ns, 99.8252 us/op
+WorkloadResult   9: 4096 op, 390980045.00 ns, 95.4541 us/op
+WorkloadResult  10: 4096 op, 395130422.00 ns, 96.4674 us/op
+WorkloadResult  11: 4096 op, 400993070.00 ns, 97.8987 us/op
+WorkloadResult  12: 4096 op, 400489589.00 ns, 97.7758 us/op
+WorkloadResult  13: 4096 op, 400635714.00 ns, 97.8115 us/op
+WorkloadResult  14: 4096 op, 395307352.00 ns, 96.5106 us/op
+GC:  0 0 0 0 0
+
+// AfterAll
+
+Mean = 98.0206 us, StdErr = 0.3776 us (0.39%); N = 14, StdDev = 1.4127 us
+Min = 95.4541 us, Q1 = 97.0356 us, Median = 97.8551 us, Q3 = 99.1223 us, Max = 100.4464 us
+IQR = 2.0867 us, LowerFence = 93.9056 us, UpperFence = 102.2523 us
+ConfidenceInterval = [96.4270 us; 99.6142 us] (CI 99.9%), Margin = 1.5936 us (1.63% of Mean)
+Skewness = 0, Kurtosis = 1.92, MValue = 2
+
+// ***** BenchmarkRunner: Finish  *****
+
+// * Export *
+  BenchmarkDotNet.Artifacts/results/Autofac.Annotation.Benchmark.AutofacAutowiredResolveBenchmark-report.csv
+  BenchmarkDotNet.Artifacts/results/Autofac.Annotation.Benchmark.AutofacAutowiredResolveBenchmark-report-github.md
+  BenchmarkDotNet.Artifacts/results/Autofac.Annotation.Benchmark.AutofacAutowiredResolveBenchmark-report.html
+
+// * Detailed results *
+AutofacAutowiredResolveBenchmark.Test: DefaultJob
+Runtime = .NET Core 2.1.5 (CoreCLR 4.6.26919.02, CoreFX 4.6.26919.02), 64bit RyuJIT; GC = Concurrent Workstation
+Mean = 98.0206 us, StdErr = 0.3776 us (0.39%); N = 14, StdDev = 1.4127 us
+Min = 95.4541 us, Q1 = 97.0356 us, Median = 97.8551 us, Q3 = 99.1223 us, Max = 100.4464 us
+IQR = 2.0867 us, LowerFence = 93.9056 us, UpperFence = 102.2523 us
+ConfidenceInterval = [96.4270 us; 99.6142 us] (CI 99.9%), Margin = 1.5936 us (1.63% of Mean)
+Skewness = 0, Kurtosis = 1.92, MValue = 2
+-------------------- Histogram --------------------
+[94.941 us ;  98.486 us) | @@@@@@@@@
+[98.486 us ; 100.959 us) | @@@@@
+---------------------------------------------------
+
+// * Summary *
+
+BenchmarkDotNet=v0.11.3, OS=macOS High Sierra 10.13.6 (17G65) [Darwin 17.7.0]
+Intel Core i7-4650U CPU 1.70GHz (Haswell), 1 CPU, 4 logical and 2 physical cores
+.NET Core SDK=2.1.403
+  [Host]     : .NET Core 2.1.5 (CoreCLR 4.6.26919.02, CoreFX 4.6.26919.02), 64bit RyuJIT
+  DefaultJob : .NET Core 2.1.5 (CoreCLR 4.6.26919.02, CoreFX 4.6.26919.02), 64bit RyuJIT
+
+
+ Method |     Mean |    Error |   StdDev |
+------- |---------:|---------:|---------:|
+   Test | 98.02 us | 1.594 us | 1.413 us |
+
+// * Hints *
+Outliers
+  AutofacAutowiredResolveBenchmark.Test: Default -> 1 outlier  was  removed
+
+// * Legends *
+  Mean   : Arithmetic mean of all measurements
+  Error  : Half of 99.9% confidence interval
+  StdDev : Standard deviation of all measurements
+  1 us   : 1 Microsecond (0.000001 sec)
+
+// ***** BenchmarkRunner: End *****
+Run time: 00:00:11 (11.15 sec), executed benchmarks: 1
+
+// * Artifacts cleanup *

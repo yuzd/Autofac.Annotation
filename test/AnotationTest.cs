@@ -1,11 +1,13 @@
 ﻿using Autofac.Core;
+using Autofac.Extras.DynamicProxy;
+using Autofac.Features.AttributeFilters;
+using Castle.DynamicProxy;
 using Xunit;
 
 namespace Autofac.Annotation.Test
 {
     public class AnotationTest
     {
-        
         [Fact]
         public void Test_Type_01()
         {
@@ -19,7 +21,6 @@ namespace Autofac.Annotation.Test
             var a1 = container.Resolve<A>();
 
             Assert.NotNull(a1);
-
         }
 
         [Fact]
@@ -37,7 +38,6 @@ namespace Autofac.Annotation.Test
             Assert.NotNull(a1);
 
             Assert.Equal("A14", a1.GetSchool());
-
         }
 
         [Fact]
@@ -56,9 +56,8 @@ namespace Autofac.Annotation.Test
             Assert.NotNull(a1);
             Assert.NotNull(a2);
 
-            Assert.Equal("测试1",a1.GetSchool());
-            Assert.Equal("测试2",a2.GetSchool());
-
+            Assert.Equal("测试1", a1.GetSchool());
+            Assert.Equal("测试2", a2.GetSchool());
         }
 
         [Fact]
@@ -78,10 +77,10 @@ namespace Autofac.Annotation.Test
             Assert.NotNull(a1);
             Assert.NotNull(ab);
             Assert.NotNull(a6);
-            Assert.Equal("测试a5",ab.GetSchool());
+            Assert.Equal("测试a5", ab.GetSchool());
         }
 
-        
+
         [Fact]
         public void Test_Type_05()
         {
@@ -92,15 +91,15 @@ namespace Autofac.Annotation.Test
 
             var container = builder.Build();
 
-            
+
             var a1 = container.Resolve<A8>();
             var a2 = container.Resolve<A9>();
-            Assert.Equal(4,a2.list.Count);
-            Assert.Equal(2,a2.dic.Keys.Count);
-            Assert.Equal("a8",a1.GetSchool());
-            Assert.Equal("aaaaaaaaa",a2.GetSchool());
-           
+            Assert.Equal(4, a2.list.Count);
+            Assert.Equal(2, a2.dic.Keys.Count);
+            Assert.Equal("a8", a1.GetSchool());
+            Assert.Equal("aaaaaaaaa", a2.GetSchool());
         }
+
         [Fact]
         public void Test_Type_06()
         {
@@ -111,12 +110,11 @@ namespace Autofac.Annotation.Test
 
             var container = builder.Build();
 
-            
+
             var a2 = container.Resolve<A10>();
-            Assert.Equal(3,a2.list.Count);
+            Assert.Equal(3, a2.list.Count);
             Assert.Single(a2.dic.Keys);
-            Assert.Equal("aaaaaaaaa1",a2.GetSchool());
-           
+            Assert.Equal("aaaaaaaaa1", a2.GetSchool());
         }
 
         [Fact]
@@ -129,12 +127,11 @@ namespace Autofac.Annotation.Test
 
             var container = builder.Build();
 
-            
+
             var a2 = container.Resolve<A11>();
-            Assert.Equal(3,a2.list.Count);
+            Assert.Equal(3, a2.list.Count);
             Assert.Single(a2.dic.Keys);
-            Assert.Equal("aaaaaaaaa1",a2.GetSchool());
-           
+            Assert.Equal("aaaaaaaaa1", a2.GetSchool());
         }
 
         [Fact]
@@ -152,7 +149,6 @@ namespace Autofac.Annotation.Test
             var a3 = container.ResolveKeyed<B>("A12");
             Assert.Equal("A12", a2.GetSchool());
             Assert.Equal("A12", a3.GetSchool());
-
         }
 
         [Fact]
@@ -170,7 +166,6 @@ namespace Autofac.Annotation.Test
             var a3 = container.ResolveKeyed<B>("A13");
             Assert.Equal("A13", a2.GetSchool());
             Assert.Equal("A13", a3.GetSchool());
-
         }
 
 
@@ -187,11 +182,10 @@ namespace Autofac.Annotation.Test
 
             var a2 = container.ResolveKeyed<A14>("aa14");
             var a3 = container.Resolve<B>();
-            container.TryResolveKeyed("aa14",typeof(B),out object aa);
+            container.TryResolveKeyed("aa14", typeof(B), out object aa);
             Assert.Null(aa);
             Assert.Equal("A14", a2.GetSchool());
             Assert.Equal("A14", a3.GetSchool());
-
         }
 
         [Fact]
@@ -208,7 +202,6 @@ namespace Autofac.Annotation.Test
             var a3 = container.Resolve<A15>();
             Assert.Equal("aaaaaaaaa", a3.School);
             Assert.Equal("aaaaaaaaa", a3.test);
-
         }
 
         [Fact]
@@ -225,8 +218,7 @@ namespace Autofac.Annotation.Test
             var a3 = container.Resolve<A16>();
             Assert.NotNull(a3.B);
             Assert.NotNull(a3.b1);
-            Assert.Equal("A13",a3.b1.GetSchool());
-
+            Assert.Equal("A13", a3.b1.GetSchool());
         }
 
         [Fact]
@@ -240,10 +232,9 @@ namespace Autofac.Annotation.Test
             var container = builder.Build();
 
             Assert.Throws<DependencyResolutionException>(() => container.Resolve<A17>());
-
         }
 
-        
+
         [Fact]
         public void Test_Type_14()
         {
@@ -256,7 +247,6 @@ namespace Autofac.Annotation.Test
 
             var a1 = container.Resolve<A18>();
             Assert.Null(a1.b1);
-
         }
 
         [Fact]
@@ -272,7 +262,6 @@ namespace Autofac.Annotation.Test
             var a1 = container.Resolve<A20>();
             Assert.NotNull(a1.b1);
             Assert.NotNull(a1.b2);
-
         }
 
         [Fact]
@@ -288,8 +277,7 @@ namespace Autofac.Annotation.Test
             var a1 = container.Resolve<A21>();
             Assert.NotNull(a1.b1);
             Assert.NotNull(a1.b2);
-            Assert.Equal("aaaa",a1.Name);
-
+            Assert.Equal("aaaa", a1.Name);
         }
 
         [Fact]
@@ -304,8 +292,7 @@ namespace Autofac.Annotation.Test
 
             var a1 = container.Resolve<A22>();
             Assert.NotNull(a1.A21);
-            Assert.Equal("name",a1.Name);
-
+            Assert.Equal("name", a1.Name);
         }
 
         [Fact]
@@ -320,11 +307,10 @@ namespace Autofac.Annotation.Test
 
             var a1 = container.Resolve<IA23>();
             var aaa = a1.GetSchool();
-            Assert.Equal("a",aaa);
-
+            Assert.Equal("a", aaa);
         }
 
-        
+
         [Fact]
         public void Test_Type_19()
         {
@@ -337,8 +323,7 @@ namespace Autofac.Annotation.Test
 
             var a1 = container.Resolve<A24>();
             var aaa = a1.GetSchool();
-            Assert.Equal("a",aaa);
-
+            Assert.Equal("a", aaa);
         }
 
         [Fact]
@@ -352,14 +337,16 @@ namespace Autofac.Annotation.Test
             var container = builder.Build();
 
             var a1 = container.Resolve<A25>();
+            Assert.NotNull(a1);
+            Assert.Equal("name", a1.Name);
+            Assert.Equal("ddd", a1.Test);
             var aaa = a1.GetSchool();
             Assert.NotNull(a1.A23);
-            var a2= a1.A23.GetSchool();
-            Assert.Equal("b",aaa);
-
+            var a2 = a1.A23.GetSchool();
+            Assert.Equal("b", aaa);
         }
 
-        
+
         [Fact]
         public void Test_Type_21()
         {
@@ -371,9 +358,9 @@ namespace Autofac.Annotation.Test
             var container = builder.Build();
 
             var a1 = container.Resolve<A263>();
-             a1.say();
-
+            a1.say();
         }
+
         [Fact]
         public void Test_Type_22()
         {
@@ -387,15 +374,15 @@ namespace Autofac.Annotation.Test
             var a1 = container.Resolve<A272>();
             Assert.NotNull(a1);
             Assert.NotNull(a1.a27);
-            Assert.Equal("aaaaa",a1.a27.Test);
+            Assert.Equal("aaaaa", a1.a27.Test);
             a1.a27.Test = "bbbbb";
-            
+
             //单例模式 属性都变成了单例的了
             var a2 = container.Resolve<A272>();
-            Assert.True(a1==a2);
-            Assert.Equal("bbbbb",a2.a27.Test);
+            Assert.True(a1 == a2);
+            Assert.Equal("bbbbb", a2.a27.Test);
         }
-        
+
         [Fact]
         public void Test_Type_23()
         {
@@ -409,17 +396,17 @@ namespace Autofac.Annotation.Test
             var a1 = container.Resolve<A28>();
             Assert.NotNull(a1);
             Assert.NotNull(a1.A282);
-            Assert.Equal("aaaaa",a1.A282.Test);
-            Assert.Equal("aaaaa",a1.Test);
+            Assert.Equal("aaaaa", a1.A282.Test);
+            Assert.Equal("aaaaa", a1.Test);
             a1.A282.Test = "bbbbb";
             a1.Test = "bbbbb";
-            
+
             var a2 = container.Resolve<A28>();
-            Assert.False(a1==a2);
-            Assert.Equal("bbbbb",a2.A282.Test);
-            Assert.Equal("aaaaa",a2.Test);
+            Assert.False(a1 == a2);
+            Assert.Equal("bbbbb", a2.A282.Test);
+            Assert.Equal("aaaaa", a2.Test);
         }
-        
+
         [Fact]
         public void Test_Type_24()
         {
@@ -433,17 +420,17 @@ namespace Autofac.Annotation.Test
             var a1 = container.Resolve<A28>();
             Assert.NotNull(a1);
             Assert.NotNull(a1.A282);
-            Assert.Equal("aaaaa",a1.A282.Test);
-            Assert.Equal("aaaaa",a1.Test);
+            Assert.Equal("aaaaa", a1.A282.Test);
+            Assert.Equal("aaaaa", a1.Test);
             a1.A282.Test = "bbbbb";
             a1.Test = "bbbbb";
-            
+
             var a2 = container.Resolve<A28>();
-            Assert.True(a1==a2);
-            Assert.Equal("bbbbb",a2.A282.Test);
-            Assert.Equal("bbbbb",a2.Test);
+            Assert.True(a1 == a2);
+            Assert.Equal("bbbbb", a2.A282.Test);
+            Assert.Equal("bbbbb", a2.Test);
         }
-        
+
         [Fact]
         public void Test_Type_25()
         {
@@ -458,10 +445,51 @@ namespace Autofac.Annotation.Test
             using (var scope = container.BeginLifetimeScope())
             {
                 a29 = scope.Resolve<A29>();
-                Assert.Equal("bbbb",a29.Test);
+                Assert.Equal("bbbb", a29.Test);
             }
+
             Assert.NotNull(a29);
             Assert.Null(a29.Test);
+        }
+
+        [Fact]
+        public void Test_Type_26()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).InstancePerLifetimeScope());
+
+            var container = builder.Build();
+
+            A30 a30 = null;
+            using (var scope = container.BeginLifetimeScope())
+            {
+                a30 = scope.Resolve<A30>();
+                Assert.Equal("bbbb", a30.Test);
+                Assert.Equal("bbbb", a30.a29.Test);
+            }
+
+            Assert.NotNull(a30);
+            Assert.NotNull(a30.a29);
+            Assert.Null(a30.Test);
+            Assert.Null(a30.a29.Test);
+        }
+
+        [Fact]
+        public void Test_Type_27()
+        {
+            var builder = new ContainerBuilder();
+            
+            builder.RegisterType<A13>().As<B>().WithAttributeFiltering();
+            builder.RegisterType<Log>().As<AsyncInterceptor>();
+            builder.RegisterType<Log2>().Keyed<AsyncInterceptor>("log2");
+            builder.RegisterType<A21>().WithAttributeFiltering().PropertiesAutowired();
+            builder.RegisterType<A23>().As<IA23>().WithAttributeFiltering().PropertiesAutowired().EnableInterfaceInterceptors().InterceptedBy(typeof(AsyncInterceptor));
+            builder.RegisterType<A25>().WithAttributeFiltering().PropertiesAutowired().EnableClassInterceptors().InterceptedBy(new KeyedService("log2",typeof(AsyncInterceptor)));
+            var _container = builder.Build();
+            var a1 = _container.Resolve<A25>();
+            var a2 = a1.A23.GetSchool();
         }
     }
 }

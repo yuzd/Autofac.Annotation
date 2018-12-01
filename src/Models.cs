@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Autofac.Annotation
 {
@@ -9,6 +10,18 @@ namespace Autofac.Annotation
     /// </summary>
     public class ComponentModel
     {
+        /// <summary>
+        /// 构造方法
+        /// </summary>
+        public ComponentModel()
+        {
+            MetaSourceList = new List<MetaSourceData>();
+            ComponentServiceList = new List<ComponentServiceModel>();
+            AutowiredFieldInfoList = new List<(FieldInfo, Autowired)>();
+            AutowiredPropertyInfoList = new List<(PropertyInfo, Autowired)>();
+            ValueFieldInfoList = new List<(FieldInfo, Value)>();
+            ValuePropertyInfoList = new List<(PropertyInfo, Value)>();
+        }
         /// <summary>
         /// 当前类所在类型
         /// </summary>
@@ -19,7 +32,26 @@ namespace Autofac.Annotation
         /// </summary>
         public List<ComponentServiceModel> ComponentServiceList { get; set; }
 
-
+        /// <summary>
+        /// 需要装配的Autowired的字段集合
+        /// </summary>
+        public List<(FieldInfo,Autowired)> AutowiredFieldInfoList { get; set; }
+        
+        /// <summary>
+        /// 需要装配的Autowired的属性集合
+        /// </summary>
+        public List<(PropertyInfo,Autowired)> AutowiredPropertyInfoList { get; set; }
+        
+        
+        /// <summary>
+        /// 需要装配的Value的字段集合
+        /// </summary>
+        public List<(FieldInfo,Value)> ValueFieldInfoList { get; set; }
+        
+        /// <summary>
+        /// 需要装配的Value的属性集合
+        /// </summary>
+        public List<(PropertyInfo,Value)> ValuePropertyInfoList { get; set; }
 
         /// <summary>
         /// PropertySource

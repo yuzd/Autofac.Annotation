@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Autofac.Features.AttributeFilters;
 using Castle.DynamicProxy;
 
@@ -237,14 +238,13 @@ namespace Autofac.Annotation.Test
 
     public class A19
     {
-        [Autowired("A13",Required = false)]
-        public B b1;
-       
-        [Autowired("A13",Required = false)]
-        public B b2;
+        [Autowired("A13", Required = false)] public B b1 { get; set; }
 
         [Autowired("A13",Required = false)]
-        private B b3;
+        public B b2 { get; set; }
+
+        [Autowired("A13",Required = false)]
+        private B b3 { get; set; }
     }
 
     [Bean]
@@ -341,6 +341,9 @@ namespace Autofac.Annotation.Test
 
 
         public string Name { get; set; }
+        
+        [Value("ddd")]
+        public string Test { get; set; }
         [Autowired]
         public A21 A21 { get; set; }
 
@@ -413,6 +416,27 @@ namespace Autofac.Annotation.Test
         void destroy()
         {
             this.Test = null;
+        }
+    }
+    
+    [Bean(InitMethod = "start",DestroyMetnod = "destroy")]
+    public class A30
+    {
+        [Value("aaaaa")]
+        public string Test { get; set; }
+
+        public A29 a29;
+
+        void start(IComponentContext context)
+        {
+            this.Test = "bbbb";
+            a29 = context.Resolve<A29>();
+        }
+
+        void destroy()
+        {
+            this.Test = null;
+            a29.Test = null;
         }
     }
 }

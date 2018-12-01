@@ -38,26 +38,20 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public override object ResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
-            var valueAttr = parameter.GetReflector().GetCustomAttribute<Value>();
-            if (valueAttr == null)
-            {
-                parameter.TryGetDeclaringProperty(out var prop);
-                if (prop == null)
-                {
-                    return null;
-                }
-                else
-                {
-                    valueAttr = prop.GetReflector().GetCustomAttribute<Value>();
-                    if (valueAttr == null)
-                    {
-                        return null;
-                    }
-                }
-            }
-            return Resolve(valueAttr, parameter.Member.DeclaringType, parameter.ParameterType, null, parameter);
+            return Resolve(this, parameter.Member.DeclaringType, parameter.ParameterType, null, parameter);
         }
 
+        /// <summary>
+        /// 注入Property的值
+        /// </summary>
+        /// <param name="prop"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public object ResolveProperty(PropertyInfo prop, IComponentContext context)
+        {
+            return prop == null ? null : Resolve(this, prop.DeclaringType, prop.PropertyType, prop);
+        }
+        
         /// <summary>
         /// 注入Filed值
         /// </summary>
@@ -66,8 +60,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public object ResolveFiled(FieldInfo parameter, IComponentContext context)
         {
-            var valueAttr = parameter.GetReflector().GetCustomAttribute<Value>();
-            return Resolve(valueAttr, parameter.DeclaringType, parameter.FieldType, parameter);
+            return parameter == null ? null : Resolve(this, parameter.DeclaringType, parameter.FieldType, parameter);
         }
 
         /// <summary>

@@ -54,23 +54,52 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public override object ResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
-            var autowired = parameter.GetReflector().GetCustomAttribute<Autowired>();
-            if (autowired == null)
-            {
-                return null;
-            }
+            return Resolve(parameter.ParameterType,context);
+        }
+
+        /// <summary>
+        /// 装配字段
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public  object ResolveField(FieldInfo parameter, IComponentContext context)
+        {
+            return Resolve(parameter.FieldType,context);
+        }
+        
+        /// <summary>
+        /// 装配属性
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public object ResolveProperty(PropertyInfo parameter, IComponentContext context)
+        {
+            return Resolve(parameter.PropertyType,context);
+        }
+        
+        /// <summary>
+        /// 装配
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        /// <exception cref="DependencyResolutionException"></exception>
+        private object Resolve(Type type,IComponentContext context)
+        {
             object obj = null;
-            if (!string.IsNullOrEmpty(autowired.Name))
+            if (!string.IsNullOrEmpty(this.Name))
             {
-                context.TryResolveKeyed(autowired.Name, parameter.ParameterType, out obj);
+                context.TryResolveKeyed(this.Name, type, out obj);
             }
             else
             {
-                context.TryResolve(parameter.ParameterType, out obj);
+                context.TryResolve(type, out obj);
             }
-            if (obj == null && autowired.Required)
+            if (obj == null && this.Required)
             {
-                throw new DependencyResolutionException($"Autowired on ResolveParameter,can not resolve type:{parameter.ParameterType.FullName} " + (!string.IsNullOrEmpty(autowired.Name) ? $" with key:{autowired.Name}" : ""));
+                throw new DependencyResolutionException($"Autowired on ResolveParameter,can not resolve type:{type.FullName} " + (!string.IsNullOrEmpty(this.Name) ? $" with key:{this.Name}" : ""));
             }
             return obj;
         }

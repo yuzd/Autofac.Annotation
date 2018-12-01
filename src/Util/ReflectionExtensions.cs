@@ -11,6 +11,19 @@ namespace Autofac.Annotation.Util
     internal static class ReflectionExtensions
     {
         /// <summary>
+        /// 获取IEnumerable泛型的类型
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static Type GetElementType(this Type type)
+        {
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                return type.GetGenericArguments()[0];
+
+            return type;
+        }
+        
+        /// <summary>
         /// Maps from a property-set-value parameter to the declaring property.
         /// </summary>
         /// <param name="pi">Parameter to the property setter.</param>

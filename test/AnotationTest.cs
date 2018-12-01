@@ -1,6 +1,10 @@
-﻿using Autofac.Core;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Autofac.Core;
 using Autofac.Extras.DynamicProxy;
 using Autofac.Features.AttributeFilters;
+using Autofac.Features.Metadata;
 using Castle.DynamicProxy;
 using Xunit;
 
@@ -508,6 +512,55 @@ namespace Autofac.Annotation.Test
             });
             
             Assert.Contains("property name:A311",exception.Message);
+        }
+        
+        [Fact]
+        public void Test_Type_29()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+//            builder.RegisterType<A321>().As<A3122>().WithMetadata("tt", "A3211");
+//            builder.RegisterType<A322>().As<A3122>().WithMetadata("tt", "A3212");
+//            builder.RegisterType<A323>().As<A3122>().WithMetadata("tt", "A3213");
+            
+//            builder.RegisterType(typeof(A321)).As(new KeyedService("A3211",typeof(A3122)));
+//            builder.RegisterType(typeof(A321)).As(new TypedService(typeof(A3122))).WithMetadata("tt", "A3211");
+//            builder.RegisterType(typeof(A322)).As(new KeyedService("A3212",typeof(A3122)));
+//            builder.RegisterType(typeof(A322)).As(new TypedService(typeof(A3122))).WithMetadata("tt", "A3212");
+//            builder.RegisterType(typeof(A323)).As(new KeyedService("A3213",typeof(A3122)));
+//            builder.RegisterType(typeof(A323)).As(new TypedService(typeof(A3122))).WithMetadata("tt", "A3213");
+            
+            var container = builder.Build();
+            
+//            var warrior = container.Resolve<IEnumerable<Meta<A3122>>>();
+
+//            var b = container.Resolve<IEnumerable<Meta<A3122>>>();
+            
+            var a = container.Resolve<A32>();
+            
+            Assert.Equal(4,a.A31List.Count());
+
+        }
+        
+        [Fact]
+        public void Test_Type_30()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            
+            var container = builder.Build();
+            
+            
+            var a = container.Resolve<A33>();
+            
+            Assert.Equal(2,a.A31List.Count());
+
         }
     }
 }

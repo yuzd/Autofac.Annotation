@@ -25,6 +25,11 @@ namespace Autofac.Annotation
         /// </summary>
         internal static ConcurrentDictionary<Type, ComponentModel> ComponentModelCache = new ConcurrentDictionary<Type, ComponentModel>();
 
+        /// <summary>
+        /// 注册指定key的metedata的key值是固定的
+        /// </summary>
+        internal const string MetaDataKeyProfix = "autofac_annotation_key_name";
+
         private readonly Assembly[] _assemblyList;
 
         /// <summary>
@@ -571,6 +576,8 @@ namespace Autofac.Annotation
                     if (!string.IsNullOrEmpty(componentServiceModel.Key))
                     {
                         registrar.As(new KeyedService(componentServiceModel.Key, componentServiceModel.Type));
+                        registrar.As(new TypedService(componentServiceModel.Type))
+                            .WithMetadata(MetaDataKeyProfix + "_" + componentServiceModel.Type.FullName, componentServiceModel.Key);
                     }
                     else
                     {

@@ -2,7 +2,11 @@
 using Autofac.Core;
 using Autofac.Features.AttributeFilters;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using Autofac.Annotation.Util;
+using Autofac.Features.Metadata;
 
 namespace Autofac.Annotation
 {
@@ -13,6 +17,9 @@ namespace Autofac.Annotation
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter)]
     public class Autowired : ParameterFilterAttribute
     {
+        private static readonly MethodInfo filterAll =
+            typeof(Autowired).GetMethod("FilterAll", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.InvokeMethod);
+
         /// <summary>
         /// 默认的
         /// </summary>
@@ -92,6 +99,14 @@ namespace Autofac.Annotation
         /// <exception cref="DependencyResolutionException"></exception>
         private object Resolve(Type classType, Type type, IComponentContext context, string typeDescription)
         {
+            var elementType = ReflectionExtensions.GetElementType(type);
+            var hasMany = elementType != type;
+            if (hasMany)
+            {
+                var key = AutofacAnnotationModule.MetaDataKeyProfix + "_" + elementType.FullName;
+                return filterAll.MakeGenericMethod(elementType).Invoke(null, new object[] {context, key, this.Name});
+            }
+
             object obj = null;
             if (!string.IsNullOrEmpty(this.Name))
             {
@@ -109,6 +124,23 @@ namespace Autofac.Annotation
             }
 
             return obj;
+        }
+
+        private static IEnumerable<T> FilterAll<T>(IComponentContext context, string metadataKey, string metadataValue)
+        {
+            // Using Lazy<T> to ensure components that aren't actually used won't get activated.
+            if (string.IsNullOrEmpty(metadataValue))
+            {
+                return context.Resolve<IEnumerable<Meta<Lazy<T>>>>()
+                    .Where(m => m.Metadata.ContainsKey(metadataKey))
+                    .Select(m => m.Value.Value)
+                    .ToArray();
+            }
+
+            return context.Resolve<IEnumerable<Meta<Lazy<T>>>>()
+                .Where(m => m.Metadata.ContainsKey(metadataKey) && metadataValue.Equals(m.Metadata[metadataKey]))
+                .Select(m => m.Value.Value)
+                .ToArray();
         }
     }
 }

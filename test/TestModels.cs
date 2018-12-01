@@ -452,4 +452,48 @@ namespace Autofac.Annotation.Test
         [Autowired("A311")]
         public A311 A311 { get; set; }
     }
+    
+//    [Bean]
+    public class A3122
+    {
+        public string Name { get; set; } = "A3122";
+    }
+    
+    [Bean(typeof(A3122),"A3211")]
+    public class A321:A3122
+    {
+        public new string Name { get; set; } = "A321";
+    }
+    
+    [Bean(typeof(A3122),"A3212")]
+    public class A322:A3122
+    {
+        public new string Name { get; set; } = "A322";
+    }
+    
+    [Bean(typeof(A3122),"A3213")]
+    public class A323:A3122
+    {
+        public new string Name { get; set; } = "A323";
+    }
+    [Bean(typeof(A3122),"A3213")]
+    public class A324:A3122
+    {
+        public new string Name { get; set; } = "A324";
+    }
+    
+    [Bean]
+    public class A32
+    {
+        [Autowired]
+        public IEnumerable<A3122> A31List { get; set; }
+    }
+    
+    
+    [Bean]
+    public class A33
+    {
+        [Autowired("A3213")]
+        public IEnumerable<A3122> A31List { get; set; }
+    }
 }

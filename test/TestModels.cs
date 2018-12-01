@@ -439,4 +439,17 @@ namespace Autofac.Annotation.Test
             a29.Test = null;
         }
     }
+    
+    
+    public class A311
+    {
+        
+    }
+
+    [Bean]
+    public class A31
+    {
+        [Autowired("A311")]
+        public A311 A311 { get; set; }
+    }
 }

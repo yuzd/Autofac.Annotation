@@ -354,16 +354,32 @@ namespace Autofac.Annotation
                         if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
                         foreach (var field in model.AutowiredFieldInfoList)
                         {
-                            var obj = field.Item2.ResolveField(field.Item1, e.Context);
-                            if (obj == null) continue;
-                            field.Item1.GetReflector().SetValue(RealInstance, obj);
+                            try
+                            {
+                                var obj = field.Item2.ResolveField(field.Item1, e.Context);
+                                if (obj == null) continue;
+                                field.Item1.GetReflector().SetValue(RealInstance, obj);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new DependencyResolutionException($"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} " 
+                                                                        + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""),ex);
+                            }
                         }
 
                         foreach (var property in model.AutowiredPropertyInfoList)
                         {
-                            var obj = property.Item2.ResolveProperty(property.Item1, e.Context);
-                            if (obj == null) continue;
-                            property.Item1.GetReflector().SetValue(RealInstance, obj);
+                            try
+                            {
+                                var obj = property.Item2.ResolveProperty(property.Item1, e.Context);
+                                if (obj == null) continue;
+                                property.Item1.GetReflector().SetValue(RealInstance, obj);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new DependencyResolutionException($"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} " 
+                                                                        + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""),ex);
+                            }
                         }
                     });
                 }
@@ -496,7 +512,9 @@ namespace Autofac.Annotation
                     }
                     catch (Exception ex)
                     {
-                        throw new DependencyResolutionException($"class:{e.Instance.GetType().FullName},fail resolve field value:{field.Item1.Name} ", ex);
+                        throw new DependencyResolutionException($"Value set error,can not resolve class type:{instanceType.FullName} =====>" +
+                                                                $" ,fail resolve field value:{field.Item1.Name} "
+                                                                + (!string.IsNullOrEmpty(field.Item2.value) ? $",with value:[{field.Item2.value}]" : ""),ex);
                     }
                 }
 
@@ -509,8 +527,9 @@ namespace Autofac.Annotation
                     }
                     catch (Exception ex)
                     {
-                        throw new DependencyResolutionException($"class:{e.Instance.GetType().FullName},fail resolve property value:{property.Item1.Name} ",
-                            ex);
+                        throw new DependencyResolutionException($"Value set error,can not resolve class type:{instanceType.FullName} =====>" +
+                                                                $" ,fail resolve property value:{property.Item1.Name} "
+                                                                + (!string.IsNullOrEmpty(property.Item2.value) ? $",with value:[{property.Item2.value}]" : ""),ex);
                     }
                 }
             });
@@ -555,6 +574,11 @@ namespace Autofac.Annotation
         }
 
 
+        /// <summary>
+        /// 解析程序集
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         private List<ComponentModel> GetAllComponent()
         {
             if (_assemblyList == null || _assemblyList.Length < 1)
@@ -670,6 +694,10 @@ namespace Autofac.Annotation
             return result;
         }
 
+        /// <summary>
+        /// 设置source源
+        /// </summary>
+        /// <param name="componentModel"></param>
 
         private void EnumerateMetaSourceAttributes(ComponentModel componentModel)
         {
@@ -736,6 +764,10 @@ namespace Autofac.Annotation
             #endregion
         }
 
+        /// <summary>
+        /// 查询指定程序集下引用的所有程序集
+        /// </summary>
+        /// <returns></returns>
         private string GetAssemblyLocation()
         {
             //var entry = Assembly.GetEntryAssembly();

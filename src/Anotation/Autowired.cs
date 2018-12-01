@@ -19,6 +19,7 @@ namespace Autofac.Annotation
         public Autowired()
         {
         }
+
         /// <summary>
         /// 按照名称来注入
         /// </summary>
@@ -36,6 +37,7 @@ namespace Autofac.Annotation
         {
             Required = required;
         }
+
         /// <summary>
         /// 对应的值
         /// </summary>
@@ -54,7 +56,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public override object ResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
-            return Resolve(parameter.ParameterType,context);
+            return parameter == null ? null : Resolve(parameter.Member.DeclaringType, parameter.ParameterType, context, "parameter");
         }
 
         /// <summary>
@@ -63,11 +65,11 @@ namespace Autofac.Annotation
         /// <param name="parameter"></param>
         /// <param name="context"></param>
         /// <returns></returns>
-        public  object ResolveField(FieldInfo parameter, IComponentContext context)
+        public object ResolveField(FieldInfo parameter, IComponentContext context)
         {
-            return Resolve(parameter.FieldType,context);
+            return parameter == null ? null : Resolve(parameter.DeclaringType, parameter.FieldType, context, "field");
         }
-        
+
         /// <summary>
         /// 装配属性
         /// </summary>
@@ -76,17 +78,19 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public object ResolveProperty(PropertyInfo parameter, IComponentContext context)
         {
-            return Resolve(parameter.PropertyType,context);
+            return parameter == null ? null : Resolve(parameter.DeclaringType, parameter.PropertyType, context, "property");
         }
-        
+
         /// <summary>
         /// 装配
         /// </summary>
+        /// <param name="classType"></param>
         /// <param name="type"></param>
         /// <param name="context"></param>
+        /// <param name="typeDescription"></param>
         /// <returns></returns>
         /// <exception cref="DependencyResolutionException"></exception>
-        private object Resolve(Type type,IComponentContext context)
+        private object Resolve(Type classType, Type type, IComponentContext context, string typeDescription)
         {
             object obj = null;
             if (!string.IsNullOrEmpty(this.Name))
@@ -97,10 +101,13 @@ namespace Autofac.Annotation
             {
                 context.TryResolve(type, out obj);
             }
+
             if (obj == null && this.Required)
             {
-                throw new DependencyResolutionException($"Autowired on ResolveParameter,can not resolve type:{type.FullName} " + (!string.IsNullOrEmpty(this.Name) ? $" with key:{this.Name}" : ""));
+                throw new DependencyResolutionException($"Autowire error,can not resolve class type:{classType.FullName},${typeDescription} name:{type.Name} "
+                                                        + (!string.IsNullOrEmpty(this.Name) ? $",with key:[{this.Name}]" : ""));
             }
+
             return obj;
         }
     }

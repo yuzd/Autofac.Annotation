@@ -491,5 +491,23 @@ namespace Autofac.Annotation.Test
             var a1 = _container.Resolve<A25>();
             var a2 = a1.A23.GetSchool();
         }
+        
+        [Fact]
+        public void Test_Type_28()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).InstancePerLifetimeScope());
+
+            var container = builder.Build();
+
+            var exception = Assert.Throws<DependencyResolutionException>(() =>
+            {
+                container.Resolve<A31>();
+            });
+            
+            Assert.Contains("property name:A311",exception.Message);
+        }
     }
 }

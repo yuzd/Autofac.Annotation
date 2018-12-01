@@ -311,7 +311,7 @@ namespace Autofac.Annotation.Test
 
             var a1 = container.Resolve<IA23>();
             var aaa = a1.GetSchool();
-            Assert.Equal("a", aaa);
+            Assert.Equal("b", aaa);
         }
 
 
@@ -327,7 +327,7 @@ namespace Autofac.Annotation.Test
 
             var a1 = container.Resolve<A24>();
             var aaa = a1.GetSchool();
-            Assert.Equal("a", aaa);
+            Assert.Equal("b", aaa);
         }
 
         [Fact]
@@ -560,6 +560,57 @@ namespace Autofac.Annotation.Test
             var a = container.Resolve<A33>();
             
             Assert.Equal(2,a.A31List.Count());
+
+        }
+        
+        
+        [Fact]
+        public void Test_Type_31()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+           // builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+//            builder.RegisterType<A321>().As<A3122>().WithMetadata("tt", "A3211");
+//            builder.RegisterType<A322>().As<A3122>().WithMetadata("tt", "A3212");
+//            builder.RegisterType<A323>().As<A3122>().WithMetadata("tt", "A3213");
+            
+            builder.RegisterType<A321>().As<A3122>().Keyed<A3122>("A3211");
+            builder.RegisterType<A322>().As<A3122>().Keyed<A3122>("A3212");
+            builder.RegisterType<A323>().As<A3122>().Keyed<A3122>("A3213");
+            
+//            builder.RegisterType(typeof(A321)).As(new KeyedService("A3211",typeof(A3122)));
+////            builder.RegisterType(typeof(A321)).As(new TypedService(typeof(A3122)));
+//            builder.RegisterType(typeof(A322)).As(new KeyedService("A3212",typeof(A3122)));
+////            builder.RegisterType(typeof(A322)).As(new TypedService(typeof(A3122)));
+//            builder.RegisterType(typeof(A323)).As(new KeyedService("A3213",typeof(A3122)));
+////            builder.RegisterType(typeof(A323)).As(new TypedService(typeof(A3122)));
+//            
+            var container = builder.Build();
+            
+            var warrior = container.Resolve<IEnumerable<A3122>>();
+
+
+        }
+        
+        [Fact]
+        public void Test_Type_32()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            
+            var container = builder.Build();
+            
+            
+            var a = container.Resolve<A35>();
+            var b = container.Resolve<A34>();
+            
+            Assert.Equal(2,a.A31List.Count());
+            Assert.Equal(4,b.A31List.Count());
 
         }
     }

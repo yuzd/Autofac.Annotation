@@ -496,4 +496,18 @@ namespace Autofac.Annotation.Test
         [Autowired("A3213")]
         public IEnumerable<A3122> A31List { get; set; }
     }
+    
+    [Bean]
+    public class A34
+    {
+        [Autowired]
+        public IEnumerable<Lazy<A3122>> A31List { get; set; }
+    }
+    
+    [Bean]
+    public class A35
+    {
+        [Autowired("A3213")]
+        public IEnumerable<Lazy<A3122>> A31List { get; set; }
+    }
 }

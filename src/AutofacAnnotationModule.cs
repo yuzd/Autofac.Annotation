@@ -350,35 +350,38 @@ namespace Autofac.Annotation
                             RealInstance = ProxyUtil.GetUnproxiedInstance(instance);
                             instanceType = ProxyUtil.GetUnproxiedType(instance);
                         }
+
                         if (RealInstance == null) return;
                         if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
                         foreach (var field in model.AutowiredFieldInfoList)
                         {
+                            var obj = field.Item2.ResolveField(field.Item1, e.Context);
+                            if (obj == null) continue;
                             try
                             {
-                                var obj = field.Item2.ResolveField(field.Item1, e.Context);
-                                if (obj == null) continue;
                                 field.Item1.GetReflector().SetValue(RealInstance, obj);
                             }
                             catch (Exception ex)
                             {
-                                throw new DependencyResolutionException($"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} " 
-                                                                        + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""),ex);
+                                throw new DependencyResolutionException(
+                                    $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
+                                    + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""), ex);
                             }
                         }
 
                         foreach (var property in model.AutowiredPropertyInfoList)
                         {
+                            var obj = property.Item2.ResolveProperty(property.Item1, e.Context);
+                            if (obj == null) continue;
                             try
                             {
-                                var obj = property.Item2.ResolveProperty(property.Item1, e.Context);
-                                if (obj == null) continue;
                                 property.Item1.GetReflector().SetValue(RealInstance, obj);
                             }
                             catch (Exception ex)
                             {
-                                throw new DependencyResolutionException($"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} " 
-                                                                        + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""),ex);
+                                throw new DependencyResolutionException(
+                                    $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
+                                    + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""), ex);
                             }
                         }
                     });
@@ -501,35 +504,39 @@ namespace Autofac.Annotation
                     RealInstance = ProxyUtil.GetUnproxiedInstance(instance);
                     instanceType = ProxyUtil.GetUnproxiedType(instance);
                 }
+
                 if (RealInstance == null) return;
                 if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
                 foreach (var field in model.ValueFieldInfoList)
                 {
+                    var value = field.Item2.ResolveFiled(field.Item1, e.Context);
+                    if (value == null) continue;
                     try
                     {
-                        var value = field.Item2.ResolveFiled(field.Item1, e.Context);
                         field.Item1.GetReflector().SetValue(RealInstance, value);
                     }
                     catch (Exception ex)
                     {
                         throw new DependencyResolutionException($"Value set error,can not resolve class type:{instanceType.FullName} =====>" +
                                                                 $" ,fail resolve field value:{field.Item1.Name} "
-                                                                + (!string.IsNullOrEmpty(field.Item2.value) ? $",with value:[{field.Item2.value}]" : ""),ex);
+                                                                + (!string.IsNullOrEmpty(field.Item2.value) ? $",with value:[{field.Item2.value}]" : ""), ex);
                     }
                 }
 
                 foreach (var property in model.ValuePropertyInfoList)
                 {
+                    var value = property.Item2.ResolveProperty(property.Item1, e.Context);
+                    if (value == null) continue;
                     try
                     {
-                        var value = property.Item2.ResolveProperty(property.Item1, e.Context);
                         property.Item1.GetReflector().SetValue(RealInstance, value);
                     }
                     catch (Exception ex)
                     {
                         throw new DependencyResolutionException($"Value set error,can not resolve class type:{instanceType.FullName} =====>" +
                                                                 $" ,fail resolve property value:{property.Item1.Name} "
-                                                                + (!string.IsNullOrEmpty(property.Item2.value) ? $",with value:[{property.Item2.value}]" : ""),ex);
+                                                                + (!string.IsNullOrEmpty(property.Item2.value) ? $",with value:[{property.Item2.value}]" : ""),
+                            ex);
                     }
                 }
             });
@@ -698,7 +705,6 @@ namespace Autofac.Annotation
         /// 设置source源
         /// </summary>
         /// <param name="componentModel"></param>
-
         private void EnumerateMetaSourceAttributes(ComponentModel componentModel)
         {
             #region PropertySource

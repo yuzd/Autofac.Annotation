@@ -158,7 +158,7 @@ namespace Autofac.Annotation
             where TReflectionActivatorData : ReflectionActivatorData
             where TSingleRegistrationStyle : SingleRegistrationStyle
         {
-            (MethodInfo, bool) AssertMethod(Type type, string methodName, bool havaParams = false)
+            Tuple<MethodInfo, bool> AssertMethod(Type type, string methodName, bool havaParams = false)
             {
                 MethodInfo method = null;
                 try
@@ -195,7 +195,7 @@ namespace Autofac.Annotation
                     withParameter = true;
                 }
 
-                return (method, withParameter);
+                return new Tuple<MethodInfo, bool>(method, withParameter);
             }
 
             if (component == null)

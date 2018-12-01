@@ -17,10 +17,10 @@ namespace Autofac.Annotation
         {
             MetaSourceList = new List<MetaSourceData>();
             ComponentServiceList = new List<ComponentServiceModel>();
-            AutowiredFieldInfoList = new List<(FieldInfo, Autowired)>();
-            AutowiredPropertyInfoList = new List<(PropertyInfo, Autowired)>();
-            ValueFieldInfoList = new List<(FieldInfo, Value)>();
-            ValuePropertyInfoList = new List<(PropertyInfo, Value)>();
+            AutowiredFieldInfoList = new List<Tuple<FieldInfo, Autowired>>();
+            AutowiredPropertyInfoList = new List<Tuple<PropertyInfo, Autowired>>();
+            ValueFieldInfoList = new List<Tuple<FieldInfo, Value>>();
+            ValuePropertyInfoList = new List<Tuple<PropertyInfo, Value>>();
         }
         /// <summary>
         /// 当前类所在类型
@@ -35,23 +35,23 @@ namespace Autofac.Annotation
         /// <summary>
         /// 需要装配的Autowired的字段集合
         /// </summary>
-        public List<(FieldInfo,Autowired)> AutowiredFieldInfoList { get; set; }
+        public List<Tuple<FieldInfo,Autowired>> AutowiredFieldInfoList { get; set; }
         
         /// <summary>
         /// 需要装配的Autowired的属性集合
         /// </summary>
-        public List<(PropertyInfo,Autowired)> AutowiredPropertyInfoList { get; set; }
+        public List<Tuple<PropertyInfo,Autowired>> AutowiredPropertyInfoList { get; set; }
         
         
         /// <summary>
         /// 需要装配的Value的字段集合
         /// </summary>
-        public List<(FieldInfo,Value)> ValueFieldInfoList { get; set; }
+        public List<Tuple<FieldInfo,Value>> ValueFieldInfoList { get; set; }
         
         /// <summary>
         /// 需要装配的Value的属性集合
         /// </summary>
-        public List<(PropertyInfo,Value)> ValuePropertyInfoList { get; set; }
+        public List<Tuple<PropertyInfo,Value>> ValuePropertyInfoList { get; set; }
 
         /// <summary>
         /// PropertySource

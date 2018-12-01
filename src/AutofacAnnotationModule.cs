@@ -324,14 +324,14 @@ namespace Autofac.Annotation
                     component.AutowiredPropertyInfoList = (from p in component.CurrentType.GetAllProperties()
                             let va = p.GetCustomAttribute<Autowired>()
                             where va != null
-                            select (p, va))
+                            select new Tuple<PropertyInfo,Autowired>(p,va))
                         .ToList();
 
 
                     component.AutowiredFieldInfoList = (from p in component.CurrentType.GetAllFields()
                         let va = p.GetCustomAttribute<Autowired>()
                         where va != null
-                        select (p, va)).ToList();
+                        select new Tuple<FieldInfo,Autowired>(p,va)).ToList();
 
                     if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any())
                     {
@@ -480,12 +480,12 @@ namespace Autofac.Annotation
             component.ValuePropertyInfoList = (from p in component.CurrentType.GetAllProperties()
                 let va = p.GetCustomAttribute<Value>()
                 where va != null
-                select (p, va)).ToList();
+                select new Tuple<PropertyInfo,Value>(p,va)).ToList();
 
             component.ValueFieldInfoList = (from p in component.CurrentType.GetAllFields()
                 let va = p.GetCustomAttribute<Value>()
                 where va != null
-                select (p, va)).ToList();
+                select new Tuple<FieldInfo,Value>(p,va)).ToList();
 
             if (!component.ValueFieldInfoList.Any() && !component.ValuePropertyInfoList.Any())
             {

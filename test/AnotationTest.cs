@@ -611,6 +611,24 @@ namespace Autofac.Annotation.Test
             
             Assert.Equal(2,a.A31List.Count());
             Assert.Equal(4,b.A31List.Count());
+        
+        }
+        
+        [Fact]
+        public void Test_Type_33()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            
+            var container = builder.Build();
+            
+            
+            var a = container.Resolve<A37>();
+            Assert.NotNull(a);
+            Assert.NotNull(a.A36);
 
         }
     }

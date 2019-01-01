@@ -510,4 +510,55 @@ namespace Autofac.Annotation.Test
         [Autowired("A3213")]
         public IEnumerable<Lazy<A3122>> A31List { get; set; }
     }
+    
+    public class A36
+    {
+        
+    }
+    
+    [Bean(typeof(A36),"A3611")]
+    public class A3611:A36
+    {
+      
+        
+        [Autowired("A3612")]
+        public A36 A3612 { get; set; }
+        
+        
+        public override string ToString()
+        {
+            return "A3611";
+        }
+    }
+    
+    [Bean(typeof(A36),"A3612")]
+    public class A3612:A36
+    {
+        [Autowired]
+        public A38 A38 { get; set; }
+
+        public override string ToString()
+        {
+            return "A3612";
+        }
+    }
+    [Bean]
+    public class A37
+    {
+        [Autowired("A3611")]
+        public A36 A36 { get; set; }
+        
+    }
+    [Bean]
+    public class A38
+    {
+        [Autowired("A3612")]
+        public A36 A36 { get; set; }
+        
+        [Autowired("A3611")]
+        public A36 A3611 { get; set; }
+        
+        [Autowired]
+        public A37 A37 { get; set; }
+    }
 }

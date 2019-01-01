@@ -322,15 +322,23 @@ namespace Autofac.Annotation
                 else
                 {
                     component.AutowiredPropertyInfoList = (from p in component.CurrentType.GetAllProperties()
+                            let propertyType = p.GetType()
+                            let typeInfo = p.GetType().GetTypeInfo()
                             let va = p.GetCustomAttribute<Autowired>()
-                            where va != null
+                            where va != null && !typeInfo.IsValueType
+                                  && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType) 
+                                  && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType) 
                             select new Tuple<PropertyInfo,Autowired>(p,va))
                         .ToList();
 
 
                     component.AutowiredFieldInfoList = (from p in component.CurrentType.GetAllFields()
+                        let propertyType = p.GetType()
+                        let typeInfo = p.GetType().GetTypeInfo()
                         let va = p.GetCustomAttribute<Autowired>()
-                        where va != null
+                        where va != null && !typeInfo.IsValueType
+                                         && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType) 
+                                         && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType) 
                         select new Tuple<FieldInfo,Autowired>(p,va)).ToList();
 
                     if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any())
@@ -339,7 +347,7 @@ namespace Autofac.Annotation
                     }
 
                     //自定义方式
-                    registrar.OnActivating(e =>
+                    registrar.RegistrationData.ActivatedHandlers.Add((s, e) =>
                     {
                         var instance = e.Instance;
                         if (instance == null) return;
@@ -355,8 +363,17 @@ namespace Autofac.Annotation
                         if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
                         foreach (var field in model.AutowiredFieldInfoList)
                         {
-                            var obj = field.Item2.ResolveField(field.Item1, e.Context);
-                            if (obj == null) continue;
+                            var obj = field.Item2.ResolveField(field.Item1, e,RealInstance);
+                            if (obj == null)
+                            {
+                                if (field.Item2.Required)
+                                {
+                                    throw new DependencyResolutionException(
+                                        $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
+                                        + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""));
+                                }
+                                continue;
+                            }
                             try
                             {
                                 field.Item1.GetReflector().SetValue(RealInstance, obj);
@@ -371,8 +388,17 @@ namespace Autofac.Annotation
 
                         foreach (var property in model.AutowiredPropertyInfoList)
                         {
-                            var obj = property.Item2.ResolveProperty(property.Item1, e.Context);
-                            if (obj == null) continue;
+                            var obj = property.Item2.ResolveProperty(property.Item1, e,RealInstance);
+                            if (obj == null)
+                            {
+                                if (property.Item2.Required)
+                                {
+                                    throw new DependencyResolutionException(
+                                        $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
+                                        + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""));
+                                }
+                                continue;
+                            }
                             try
                             {
                                 property.Item1.GetReflector().SetValue(RealInstance, obj);
@@ -385,6 +411,7 @@ namespace Autofac.Annotation
                             }
                         }
                     });
+                    
                 }
             }
         }
@@ -493,7 +520,7 @@ namespace Autofac.Annotation
             }
 
             //创建对象之后调用
-            registrar.OnActivating(e =>
+            registrar.OnActivated(e =>
             {
                 var instance = e.Instance;
                 if (instance == null) return;

@@ -132,5 +132,26 @@ namespace Autofac.Annotation.Util
 
             return type.GetProperties(flags).Union(GetAllProperties(type.BaseType));
         }
+        
+        public static bool IsGenericEnumerableInterfaceType(this Type type)
+        {
+            return type.IsGenericTypeDefinedBy(typeof(IEnumerable<>))
+                   || type.IsGenericListOrCollectionInterfaceType();
+        }
+
+        public static bool IsGenericListOrCollectionInterfaceType(this Type t)
+        {
+            return t.IsGenericTypeDefinedBy(typeof(IList<>))
+                   || t.IsGenericTypeDefinedBy(typeof(ICollection<>))
+                   || t.IsGenericTypeDefinedBy(typeof(IReadOnlyCollection<>))
+                   || t.IsGenericTypeDefinedBy(typeof(IReadOnlyList<>));
+        }
+
+        public static bool IsGenericTypeDefinedBy(this Type @this, Type openGeneric)
+        {
+            return !@this.GetTypeInfo().ContainsGenericParameters
+                   && @this.GetTypeInfo().IsGenericType
+                   && @this.GetGenericTypeDefinition() == openGeneric;
+        }
     }
 }

@@ -67,23 +67,124 @@ namespace Autofac.Annotation
         /// <summary>
         /// 装配字段
         /// </summary>
-        /// <param name="parameter"></param>
-        /// <param name="context"></param>
+        /// <param name="property"></param>
+        /// <param name="args"></param>
+        /// <param name="instance"></param>
         /// <returns></returns>
-        public object ResolveField(FieldInfo parameter, IComponentContext context)
+        public object ResolveField(FieldInfo property, IActivatedEventArgs<object> args,object instance)
         {
-            return parameter == null ? null : Resolve(parameter.DeclaringType, parameter.FieldType, context, "field");
+            //return parameter == null ? null : Resolve(parameter.DeclaringType, parameter.FieldType, context, "field");
+            var context = args.Context;
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+            if (instance == null)
+            {
+                throw new ArgumentNullException(nameof(instance));
+            }
+           
+            var instanceType = instance.GetType();
+
+            
+            Service propertyService = null;
+            if (!string.IsNullOrEmpty(this.Name))
+            {
+                propertyService = new KeyedService(this.Name,property.FieldType);
+            }
+            else
+            {
+                propertyService = new TypedService(property.FieldType);
+            }
+
+            if (args.Parameters != null && args.Parameters.Count() == 1)
+            {
+                if (!(args.Parameters.First() is AutowiredParmeter AutowiredParmeter)) return null;
+                if (AutowiredParmeter.AutowiredChains.TryGetValue(property.FieldType.FullName,out var objectInstance))
+                {
+                    return objectInstance;
+                }
+                else
+                {
+                    AutowiredParmeter.Add(property.DeclaringType.FullName,instance);
+                    if (context.TryResolveService(propertyService, new Parameter[] { AutowiredParmeter }, out var propertyValue))
+                    {
+                        return propertyValue;
+                    }
+                }
+            }
+            else
+            {
+                var instanceTypeParameter = new AutowiredParmeter();
+                instanceTypeParameter.Add(property.DeclaringType.FullName,instance);
+                if (context.TryResolveService(propertyService, new Parameter[] { instanceTypeParameter }, out var propertyValue))
+                {
+                    return propertyValue;
+                }
+            }
+            return null;
         }
 
         /// <summary>
         /// 装配属性
         /// </summary>
-        /// <param name="parameter"></param>
-        /// <param name="context"></param>
+        /// <param name="property"></param>
+        /// <param name="args"></param>
+        /// <param name="instance"></param>
         /// <returns></returns>
-        public object ResolveProperty(PropertyInfo parameter, IComponentContext context)
+        public object ResolveProperty(PropertyInfo property, IActivatedEventArgs<object> args,object instance)
         {
-            return parameter == null ? null : Resolve(parameter.DeclaringType, parameter.PropertyType, context, "property");
+            //return property == null ? null : Resolve(property.DeclaringType, property.PropertyType, args.Context, "property");
+            
+            var context = args.Context;
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+            if (instance == null)
+            {
+                throw new ArgumentNullException(nameof(instance));
+            }
+           
+            var instanceType = instance.GetType();
+
+            
+            Service propertyService = null;
+            if (!string.IsNullOrEmpty(this.Name))
+            {
+                propertyService = new KeyedService(this.Name,property.PropertyType);
+            }
+            else
+            {
+                propertyService = new TypedService(property.PropertyType);
+            }
+
+            if (args.Parameters != null && args.Parameters.Count() == 1)
+            {
+                if (!(args.Parameters.First() is AutowiredParmeter AutowiredParmeter)) return null;
+                if (AutowiredParmeter.AutowiredChains.TryGetValue(property.PropertyType.FullName,out var objectInstance))
+                {
+                    return objectInstance;
+                }
+                else
+                {
+                    AutowiredParmeter.Add(property.DeclaringType.FullName,instance);
+                    if (context.TryResolveService(propertyService, new Parameter[] { AutowiredParmeter }, out var propertyValue))
+                    {
+                        return propertyValue;
+                    }
+                }
+            }
+            else
+            {
+                var instanceTypeParameter = new AutowiredParmeter();
+                instanceTypeParameter.Add(property.DeclaringType.FullName,instance);
+                if (context.TryResolveService(propertyService, new Parameter[] { instanceTypeParameter }, out var propertyValue))
+                {
+                    return propertyValue;
+                }
+            }
+            return null;
         }
 
         /// <summary>

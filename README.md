@@ -3,15 +3,15 @@
 支持netcore2.0 + framework4.6+
 
 ## 如何使用
+### NUGET Install-Package Autofac.Annotation
 ```
-			var builder = new ContainerBuilder();
+var builder = new ContainerBuilder();
 
-            // 注册autofac打标签模式
-            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
-				
-            var container = builder.Build();
+// 注册autofac打标签模式
+builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));			
+var container = builder.Build();
+var serviceB = container.Resolve<B>();
 
-            var serviceB = container.Resolve<B>();
 ```
 
 AutofacAnnotationModule有两种构造方法
@@ -25,11 +25,11 @@ AutofacAnnotationModule有两种构造方法
 1. 无构造方法的方式	等同于 builder.RegisterType<A>();
 ```
 //把class A 注册到容器
-	[Bean]
-	public class A
-	{
-		public string Name { get; set; }
-	}
+[Bean]
+public class A
+{
+	public string Name { get; set; }
+}
 ```
 2. 指定Scope [需要指定AutofacScope属性 如果不指定为则默认为AutofacScope.InstancePerDependency]
 ```
@@ -46,7 +46,7 @@ AutofacAnnotationModule有两种构造方法
 
     }
 	
-	[Bean(typeof(B))]
+    [Bean(typeof(B))]
     public class A6:B
     {
 
@@ -54,7 +54,7 @@ AutofacAnnotationModule有两种构造方法
 ```
 4. 指定名字注册 等同于 builder.RegisterType<A6>().Keyed<A4>("a4")
 ```
-   [Bean("a4")]
+    [Bean("a4")]
     public class A4
     {
         public string School { get; set; } = "测试2";
@@ -77,7 +77,7 @@ AutofacAnnotationModule有两种构造方法
 * DestroyMetnod 当实例被Release时执行的方法 类似Spring的destroy-method
 	必须是无参数的方法
 ```
-	[Bean(InitMethod = "start",DestroyMetnod = "destroy")]
+    [Bean(InitMethod = "start",DestroyMetnod = "destroy")]
     public class A30
     {
         [Value("aaaaa")]
@@ -124,7 +124,7 @@ AutofacAnnotationModule有两种构造方法
     [Bean]
     public class A16
     {
-		public A16([Autowired]A21 a21)
+	public A16([Autowired]A21 a21)
         {
             Name = name;
             A21 = a21;
@@ -137,8 +137,8 @@ AutofacAnnotationModule有两种构造方法
         [Autowired]
         public B B { get; set; }
 		
-		//Required默认为true 如果装载错误会抛异常出来。如果指定为false则不抛异常
-		[Autowired("adadada",Required = false)]
+	//Required默认为true 如果装载错误会抛异常出来。如果指定为false则不抛异常
+	[Autowired("adadada",Required = false)]
         public B b1;
     }
 ```
@@ -160,7 +160,7 @@ AutofacAnnotationModule有两种构造方法
 }
 ```
 ```
-	[Bean]
+    [Bean]
     [PropertySource("/file/appsettings1.json")]
     public class A10
     {
@@ -175,15 +175,15 @@ AutofacAnnotationModule有两种构造方法
         public List<int> list { get; set; } 
         public Dictionary<string,string> dic { get; set; } 
 		
-		[Value("#{testInitField}")]
+	[Value("#{testInitField}")]
         public int test;
 		
-		[Value("#{testInitProperty}")]
+	[Value("#{testInitProperty}")]
         public int test2 { get; set; }
 		
-		//可以直接指定值
-		[Value("2")]
-		public int test3 { get; set; }
+	//可以直接指定值
+	[Value("2")]
+	public int test3 { get; set; }
     }
 ```
 

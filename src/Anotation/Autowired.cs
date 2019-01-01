@@ -84,8 +84,6 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(instance));
             }
            
-            var instanceType = instance.GetType();
-
             
             Service propertyService = null;
             if (!string.IsNullOrEmpty(this.Name))

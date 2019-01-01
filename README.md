@@ -8,7 +8,9 @@
 var builder = new ContainerBuilder();
 
 // 注册autofac打标签模式
-builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));			
+builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+//如果需要开启支持循环注入
+//builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetAllowCircularDependencies(true));
 var container = builder.Build();
 var serviceB = container.Resolve<B>();
 

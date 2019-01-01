@@ -30,7 +30,12 @@ namespace Autofac.Annotation
         /// <summary>
         /// 当前默认的Scope
         /// </summary>
-        public AutofacScope AutofacScope { get; set; } = AutofacScope.Default;
+        public AutofacScope AutofacScope { get; private set; } = AutofacScope.Default;
+
+        /// <summary>
+        /// 是否启用Autowired的循环注入
+        /// </summary>
+        public bool AllowCircularDependencies { get; private set; }
 
         /// <summary>
         /// 根据程序集来实例化
@@ -97,6 +102,16 @@ namespace Autofac.Annotation
         public AutofacAnnotationModule InstancePerRequest()
         {
             this.AutofacScope = AutofacScope.InstancePerRequest;
+            return this;
+        }
+
+        /// <summary>
+        /// 设置是否启用循环Autowired
+        /// </summary>
+        /// <returns></returns>
+        public AutofacAnnotationModule SetAllowCircularDependencies(bool flag)
+        {
+            this.AllowCircularDependencies = flag;
             return this;
         }
 
@@ -217,7 +232,7 @@ namespace Autofac.Annotation
                 }
                 else
                 {
-                    registrar.OnActivated(e => { method.Item1.Invoke(e.Instance, new object[] {e.Context}); });
+                    registrar.OnActivated(e => { method.Item1.Invoke(e.Instance, new object[] { e.Context }); });
                 }
             }
 
@@ -322,96 +337,166 @@ namespace Autofac.Annotation
                 else
                 {
                     component.AutowiredPropertyInfoList = (from p in component.CurrentType.GetAllProperties()
-                            let propertyType = p.GetType()
-                            let typeInfo = p.GetType().GetTypeInfo()
-                            let va = p.GetCustomAttribute<Autowired>()
-                            where va != null && !typeInfo.IsValueType
-                                  && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType) 
-                                  && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType) 
-                            select new Tuple<PropertyInfo,Autowired>(p,va))
+                                                           let propertyType = p.GetType()
+                                                           let typeInfo = p.GetType().GetTypeInfo()
+                                                           let va = p.GetCustomAttribute<Autowired>()
+                                                           where va != null && !typeInfo.IsValueType
+                                                                 && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
+                                                                 && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
+                                                           select new Tuple<PropertyInfo, Autowired>(p, va))
                         .ToList();
 
 
                     component.AutowiredFieldInfoList = (from p in component.CurrentType.GetAllFields()
-                        let propertyType = p.GetType()
-                        let typeInfo = p.GetType().GetTypeInfo()
-                        let va = p.GetCustomAttribute<Autowired>()
-                        where va != null && !typeInfo.IsValueType
-                                         && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType) 
-                                         && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType) 
-                        select new Tuple<FieldInfo,Autowired>(p,va)).ToList();
+                                                        let propertyType = p.GetType()
+                                                        let typeInfo = p.GetType().GetTypeInfo()
+                                                        let va = p.GetCustomAttribute<Autowired>()
+                                                        where va != null && !typeInfo.IsValueType
+                                                                         && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
+                                                                         && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
+                                                        select new Tuple<FieldInfo, Autowired>(p, va)).ToList();
 
                     if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any())
                     {
                         return;
                     }
 
-                    //自定义方式
-                    registrar.RegistrationData.ActivatedHandlers.Add((s, e) =>
+                    if (!AllowCircularDependencies)
                     {
-                        var instance = e.Instance;
-                        if (instance == null) return;
-                        Type instanceType = instance.GetType();
-                        object RealInstance = instance;
-                        if (ProxyUtil.IsProxy(instance))
+                        //不支持循环
+                        registrar.OnActivating((e) =>
                         {
-                            RealInstance = ProxyUtil.GetUnproxiedInstance(instance);
-                            instanceType = ProxyUtil.GetUnproxiedType(instance);
-                        }
-
-                        if (RealInstance == null) return;
-                        if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
-                        foreach (var field in model.AutowiredFieldInfoList)
-                        {
-                            var obj = field.Item2.ResolveField(field.Item1, e,RealInstance);
-                            if (obj == null)
+                            var instance = e.Instance;
+                            if (instance == null) return;
+                            Type instanceType = instance.GetType();
+                            object RealInstance = instance;
+                            if (ProxyUtil.IsProxy(instance))
                             {
-                                if (field.Item2.Required)
+                                RealInstance = ProxyUtil.GetUnproxiedInstance(instance);
+                                instanceType = ProxyUtil.GetUnproxiedType(instance);
+                            }
+
+                            if (RealInstance == null) return;
+                            if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
+                            foreach (var field in model.AutowiredFieldInfoList)
+                            {
+                                var obj = field.Item2.ResolveField(field.Item1, e.Context,e.Parameters, RealInstance,false);
+                                if (obj == null)
+                                {
+                                    if (field.Item2.Required)
+                                    {
+                                        throw new DependencyResolutionException(
+                                            $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
+                                            + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""));
+                                    }
+                                    continue;
+                                }
+                                try
+                                {
+                                    field.Item1.GetReflector().SetValue(RealInstance, obj);
+                                }
+                                catch (Exception ex)
                                 {
                                     throw new DependencyResolutionException(
                                         $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
-                                        + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""));
+                                        + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""), ex);
                                 }
-                                continue;
                             }
-                            try
-                            {
-                                field.Item1.GetReflector().SetValue(RealInstance, obj);
-                            }
-                            catch (Exception ex)
-                            {
-                                throw new DependencyResolutionException(
-                                    $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
-                                    + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""), ex);
-                            }
-                        }
 
-                        foreach (var property in model.AutowiredPropertyInfoList)
-                        {
-                            var obj = property.Item2.ResolveProperty(property.Item1, e,RealInstance);
-                            if (obj == null)
+                            foreach (var property in model.AutowiredPropertyInfoList)
                             {
-                                if (property.Item2.Required)
+                                var obj = property.Item2.ResolveProperty(property.Item1, e.Context,e.Parameters, RealInstance,false);
+                                if (obj == null)
+                                {
+                                    if (property.Item2.Required)
+                                    {
+                                        throw new DependencyResolutionException(
+                                            $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
+                                            + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""));
+                                    }
+                                    continue;
+                                }
+                                try
+                                {
+                                    property.Item1.GetReflector().SetValue(RealInstance, obj);
+                                }
+                                catch (Exception ex)
                                 {
                                     throw new DependencyResolutionException(
                                         $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
-                                        + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""));
+                                        + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""), ex);
                                 }
-                                continue;
                             }
-                            try
+                        });
+                    }
+                    else
+                    {
+                        //支持循环
+                        registrar.RegistrationData.ActivatedHandlers.Add((s, e) =>
+                        {
+                            var instance = e.Instance;
+                            if (instance == null) return;
+                            Type instanceType = instance.GetType();
+                            object RealInstance = instance;
+                            if (ProxyUtil.IsProxy(instance))
                             {
-                                property.Item1.GetReflector().SetValue(RealInstance, obj);
+                                RealInstance = ProxyUtil.GetUnproxiedInstance(instance);
+                                instanceType = ProxyUtil.GetUnproxiedType(instance);
                             }
-                            catch (Exception ex)
+
+                            if (RealInstance == null) return;
+                            if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
+                            foreach (var field in model.AutowiredFieldInfoList)
                             {
-                                throw new DependencyResolutionException(
-                                    $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
-                                    + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""), ex);
+                                var obj = field.Item2.ResolveField(field.Item1, e.Context,e.Parameters, RealInstance,true);
+                                if (obj == null)
+                                {
+                                    if (field.Item2.Required)
+                                    {
+                                        throw new DependencyResolutionException(
+                                            $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
+                                            + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""));
+                                    }
+                                    continue;
+                                }
+                                try
+                                {
+                                    field.Item1.GetReflector().SetValue(RealInstance, obj);
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw new DependencyResolutionException(
+                                        $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
+                                        + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""), ex);
+                                }
                             }
-                        }
-                    });
-                    
+
+                            foreach (var property in model.AutowiredPropertyInfoList)
+                            {
+                                var obj = property.Item2.ResolveProperty(property.Item1, e.Context,e.Parameters, RealInstance,true);
+                                if (obj == null)
+                                {
+                                    if (property.Item2.Required)
+                                    {
+                                        throw new DependencyResolutionException(
+                                            $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
+                                            + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""));
+                                    }
+                                    continue;
+                                }
+                                try
+                                {
+                                    property.Item1.GetReflector().SetValue(RealInstance, obj);
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw new DependencyResolutionException(
+                                        $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
+                                        + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""), ex);
+                                }
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -505,14 +590,14 @@ namespace Autofac.Annotation
             }
 
             component.ValuePropertyInfoList = (from p in component.CurrentType.GetAllProperties()
-                let va = p.GetCustomAttribute<Value>()
-                where va != null
-                select new Tuple<PropertyInfo,Value>(p,va)).ToList();
+                                               let va = p.GetCustomAttribute<Value>()
+                                               where va != null
+                                               select new Tuple<PropertyInfo, Value>(p, va)).ToList();
 
             component.ValueFieldInfoList = (from p in component.CurrentType.GetAllFields()
-                let va = p.GetCustomAttribute<Value>()
-                where va != null
-                select new Tuple<FieldInfo,Value>(p,va)).ToList();
+                                            let va = p.GetCustomAttribute<Value>()
+                                            where va != null
+                                            select new Tuple<FieldInfo, Value>(p, va)).ToList();
 
             if (!component.ValueFieldInfoList.Any() && !component.ValuePropertyInfoList.Any())
             {
@@ -627,13 +712,13 @@ namespace Autofac.Annotation
                 var types = assembly.GetExportedTypes();
                 //找到类型中含有 Component 标签的类 排除掉抽象类
                 var beanTypeList = (from type in types
-                    let bean = type.GetCustomAttribute<Bean>()
-                    where type.IsClass && !type.IsAbstract && bean != null
-                    select new
-                    {
-                        Type = type,
-                        Bean = bean
-                    }).ToList();
+                                    let bean = type.GetCustomAttribute<Bean>()
+                                    where type.IsClass && !type.IsAbstract && bean != null
+                                    select new
+                                    {
+                                        Type = type,
+                                        Bean = bean
+                                    }).ToList();
 
                 foreach (var bean in beanTypeList)
                 {

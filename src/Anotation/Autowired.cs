@@ -68,13 +68,14 @@ namespace Autofac.Annotation
         /// 装配字段
         /// </summary>
         /// <param name="property"></param>
-        /// <param name="args"></param>
+        /// <param name="context"></param>
+        /// <param name="Parameters"></param>
         /// <param name="instance"></param>
+        /// <param name="alowCircle"></param>
         /// <returns></returns>
-        public object ResolveField(FieldInfo property, IActivatedEventArgs<object> args,object instance)
+        public object ResolveField(FieldInfo property, IComponentContext context,IEnumerable<Parameter> Parameters,object instance,bool alowCircle)
         {
-            //return parameter == null ? null : Resolve(parameter.DeclaringType, parameter.FieldType, context, "field");
-            var context = args.Context;
+            if(!alowCircle) return property == null ? null : Resolve(property.DeclaringType, property.FieldType, context, "field");
             if (context == null)
             {
                 throw new ArgumentNullException(nameof(context));
@@ -95,9 +96,9 @@ namespace Autofac.Annotation
                 propertyService = new TypedService(property.FieldType);
             }
 
-            if (args.Parameters != null && args.Parameters.Count() == 1)
+            if (Parameters != null && Parameters.Count() == 1)
             {
-                if (!(args.Parameters.First() is AutowiredParmeter AutowiredParmeter)) return null;
+                if (!(Parameters.First() is AutowiredParmeter AutowiredParmeter)) return null;
                 if (AutowiredParmeter.AutowiredChains.TryGetValue(property.FieldType.FullName,out var objectInstance))
                 {
                     return objectInstance;
@@ -127,14 +128,15 @@ namespace Autofac.Annotation
         /// 装配属性
         /// </summary>
         /// <param name="property"></param>
-        /// <param name="args"></param>
+        /// <param name="context"></param>
+        /// <param name="Parameters"></param>
         /// <param name="instance"></param>
+        /// <param name="alowCircle"></param>
         /// <returns></returns>
-        public object ResolveProperty(PropertyInfo property, IActivatedEventArgs<object> args,object instance)
+        public object ResolveProperty(PropertyInfo property, IComponentContext context,IEnumerable<Parameter> Parameters,object instance,bool alowCircle)
         {
-            //return property == null ? null : Resolve(property.DeclaringType, property.PropertyType, args.Context, "property");
+            if(!alowCircle)return property == null ? null : Resolve(property.DeclaringType, property.PropertyType, context, "property");
             
-            var context = args.Context;
             if (context == null)
             {
                 throw new ArgumentNullException(nameof(context));
@@ -144,9 +146,6 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(instance));
             }
            
-            var instanceType = instance.GetType();
-
-            
             Service propertyService = null;
             if (!string.IsNullOrEmpty(this.Name))
             {
@@ -157,9 +156,9 @@ namespace Autofac.Annotation
                 propertyService = new TypedService(property.PropertyType);
             }
 
-            if (args.Parameters != null && args.Parameters.Count() == 1)
+            if (Parameters != null && Parameters.Count() == 1)
             {
-                if (!(args.Parameters.First() is AutowiredParmeter AutowiredParmeter)) return null;
+                if (!(Parameters.First() is AutowiredParmeter AutowiredParmeter)) return null;
                 if (AutowiredParmeter.AutowiredChains.TryGetValue(property.PropertyType.FullName,out var objectInstance))
                 {
                     return objectInstance;

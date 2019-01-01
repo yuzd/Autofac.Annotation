@@ -620,7 +620,7 @@ namespace Autofac.Annotation.Test
             var builder = new ContainerBuilder();
 
             // autofac打标签模式
-            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetAllowCircularDependencies(true));
 
             
             var container = builder.Build();

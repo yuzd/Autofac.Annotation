@@ -71,11 +71,11 @@ namespace Autofac.Annotation
         /// <param name="context"></param>
         /// <param name="Parameters"></param>
         /// <param name="instance"></param>
-        /// <param name="alowCircle"></param>
+        /// <param name="allowCircle"></param>
         /// <returns></returns>
-        public object ResolveField(FieldInfo property, IComponentContext context,IEnumerable<Parameter> Parameters,object instance,bool alowCircle)
+        public object ResolveField(FieldInfo property, IComponentContext context,IEnumerable<Parameter> Parameters,object instance,bool allowCircle)
         {
-            if(!alowCircle) return property == null ? null : Resolve(property.DeclaringType, property.FieldType, context, "field");
+            if(!allowCircle) return property == null ? null : Resolve(property.DeclaringType, property.FieldType, context, "field");
             if (context == null)
             {
                 throw new ArgumentNullException(nameof(context));

@@ -334,172 +334,55 @@ namespace Autofac.Annotation
                     registrar.PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies);
                     return;
                 }
+
+                component.AutowiredPropertyInfoList = (from p in component.CurrentType.GetAllProperties()
+                                                       let propertyType = p.GetType()
+                                                       let typeInfo = p.GetType().GetTypeInfo()
+                                                       let va = p.GetCustomAttribute<Autowired>()
+                                                       where va != null && !typeInfo.IsValueType
+                                                             && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
+                                                             && (!propertyType.IsGenericEnumerableInterfaceType()
+                                                                 || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
+                                                       select new Tuple<PropertyInfo, Autowired>(p, va))
+                                                          .ToList();
+
+
+                component.AutowiredFieldInfoList = (from p in component.CurrentType.GetAllFields()
+                                                    let propertyType = p.GetType()
+                                                    let typeInfo = p.GetType().GetTypeInfo()
+                                                    let va = p.GetCustomAttribute<Autowired>()
+                                                    where va != null && !typeInfo.IsValueType
+                                                                     && (!propertyType.IsArray
+                                                                         || !propertyType.GetElementType().GetTypeInfo().IsValueType)
+                                                                     && (!propertyType.IsGenericEnumerableInterfaceType()
+                                                                         || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
+                                                    select new Tuple<FieldInfo, Autowired>(p, va))
+                                                    .ToList();
+
+                if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any())
+                {
+                    return;
+                }
+
+                if (!AllowCircularDependencies)
+                {
+                    //不支持循环
+                    registrar.OnActivating((e) =>
+                    {
+                        DoAutoWired(e.Context, e.Parameters, e.Instance, false);
+                    });
+                }
                 else
                 {
-                    component.AutowiredPropertyInfoList = (from p in component.CurrentType.GetAllProperties()
-                                                           let propertyType = p.GetType()
-                                                           let typeInfo = p.GetType().GetTypeInfo()
-                                                           let va = p.GetCustomAttribute<Autowired>()
-                                                           where va != null && !typeInfo.IsValueType
-                                                                 && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
-                                                                 && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
-                                                           select new Tuple<PropertyInfo, Autowired>(p, va))
-                        .ToList();
-
-
-                    component.AutowiredFieldInfoList = (from p in component.CurrentType.GetAllFields()
-                                                        let propertyType = p.GetType()
-                                                        let typeInfo = p.GetType().GetTypeInfo()
-                                                        let va = p.GetCustomAttribute<Autowired>()
-                                                        where va != null && !typeInfo.IsValueType
-                                                                         && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
-                                                                         && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
-                                                        select new Tuple<FieldInfo, Autowired>(p, va)).ToList();
-
-                    if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any())
+                    //支持循环
+                    registrar.RegistrationData.ActivatedHandlers.Add((s, e) =>
                     {
-                        return;
-                    }
-
-                    if (!AllowCircularDependencies)
-                    {
-                        //不支持循环
-                        registrar.OnActivating((e) =>
-                        {
-                            var instance = e.Instance;
-                            if (instance == null) return;
-                            Type instanceType = instance.GetType();
-                            object RealInstance = instance;
-                            if (ProxyUtil.IsProxy(instance))
-                            {
-                                RealInstance = ProxyUtil.GetUnproxiedInstance(instance);
-                                instanceType = ProxyUtil.GetUnproxiedType(instance);
-                            }
-
-                            if (RealInstance == null) return;
-                            if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
-                            foreach (var field in model.AutowiredFieldInfoList)
-                            {
-                                var obj = field.Item2.ResolveField(field.Item1, e.Context,e.Parameters, RealInstance,false);
-                                if (obj == null)
-                                {
-                                    if (field.Item2.Required)
-                                    {
-                                        throw new DependencyResolutionException(
-                                            $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
-                                            + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""));
-                                    }
-                                    continue;
-                                }
-                                try
-                                {
-                                    field.Item1.GetReflector().SetValue(RealInstance, obj);
-                                }
-                                catch (Exception ex)
-                                {
-                                    throw new DependencyResolutionException(
-                                        $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
-                                        + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""), ex);
-                                }
-                            }
-
-                            foreach (var property in model.AutowiredPropertyInfoList)
-                            {
-                                var obj = property.Item2.ResolveProperty(property.Item1, e.Context,e.Parameters, RealInstance,false);
-                                if (obj == null)
-                                {
-                                    if (property.Item2.Required)
-                                    {
-                                        throw new DependencyResolutionException(
-                                            $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
-                                            + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""));
-                                    }
-                                    continue;
-                                }
-                                try
-                                {
-                                    property.Item1.GetReflector().SetValue(RealInstance, obj);
-                                }
-                                catch (Exception ex)
-                                {
-                                    throw new DependencyResolutionException(
-                                        $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
-                                        + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""), ex);
-                                }
-                            }
-                        });
-                    }
-                    else
-                    {
-                        //支持循环
-                        registrar.RegistrationData.ActivatedHandlers.Add((s, e) =>
-                        {
-                            var instance = e.Instance;
-                            if (instance == null) return;
-                            Type instanceType = instance.GetType();
-                            object RealInstance = instance;
-                            if (ProxyUtil.IsProxy(instance))
-                            {
-                                RealInstance = ProxyUtil.GetUnproxiedInstance(instance);
-                                instanceType = ProxyUtil.GetUnproxiedType(instance);
-                            }
-
-                            if (RealInstance == null) return;
-                            if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
-                            foreach (var field in model.AutowiredFieldInfoList)
-                            {
-                                var obj = field.Item2.ResolveField(field.Item1, e.Context,e.Parameters, RealInstance,true);
-                                if (obj == null)
-                                {
-                                    if (field.Item2.Required)
-                                    {
-                                        throw new DependencyResolutionException(
-                                            $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
-                                            + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""));
-                                    }
-                                    continue;
-                                }
-                                try
-                                {
-                                    field.Item1.GetReflector().SetValue(RealInstance, obj);
-                                }
-                                catch (Exception ex)
-                                {
-                                    throw new DependencyResolutionException(
-                                        $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
-                                        + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""), ex);
-                                }
-                            }
-
-                            foreach (var property in model.AutowiredPropertyInfoList)
-                            {
-                                var obj = property.Item2.ResolveProperty(property.Item1, e.Context,e.Parameters, RealInstance,true);
-                                if (obj == null)
-                                {
-                                    if (property.Item2.Required)
-                                    {
-                                        throw new DependencyResolutionException(
-                                            $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
-                                            + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""));
-                                    }
-                                    continue;
-                                }
-                                try
-                                {
-                                    property.Item1.GetReflector().SetValue(RealInstance, obj);
-                                }
-                                catch (Exception ex)
-                                {
-                                    throw new DependencyResolutionException(
-                                        $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
-                                        + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""), ex);
-                                }
-                            }
-                        });
-                    }
+                        DoAutoWired(e.Context, e.Parameters, e.Instance, true);
+                    });
                 }
             }
         }
+
 
         /// <summary>
         /// 设置Ownership
@@ -921,6 +804,79 @@ namespace Autofac.Annotation
                         list.Add(reference.FullName);
                     }
             } while (stack.Count > 0);
+        }
+
+
+        /// <summary>
+        /// 属性注入
+        /// </summary>
+        /// <param name="context">容器</param>
+        /// <param name="Parameters">参数</param>
+        /// <param name="instance">实例</param>
+        /// <param name="allowCircle">是否可以循环</param>
+        private void DoAutoWired(IComponentContext context, IEnumerable<Parameter> Parameters, object instance, bool allowCircle)
+        {
+            if (instance == null) return;
+            Type instanceType = instance.GetType();
+            object RealInstance = instance;
+            if (ProxyUtil.IsProxy(instance))
+            {
+                RealInstance = ProxyUtil.GetUnproxiedInstance(instance);
+                instanceType = ProxyUtil.GetUnproxiedType(instance);
+            }
+
+            if (RealInstance == null) return;
+            if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
+            //字段注入
+            foreach (var field in model.AutowiredFieldInfoList)
+            {
+                var obj = field.Item2.ResolveField(field.Item1, context, Parameters, RealInstance, allowCircle);
+                if (obj == null)
+                {
+                    if (field.Item2.Required)
+                    {
+                        throw new DependencyResolutionException(
+                            $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
+                            + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""));
+                    }
+                    continue;
+                }
+                try
+                {
+                    field.Item1.GetReflector().SetValue(RealInstance, obj);
+                }
+                catch (Exception ex)
+                {
+                    throw new DependencyResolutionException(
+                        $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
+                        + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""), ex);
+                }
+            }
+            //属性注入
+            foreach (var property in model.AutowiredPropertyInfoList)
+            {
+                var obj = property.Item2.ResolveProperty(property.Item1, context, Parameters, RealInstance, allowCircle);
+                if (obj == null)
+                {
+                    if (property.Item2.Required)
+                    {
+                        throw new DependencyResolutionException(
+                            $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
+                            + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""));
+                    }
+                    continue;
+                }
+                try
+                {
+                    property.Item1.GetReflector().SetValue(RealInstance, obj);
+                }
+                catch (Exception ex)
+                {
+                    throw new DependencyResolutionException(
+                        $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
+                        + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""), ex);
+                }
+            }
         }
     }
 }

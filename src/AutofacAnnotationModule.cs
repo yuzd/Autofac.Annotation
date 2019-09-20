@@ -595,7 +595,7 @@ namespace Autofac.Annotation
                 var types = assembly.GetExportedTypes();
                 //找到类型中含有 Component 标签的类 排除掉抽象类
                 var beanTypeList = (from type in types
-                                    let bean = type.GetCustomAttribute<Bean>()
+                                    let bean = type.GetCustomAttribute<Component>()
                                     where type.IsClass && !type.IsAbstract && bean != null
                                     select new
                                     {
@@ -621,7 +621,7 @@ namespace Autofac.Annotation
         /// <param name="bean"></param>
         /// <param name="currentType"></param>
         /// <returns></returns>
-        private ComponentModel EnumerateComponentServices(Bean bean, Type currentType)
+        private ComponentModel EnumerateComponentServices(Component bean, Type currentType)
         {
             if (bean == null)
             {
@@ -647,6 +647,33 @@ namespace Autofac.Annotation
 
             var re = new List<ComponentServiceModel>();
 
+            if (bean.Service == null)
+            {
+                var typeInterfaces = currentType.GetInterfaces();
+
+                foreach (var iInterface in typeInterfaces)
+                {
+                    if (bean.Services == null || !bean.Services.Contains(iInterface))
+                    {
+                        //如果父类直接是接口 也没有特别指定 Service 或者 Services集合
+                        re.Add(new ComponentServiceModel
+                        {
+                            Type = iInterface,
+                            Key = bean.Key
+                        });
+
+                        if (!string.IsNullOrEmpty(bean.Key))
+                        {
+                            //指定了key 默认为本身
+                            re.Add(new ComponentServiceModel
+                            {
+                                Type = iInterface,
+                                Key = bean.Key
+                            });
+                        }
+                    }
+                }
+            }
 
             if (bean.Service != null)
             {
@@ -670,8 +697,13 @@ namespace Autofac.Annotation
             if (bean.Services != null && bean.Services.Length > 0)
             {
                 var keyList = new string[bean.Services.Length];
-                if (bean.Keys != null && bean.Keys.Length > 0 && bean.Keys.Length <= bean.Services.Length)
+                if (bean.Keys != null && bean.Keys.Length > 0)
                 {
+                    if (bean.Keys.Length > bean.Services.Length)
+                    {
+                        throw new ArgumentOutOfRangeException(currentType.FullName + ":" + nameof(bean.Keys) + "`length is not eq to " + nameof(bean.Services)  + "`length");
+                    }
+                    //Keys和Services是按照一对一的  如果长度不对
                     for (int i = 0; i < bean.Keys.Length; i++)
                     {
                         keyList[i] = bean.Keys[i];

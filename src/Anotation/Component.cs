@@ -9,13 +9,13 @@ namespace Autofac.Annotation
     /// 打在父类上子类没打的话子类就获取不到
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public class Bean : System.Attribute
+    public class Component : System.Attribute
     {
         #region Constructor
         /// <summary>
         /// 构造函数
         /// </summary>
-        public Bean()
+        public Component()
         {
 
         }
@@ -23,7 +23,7 @@ namespace Autofac.Annotation
         /// 构造函数
         /// </summary>
         /// <param name="_service"></param>
-        public Bean(Type _service)
+        public Component(Type _service)
         {
             Service = _service;
         }
@@ -33,7 +33,7 @@ namespace Autofac.Annotation
         /// </summary>
         /// <param name="_service"></param>
         /// <param name="key"></param>
-        public Bean(Type _service, string key) : this(_service)
+        public Component(Type _service, string key) : this(_service)
         {
             this.Key = key;
         }
@@ -42,7 +42,7 @@ namespace Autofac.Annotation
         /// 构造函数
         /// </summary>
         /// <param name="key"></param>
-        public Bean(string key)
+        public Component(string key)
         {
             this.Key = key;
         }

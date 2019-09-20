@@ -5,7 +5,39 @@ using Castle.DynamicProxy;
 
 namespace Autofac.Annotation.Test
 {
-    [Bean]
+    public interface IAA
+    {
+        void Test1();
+    }
+    public interface IA:IAA
+    {
+        void Test();
+    }
+
+    public class ABA: IA
+    {
+        public void Test1()
+        {}
+
+        public void Test()
+        {
+        }
+    }
+
+    [Component]
+    public class AImpl : ABA
+    {
+        public void Test()
+        {
+            Console.WriteLine("1");
+        }
+
+        public void Test1()
+        {
+        }
+    }
+
+    [Component]
     public class A
     {
         public string Name { get; set; }
@@ -20,7 +52,7 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Bean(Services = new []{typeof(B)})]
+    [Component(Services = new []{typeof(B)})]
     public class A1:B
     {
         public string School { get; set; } = "测试";
@@ -31,7 +63,7 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Bean(Services = new []{typeof(B)},Keys = new []{"B1"})]
+    [Component(Services = new []{typeof(B)},Keys = new []{"B1"})]
     public class A2:B
     {
         public string School { get; set; } = "测试1";
@@ -41,7 +73,7 @@ namespace Autofac.Annotation.Test
             return this.School;
         }
     }
-    [Bean(Services = new []{typeof(B)},Keys = new []{"B2"})]
+    [Component(Services = new []{typeof(B)},Keys = new []{"B2"})]
     public class A3:B
     {
         public string School { get; set; } = "测试2";
@@ -52,13 +84,13 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Bean("a4")]
+    [Component("a4")]
     public class A4
     {
         public string School { get; set; } = "测试2";
     }
 
-    [Bean(typeof(B),"a5")]
+    [Component(typeof(B),"a5")]
     public class A5:B
     {
         public string School { get; set; } = "测试a5";
@@ -68,7 +100,7 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Bean(typeof(B))]
+    [Component(typeof(B))]
     public class A6:B
     {
         public string School { get; set; } = "测试a6";
@@ -78,7 +110,7 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Bean(typeof(B))]
+    [Component(typeof(B))]
     public class A7:B
     {
         public string School { get; set; } = "测试a7";
@@ -88,7 +120,7 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Bean]
+    [Component]
     public class A8
     {
         public A8([Value("a8")]string school)
@@ -101,7 +133,7 @@ namespace Autofac.Annotation.Test
             return this.School;
         }
     }
-    [Bean]
+    [Component]
     public class A9
     {
         public A9([Value("#{a9}")]string school,[Value("#{list}")]List<int> list,[Value("#{dic}")]Dictionary<string,string> dic)
@@ -120,7 +152,7 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Bean]
+    [Component]
     [PropertySource("/file/appsettings1.json")]
     public class A10
     {
@@ -140,7 +172,7 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Bean]
+    [Component]
     [PropertySource("/file/appsettings1.xml")]
     public class A11
     {
@@ -160,7 +192,7 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Bean(typeof(A12),Services = new[] { typeof(B) }, Keys = new[] { "A12" })]
+    [Component(typeof(A12),Services = new[] { typeof(B) }, Keys = new[] { "A12" })]
     public class A12 : B
     {
         public string School { get; set; } = "A12";
@@ -170,7 +202,7 @@ namespace Autofac.Annotation.Test
             return this.School;
         }
     }
-    [Bean(typeof(A13),"aa12", Services = new[] { typeof(B) }, Keys = new[] { "A13" })]
+    [Component(typeof(A13),"aa12", Services = new[] { typeof(B) }, Keys = new[] { "A13" })]
     public class A13 : B
     {
         public string School { get; set; } = "A13";
@@ -181,7 +213,7 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Bean(typeof(A14), "aa14", Services = new[] { typeof(B) })]
+    [Component(typeof(A14), "aa14", Services = new[] { typeof(B) })]
     public class A14 : B
     {
         public string School { get; set; } = "A14";
@@ -192,7 +224,7 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Bean]
+    [Component]
     public class A15
     {
         [Value("#{a9}")]
@@ -203,7 +235,7 @@ namespace Autofac.Annotation.Test
 
     }
 
-    [Bean]
+    [Component]
     public class A16
     {
         [Autowired("A13")]
@@ -214,7 +246,7 @@ namespace Autofac.Annotation.Test
         public B B { get; set; }
     }
 
-    [Bean]
+    [Component]
     public class A17
     {
         [Autowired("A131111")]
@@ -225,7 +257,7 @@ namespace Autofac.Annotation.Test
         public B B { get; set; }
     }
 
-    [Bean]
+    [Component]
     public class A18
     {
         [Autowired("adadada",Required = false)]
@@ -247,20 +279,20 @@ namespace Autofac.Annotation.Test
         private B b3 { get; set; }
     }
 
-    [Bean]
+    [Component]
     public class A20:A19
     {
         [Value("aaaa")]
         public string Name { get; set; }
     }
 
-    [Bean]
+    [Component]
     public class A21:A20
     {
        
     }
 
-    [Bean]
+    [Component]
     public class A22
     {
         public A22([Value("name")]string name,[Autowired]A21 a21)
@@ -278,7 +310,7 @@ namespace Autofac.Annotation.Test
         string GetSchool();
     }
 
-    [Bean(typeof(IA23),Interceptor = typeof(AsyncInterceptor))]
+    [Component(typeof(IA23),Interceptor = typeof(AsyncInterceptor))]
     public class A23:IA23
     {
         public A23([Value("name")]string name)
@@ -305,7 +337,7 @@ namespace Autofac.Annotation.Test
         private string ttt;
     }
 
-    [Bean(Interceptor = typeof(AsyncInterceptor),InterceptorType = InterceptorType.Class )]
+    [Component(Interceptor = typeof(AsyncInterceptor),InterceptorType = InterceptorType.Class )]
     public class A24
     {
         public A24([Value("name")]string name,[Autowired]A21 a21)
@@ -325,7 +357,7 @@ namespace Autofac.Annotation.Test
         public A21 A21 { get; set; }
     }
 
-    [Bean(Interceptor = typeof(AsyncInterceptor),InterceptorType = InterceptorType.Class,InterceptorKey = "log2")]
+    [Component(Interceptor = typeof(AsyncInterceptor),InterceptorType = InterceptorType.Class,InterceptorKey = "log2")]
     public class A25
     {
         public A25([Value("name")]string name)
@@ -361,7 +393,7 @@ namespace Autofac.Annotation.Test
     {
         
     }
-    [Bean]
+    [Component]
     public class A263:A262
     {
         public void say()
@@ -370,14 +402,14 @@ namespace Autofac.Annotation.Test
         }
     }
     
-    [Bean()]
+    [Component()]
     public class A27
     {
         [Value("aaaaa")]
         public string Test { get; set; }
     }
     
-    [Bean(AutofacScope = AutofacScope.SingleInstance )]
+    [Component(AutofacScope = AutofacScope.SingleInstance )]
     public class A272
     {
         [Autowired]
@@ -385,14 +417,14 @@ namespace Autofac.Annotation.Test
     }
     
      
-    [Bean(AutofacScope= AutofacScope.SingleInstance)]
+    [Component(AutofacScope= AutofacScope.SingleInstance)]
     public class A282
     {
         [Value("aaaaa")]
         public string Test { get; set; }
     }
     
-    [Bean(AutofacScope = AutofacScope.InstancePerDependency)]
+    [Component(AutofacScope = AutofacScope.InstancePerDependency)]
     public class A28
     {
         [Value("aaaaa")]
@@ -402,7 +434,7 @@ namespace Autofac.Annotation.Test
         public A282 A282;    
     }
     
-    [Bean(InitMethod = "start",DestroyMetnod = "destroy")]
+    [Component(InitMethod = "start",DestroyMetnod = "destroy")]
     public class A29
     {
         [Value("aaaaa")]
@@ -419,7 +451,7 @@ namespace Autofac.Annotation.Test
         }
     }
     
-    [Bean(InitMethod = "start",DestroyMetnod = "destroy")]
+    [Component(InitMethod = "start",DestroyMetnod = "destroy")]
     public class A30
     {
         [Value("aaaaa")]
@@ -446,7 +478,7 @@ namespace Autofac.Annotation.Test
         
     }
 
-    [Bean]
+    [Component]
     public class A31
     {
         [Autowired("A311")]
@@ -459,30 +491,30 @@ namespace Autofac.Annotation.Test
         public string Name { get; set; } = "A3122";
     }
     
-    [Bean(typeof(A3122),"A3211")]
+    [Component(typeof(A3122),"A3211")]
     public class A321:A3122
     {
         public new string Name { get; set; } = "A321";
     }
     
-    [Bean(typeof(A3122),"A3212")]
+    [Component(typeof(A3122),"A3212")]
     public class A322:A3122
     {
         public new string Name { get; set; } = "A322";
     }
     
-    [Bean(typeof(A3122),"A3213")]
+    [Component(typeof(A3122),"A3213")]
     public class A323:A3122
     {
         public new string Name { get; set; } = "A323";
     }
-    [Bean(typeof(A3122),"A3213")]
+    [Component(typeof(A3122),"A3213")]
     public class A324:A3122
     {
         public new string Name { get; set; } = "A324";
     }
     
-    [Bean]
+    [Component]
     public class A32
     {
         [Autowired]
@@ -490,21 +522,21 @@ namespace Autofac.Annotation.Test
     }
     
     
-    [Bean]
+    [Component]
     public class A33
     {
         [Autowired("A3213")]
         public IEnumerable<A3122> A31List { get; set; }
     }
     
-    [Bean]
+    [Component]
     public class A34
     {
         [Autowired]
         public IEnumerable<Lazy<A3122>> A31List { get; set; }
     }
     
-    [Bean]
+    [Component]
     public class A35
     {
         [Autowired("A3213")]
@@ -516,7 +548,7 @@ namespace Autofac.Annotation.Test
         
     }
     
-    [Bean(typeof(A36),"A3611")]
+    [Component(typeof(A36),"A3611")]
     public class A3611:A36
     {
       
@@ -531,7 +563,7 @@ namespace Autofac.Annotation.Test
         }
     }
     
-    [Bean(typeof(A36),"A3612")]
+    [Component(typeof(A36),"A3612")]
     public class A3612:A36
     {
         [Autowired]
@@ -542,14 +574,14 @@ namespace Autofac.Annotation.Test
             return "A3612";
         }
     }
-    [Bean]
+    [Component]
     public class A37
     {
         [Autowired("A3611")]
         public A36 A36 { get; set; }
         
     }
-    [Bean]
+    [Component]
     public class A38
     {
         [Autowired("A3612")]

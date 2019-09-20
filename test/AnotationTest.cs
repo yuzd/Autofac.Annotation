@@ -631,5 +631,22 @@ namespace Autofac.Annotation.Test
             Assert.NotNull(a.A36);
 
         }
+
+        [Fact]
+        public void Test_Type_34()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetAllowCircularDependencies(true));
+
+
+            var container = builder.Build();
+
+
+            var a = container.Resolve<IAA>();
+            Assert.NotNull(a);
+
+        }
     }
 }

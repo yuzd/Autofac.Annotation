@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Autofac.Annotation.Test
 {
-    [Bean(typeof(AsyncInterceptor))]
+    [Component(typeof(AsyncInterceptor))]
     public class Log : AsyncInterceptor
     {
         protected override async Task InterceptAsync(IInvocation invocation, Func<IInvocation, Task> proceed)
@@ -25,7 +25,7 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Bean(typeof(AsyncInterceptor),"log2")]
+    [Component(typeof(AsyncInterceptor),"log2")]
     public class Log2 : AsyncInterceptor
     {
         [Value("test")]

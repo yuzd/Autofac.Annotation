@@ -281,7 +281,6 @@ namespace Autofac.Annotation.Test
             var a1 = container.Resolve<A21>();
             Assert.NotNull(a1.b1);
             Assert.NotNull(a1.b2);
-            Assert.Equal("aaaa", a1.Name);
         }
 
         [Fact]
@@ -342,8 +341,6 @@ namespace Autofac.Annotation.Test
 
             var a1 = container.Resolve<A25>();
             Assert.NotNull(a1);
-            Assert.Equal("name", a1.Name);
-            Assert.Equal("ddd", a1.Test);
             var aaa = a1.GetSchool();
             Assert.NotNull(a1.A23);
             var a2 = a1.A23.GetSchool();

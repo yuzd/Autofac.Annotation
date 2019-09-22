@@ -28,7 +28,7 @@ namespace Autofac.Annotation.Benchmark
         }
 
         [Benchmark]
-        public void Test()
+        public void Autofac()
         {
             var a1 = _container.Resolve<A25>();
             var a2= a1.A23.GetSchool();

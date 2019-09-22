@@ -281,19 +281,20 @@ namespace Autofac.Annotation.Test
 
     public class A19
     {
-        [Autowired("A13", Required = false)] public B b1 { get; set; }
+        [Autowired("A13", Required = false)]
+        public B b1 { get; set; }
 
         [Autowired("A13",Required = false)]
         public B b2 { get; set; }
 
-        [Autowired("A13",Required = false)]
-        private B b3 { get; set; }
+        //[Autowired("A13",Required = false)]
+        //private B b3 { get; set; }
     }
 
     [Component]
     public class A20:A19
     {
-        [Value("aaaa")]
+        //[Value("aaaa")]
         public string Name { get; set; }
     }
 
@@ -324,10 +325,10 @@ namespace Autofac.Annotation.Test
     [Component(Interceptor = typeof(AsyncInterceptor))]
     public class A23:IA23
     {
-        public A23([Value("name")]string name)
-        {
-            Name = name;
-        }
+        //public A23([Value("name")]string name)
+        //{
+        //    Name = name;
+        //}
 
 
         public  string GetSchool()
@@ -341,10 +342,10 @@ namespace Autofac.Annotation.Test
         [Autowired]
         public A21 A21 { get; set; }
 
-        [Autowired]
-        private A21 A221;
+        //[Autowired]
+        //private A21 A221;
 
-        [Value("test")]
+        //[Value("test")]
         private string ttt;
     }
 
@@ -371,9 +372,13 @@ namespace Autofac.Annotation.Test
     [Component(Interceptor = typeof(AsyncInterceptor),InterceptorType = InterceptorType.Class,InterceptorKey = "log2")]
     public class A25
     {
-        public A25([Value("name")]string name)
+        //public A25([Value("name")]string name)
+        //{
+        //    Name = name;
+        //}
+
+        public A25()
         {
-            Name = name;
         }
 
 
@@ -385,7 +390,7 @@ namespace Autofac.Annotation.Test
 
         public string Name { get; set; }
         
-        [Value("ddd")]
+        //[Value("ddd")]
         public string Test { get; set; }
         [Autowired]
         public A21 A21 { get; set; }

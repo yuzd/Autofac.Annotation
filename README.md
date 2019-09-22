@@ -20,7 +20,7 @@ AutofacAnnotationModule有两种构造方法
 1. 可以传一个Assebly列表 （这种方式会注册传入的Assebly里面打了标签的类）
 2. 可以传一个AsseblyName列表 (这种方式是先会根据AsseblyName查找Assebly 然后在注册)
 
-## Supported Attributes [支持的标签说明]
+## Supported Attributes [支持的标签说明【AutoConfiguration】【Bean】【Component】【Value】【PropertySource】【Autowired】]
 ### Component标签
 说明：只能打在class上面(且不能是抽象class) 把某个类注册到autofac容器
 例如：
@@ -238,6 +238,40 @@ public class B:ParentB
 ```
 
 3. 不指定PropertySource的话会默认从工程目录的 appsettings.json获取值
+
+# AutoConfiguration标签 和  Bean标签
+```csharp
+    [AutoConfiguration]
+    public class TestConfiguration
+    {
+        //Bean标签只能搭配AutoConfiguration标签使用，在其他地方没有效
+	//并且是单例注册
+        [Bean]
+        private ITestModel4 getTest5()
+        {
+            return new TestModel4
+            {
+                Name = "getTest5"
+            };
+        }
+    }
+```
+在容器build完成后执行：
+扫描指定的程序集，发现如果有打了AutoConfiguration标签的class，就会去识别有Bean标签的方法，并执行方法将方法返回实例注册为方法返回类型到容器！
+一个程序集可以有多个AutoConfiguration标签的class会每个都加载。
+
+AutoConfiguration标签的其他属性：
+* OrderIndex  可以通过OrderIndex设置优先级，越大的越先加载。
+* Key 也可以通过Key属性设置
+
+搭配如下代码可以设置过滤你想要加载的，比如你想要加载Key = “test” 的所有 AutoConfiguration标签class
+//builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetAutofacConfigurationKey("test"));
+
+Bean标签的其他属性：
+* Key 也可以通过Key属性设置
+比如有多个方法返回的类型相同 可以设置Key来区分
+
+
 
 # AutofacAnnotation标签模式和autofac写代码性能测试对比
 ```csharp

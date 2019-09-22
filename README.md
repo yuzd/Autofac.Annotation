@@ -21,21 +21,37 @@ AutofacAnnotationModule有两种构造方法
 2. 可以传一个AsseblyName列表 (这种方式是先会根据AsseblyName查找Assebly 然后在注册)
 
 ## Supported Attributes [支持的标签说明]
-### Bean标签
-说明：只能打在class上面 把某个类注册到autofac容器
+### Component标签
+说明：只能打在class上面(且不能是抽象class) 把某个类注册到autofac容器
 例如：
 1. 无构造方法的方式	等同于 builder.RegisterType<A>();
 ```csharp
 //把class A 注册到容器
-[Bean]
+[Component]
 public class A
 {
 	public string Name { get; set; }
 }
+//如果 A有父类或者实现了接口 也会自动注册(排除非public的因为autofac不能注册私有类或接口)
+public interface IB
+{
+
+}	
+public class ParentB:IB
+{
+	public string Name1 { get; set; }
+}
+
+//把class B 注册到容器 并且把 B作为ParentB注册到容器 并且把B最为IB注册到容器
+[Component]
+public class B:ParentB
+{
+	public string Name { get; set; }
+}	
 ```
 2. 指定Scope [需要指定AutofacScope属性 如果不指定为则默认为AutofacScope.InstancePerDependency]
 ```csharp
-    [Bean(AutofacScope = AutofacScope.SingleInstance)]
+    [Component(AutofacScope = AutofacScope.SingleInstance)]
     public class A
     {
         public string Name { get; set; }
@@ -48,7 +64,7 @@ public class A
 
     }
 	
-    [Bean(typeof(B))]
+    [Component(typeof(B))]
     public class A6:B
     {
 
@@ -56,13 +72,14 @@ public class A
 ```
 4. 指定名字注册 等同于 builder.RegisterType<A6>().Keyed<A4>("a4")
 ```csharp
-    [Bean("a4")]
+    [Component("a4")]
     public class A4
     {
         public string School { get; set; } = "测试2";
     }
 ```
 5. 其他属性说明
+* OrderIndex 注册顺序 【顺序值越大越早注册到容器，但是一个类型多次注册那么装配的时候会拿OrderIndex最小的值(因为autofac的规则会覆盖)】
 * InjectProperties 是否默认装配属性 【默认为true】
 * InjectPropertyType 属性自动装配的类型
 	1. Autowired 【默认值】代表打了Autowired标签的才会自动装配
@@ -79,7 +96,7 @@ public class A
 * DestroyMetnod 当实例被Release时执行的方法 类似Spring的destroy-method
 	必须是无参数的方法
 ```csharp
-    [Bean(InitMethod = "start",DestroyMetnod = "destroy")]
+    [Component(InitMethod = "start",DestroyMetnod = "destroy")]
     public class A30
     {
         [Value("aaaaa")]
@@ -108,7 +125,7 @@ public class A
 
     }
 	
-    [Bean(typeof(B),"a5")]
+    [Component(typeof(B),"a5")]
     public class A5:B
     {
         public string School { get; set; } = "测试a5";
@@ -123,7 +140,7 @@ public class A
 可以打在Field Property 构造方法的Parameter上面
 其中Field 和 Property 支持在父类
 ```csharp
-    [Bean]
+    [Component]
     public class A16
     {
 	public A16([Autowired]A21 a21)
@@ -162,7 +179,7 @@ public class A
 }
 ```
 ```csharp
-    [Bean]
+    [Component]
     [PropertySource("/file/appsettings1.json")]
     public class A10
     {
@@ -203,7 +220,7 @@ public class A
 ```
 
 ```csharp
-    [Bean]
+    [Component]
     [PropertySource("/file/appsettings1.xml")]
     public class A11
     {

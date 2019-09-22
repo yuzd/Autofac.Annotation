@@ -23,14 +23,14 @@ namespace Autofac.Annotation
         /// <summary>
         /// ComponentModel缓存
         /// </summary>
-        internal static ConcurrentDictionary<Type, ComponentModel> ComponentModelCache = new ConcurrentDictionary<Type, ComponentModel>();
+        internal static readonly ConcurrentDictionary<Type, ComponentModel> ComponentModelCache = new ConcurrentDictionary<Type, ComponentModel>();
 
         private readonly Assembly[] _assemblyList;
 
         /// <summary>
         /// 当前默认的Scope
         /// </summary>
-        public AutofacScope AutofacScope { get; private set; } = AutofacScope.Default;
+        public AutofacScope DefaultAutofacScope { get; private set; } = AutofacScope.Default;
 
         /// <summary>
         /// 是否启用Autowired的循环注入
@@ -69,9 +69,9 @@ namespace Autofac.Annotation
         /// 设置瞬时
         /// </summary>
         /// <returns></returns>
-        public AutofacAnnotationModule InstancePerDependency()
+        public AutofacAnnotationModule SetDefaultAutofacScopeToInstancePerDependency()
         {
-            this.AutofacScope = AutofacScope.InstancePerDependency;
+            this.DefaultAutofacScope = AutofacScope.InstancePerDependency;
             return this;
         }
 
@@ -79,9 +79,9 @@ namespace Autofac.Annotation
         /// 设置单例
         /// </summary>
         /// <returns></returns>
-        public AutofacAnnotationModule SingleInstance()
+        public AutofacAnnotationModule SetDefaultAutofacScopeToSingleInstance()
         {
-            this.AutofacScope = AutofacScope.SingleInstance;
+            this.DefaultAutofacScope = AutofacScope.SingleInstance;
             return this;
         }
 
@@ -89,9 +89,9 @@ namespace Autofac.Annotation
         /// 设置作用域
         /// </summary>
         /// <returns></returns>
-        public AutofacAnnotationModule InstancePerLifetimeScope()
+        public AutofacAnnotationModule SetDefaultAutofacScopeToInstancePerLifetimeScope()
         {
-            this.AutofacScope = AutofacScope.InstancePerLifetimeScope;
+            this.DefaultAutofacScope = AutofacScope.InstancePerLifetimeScope;
             return this;
         }
 
@@ -99,9 +99,9 @@ namespace Autofac.Annotation
         /// 设置请求作用域
         /// </summary>
         /// <returns></returns>
-        public AutofacAnnotationModule InstancePerRequest()
+        public AutofacAnnotationModule SetDefaultAutofacScopeToInstancePerRequest()
         {
-            this.AutofacScope = AutofacScope.InstancePerRequest;
+            this.DefaultAutofacScope = AutofacScope.InstancePerRequest;
             return this;
         }
 
@@ -132,6 +132,10 @@ namespace Autofac.Annotation
             {
                 //注册本身
                 var registrar = builder.RegisterType(component.CurrentType).WithAttributeFiltering();
+                //如果没有指定的话就是注册本身类型 否则就是as注册
+                //指定一个规则 像spring一样
+                // 1. 如果指定了类型 那么不仅要as 也要注册本身类型
+                // 2. 如果没有指定类型 那只需要注册本身类型
 
                 //注册非本身类型 比如注册父类
                 RegisterComponentServices(component, registrar);
@@ -262,6 +266,7 @@ namespace Autofac.Annotation
 
             if (component.Interceptor != null)
             {
+                //配置拦截器
                 switch (component.InterceptorType)
                 {
                     case InterceptorType.Interface:
@@ -284,6 +289,11 @@ namespace Autofac.Annotation
                         return;
                 }
             }
+            else
+            {
+                //配置了拦截器就不能注册自己
+                registrar.As(component.CurrentType);
+            }
         }
 
         /// <summary>
@@ -303,9 +313,22 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(registrar));
             }
 
-            if (component.AutoActivate)
+            if (component.AutoActivate != null)
             {
+                if (component.AutoActivate.Value)
+                {
+                    registrar.AutoActivate();
+                    return;
+                }
+
+                return;
+            }
+
+            if (component.AutofacScope == AutofacScope.SingleInstance) 
+            {
+                //默认单例注册完成后自动装载
                 registrar.AutoActivate();
+                return;
             }
         }
 
@@ -565,11 +588,13 @@ namespace Autofac.Annotation
                 {
                     if (!string.IsNullOrEmpty(componentServiceModel.Key))
                     {
-                        registrar.As(componentServiceModel.Type).Keyed(componentServiceModel.Key, componentServiceModel.Type);
+                        registrar.Keyed(componentServiceModel.Key, componentServiceModel.Type)
+                            .Named("`1System.Collections.Generic.IEnumerable`1" + componentServiceModel.Type.FullName, componentServiceModel.Type);//通过集合注入Autowired拿到所有
                     }
                     else
                     {
-                        registrar.As(componentServiceModel.Type);
+                        registrar.As(componentServiceModel.Type)
+                            .Named("`1System.Collections.Generic.IEnumerable`1" + componentServiceModel.Type.FullName, componentServiceModel.Type);//通过集合注入Autowired拿到所有
                     }
                 }
             }
@@ -600,10 +625,11 @@ namespace Autofac.Annotation
                                     select new
                                     {
                                         Type = type,
-                                        Bean = bean
+                                        Bean = bean,
+                                        OrderIndex = bean.OrderIndex
                                     }).ToList();
 
-                foreach (var bean in beanTypeList)
+                foreach (var bean in beanTypeList.OrderByDescending(r=>r.OrderIndex))
                 {
                     var component = EnumerateComponentServices(bean.Bean, bean.Type);
                     EnumerateMetaSourceAttributes(component);
@@ -631,7 +657,7 @@ namespace Autofac.Annotation
             var result = new ComponentModel
             {
                 AutoActivate = bean.AutoActivate,
-                AutofacScope = this.AutofacScope.Equals(AutofacScope.Default) ? bean.AutofacScope : this.AutofacScope,
+                AutofacScope = this.DefaultAutofacScope.Equals(AutofacScope.Default) ? bean.AutofacScope : this.DefaultAutofacScope,
                 CurrentType = currentType,
                 InjectProperties = bean.InjectProperties,
                 InjectPropertyType = bean.InjectPropertyType,
@@ -640,19 +666,27 @@ namespace Autofac.Annotation
                 InterceptorKey = bean.InterceptorKey,
                 InterceptorType = bean.InterceptorType,
                 InitMethod = bean.InitMethod,
-                DestroyMetnod = bean.DestroyMetnod
+                DestroyMetnod = bean.DestroyMetnod,
+                OrderIndex = bean.OrderIndex
             };
+
 
             #region 解析注册对应的类的列表
 
             var re = new List<ComponentServiceModel>();
 
+            //if (currentType.Name.Contains("A23"))
+            //{
+
+            //}
+
             if (bean.Service == null)
             {
-                var typeInterfaces = currentType.GetInterfaces();
-
+                //接口自动注册 父类自动注册
+                var typeInterfaces = currentType.GetParentTypes();
                 foreach (var iInterface in typeInterfaces)
                 {
+                    if(iInterface.IsValueType || iInterface.IsEnum || iInterface == typeof(object) || iInterface.IsGenericEnumerableInterfaceType() || !ProxyUtil.IsAccessible(iInterface)) continue;
                     if (bean.Services == null || !bean.Services.Contains(iInterface))
                     {
                         //如果父类直接是接口 也没有特别指定 Service 或者 Services集合
@@ -661,16 +695,6 @@ namespace Autofac.Annotation
                             Type = iInterface,
                             Key = bean.Key
                         });
-
-                        if (!string.IsNullOrEmpty(bean.Key))
-                        {
-                            //指定了key 默认为本身
-                            re.Add(new ComponentServiceModel
-                            {
-                                Type = iInterface,
-                                Key = bean.Key
-                            });
-                        }
                     }
                 }
             }
@@ -858,10 +882,13 @@ namespace Autofac.Annotation
             }
 
             if (RealInstance == null) return;
+            
             if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
             //字段注入
             foreach (var field in model.AutowiredFieldInfoList)
             {
+                
+                // ReSharper disable once PossibleMultipleEnumeration
                 var obj = field.Item2.ResolveField(field.Item1, context, Parameters, RealInstance, allowCircle);
                 if (obj == null)
                 {
@@ -887,6 +914,7 @@ namespace Autofac.Annotation
             //属性注入
             foreach (var property in model.AutowiredPropertyInfoList)
             {
+                // ReSharper disable once PossibleMultipleEnumeration
                 var obj = property.Item2.ResolveProperty(property.Item1, context, Parameters, RealInstance, allowCircle);
                 if (obj == null)
                 {

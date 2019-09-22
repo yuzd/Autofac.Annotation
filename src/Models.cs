@@ -62,8 +62,9 @@ namespace Autofac.Annotation
 
         /// <summary>
         /// A Boolean indicating if the component should auto-activate.
+        /// SingleInstance Scope default is true
         /// </summary>
-        public bool AutoActivate { get; set; }
+        public bool? AutoActivate { get; set; }
 
         /// <summary>
         /// A Boolean indicating whether property (setter) injection for the component should be enabled.
@@ -108,6 +109,11 @@ namespace Autofac.Annotation
         /// 被Release时执行的方法
         /// </summary>
         public string DestroyMetnod { get; set; }
+
+        /// <summary>
+        /// 自定义注册顺序
+        /// </summary>
+        public int OrderIndex { get; set; }
     }
 
     /// <summary>
@@ -168,23 +174,6 @@ namespace Autofac.Annotation
 
 
     /// <summary>
-    /// MetaData
-    /// </summary>
-    public class MetaData
-    {
-        /// <summary>
-        /// 字段
-        /// </summary>
-        public string Key { get; set; }
-
-        /// <summary>
-        /// 值
-        /// </summary>
-        public object Value { get; set; }
-
-    }
-
-    /// <summary>
     /// 注册对应的类型
     /// </summary>
     public class ComponentServiceModel
@@ -196,6 +185,8 @@ namespace Autofac.Annotation
 
         /// <summary>
         /// 别名
+        ///  1. 如果同一个类型注册多个相同别名 那么根据别名会获取到最后一个注册的
+        ///  2. 如果一个类型 既注册了别名 又注册了非别名 那么根据别名只能获取到别名注册的，要想获取非别名注册就不能带Key去Autowired
         /// </summary>
         public string Key { get; set; }
     }

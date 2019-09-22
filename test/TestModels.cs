@@ -36,7 +36,18 @@ namespace Autofac.Annotation.Test
         {
         }
     }
+    [Component("AImpl2")]
+    public class AImpl2 : ABA
+    {
+        public void Test()
+        {
+            Console.WriteLine("1");
+        }
 
+        public void Test1()
+        {
+        }
+    }
     [Component]
     public class A
     {
@@ -310,7 +321,7 @@ namespace Autofac.Annotation.Test
         string GetSchool();
     }
 
-    [Component(typeof(IA23),Interceptor = typeof(AsyncInterceptor))]
+    [Component(Interceptor = typeof(AsyncInterceptor))]
     public class A23:IA23
     {
         public A23([Value("name")]string name)
@@ -508,7 +519,7 @@ namespace Autofac.Annotation.Test
     {
         public new string Name { get; set; } = "A323";
     }
-    [Component(typeof(A3122),"A3213")]
+    [Component(typeof(A3122), "A3213")]
     public class A324:A3122
     {
         public new string Name { get; set; } = "A324";
@@ -517,8 +528,8 @@ namespace Autofac.Annotation.Test
     [Component]
     public class A32
     {
-        [Autowired]
-        public IEnumerable<A3122> A31List { get; set; }
+        [Autowired()]
+        public IList<A3122> A31List { get; set; }
     }
     
     

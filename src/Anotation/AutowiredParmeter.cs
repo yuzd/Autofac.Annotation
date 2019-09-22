@@ -8,21 +8,32 @@ namespace Autofac.Annotation
     /// <summary>
     /// 
     /// </summary>
-    public class AutowiredParmeter:Parameter
+    internal class AutowiredParmeter:Parameter
     {
         /// <summary>
-        /// 
+        /// 集合
         /// </summary>
-        public ConcurrentDictionary<string,object> AutowiredChains { get; set; } = new ConcurrentDictionary<string, object>();
+        private readonly ConcurrentDictionary<string,object> AutowiredChains = new ConcurrentDictionary<string, object>();
 
         /// <summary>
         /// 添加
         /// </summary>
         /// <param name="service"></param>
         /// <param name="instance"></param>
-        public void Add(string service,object instance)
+        public bool TryAdd(string service,object instance)
         {
-            this.AutowiredChains.TryAdd(service, instance);
+           return this.AutowiredChains.TryAdd(service, instance);
+        }
+
+        /// <summary>
+        /// 获取
+        /// </summary>
+        /// <param name="service"></param>
+        /// <param name="instance"></param>
+        /// <returns></returns>
+        public bool TryGet(string service, out object instance)
+        {
+           return this.AutowiredChains.TryGetValue(service,out instance);
         }
 
         /// <summary>

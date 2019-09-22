@@ -1,11 +1,14 @@
-﻿using Castle.DynamicProxy;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
+using Autofac.Annotation;
+using Castle.DynamicProxy;
 
-namespace Autofac.Annotation.Test
+namespace Autofac.Configuration.Test.test2
 {
     [Component]
-    public class Log : AsyncInterceptor
+    public class Test2Interceptor : AsyncInterceptor
     {
         protected override async Task InterceptAsync(IInvocation invocation, Func<IInvocation, Task> proceed)
         {
@@ -17,7 +20,7 @@ namespace Autofac.Annotation.Test
             TResult result = await proceed(invocation).ConfigureAwait(false);
             if (result is string)
             {
-                var tt =  (TResult) Activator.CreateInstance(typeof(String),new char[]{'a'});
+                var tt = (TResult)Activator.CreateInstance(typeof(String), new char[] { 'a' });
                 invocation.ReturnValue = tt;
                 return tt;
             }
@@ -25,15 +28,9 @@ namespace Autofac.Annotation.Test
         }
     }
 
-    [Component("log2")]
-    public class Log2 : AsyncInterceptor
+    [Component("Test2Interceptor2")]
+    public class Test2Interceptor2 : AsyncInterceptor
     {
-        [Value("test")]
-        public string Test { get; set; }
-
-        [Autowired]
-        public A21 A21 { get; set; }
-
         protected override async Task InterceptAsync(IInvocation invocation, Func<IInvocation, Task> proceed)
         {
             await proceed(invocation).ConfigureAwait(false);
@@ -44,11 +41,12 @@ namespace Autofac.Annotation.Test
             TResult result = await proceed(invocation).ConfigureAwait(false);
             if (result is string)
             {
-                var tt =  (TResult) Activator.CreateInstance(typeof(String),new char[]{'b'});
+                var tt = (TResult)Activator.CreateInstance(typeof(String), new char[] { 'b' });
                 invocation.ReturnValue = tt;
                 return tt;
             }
             return result;
         }
     }
+
 }

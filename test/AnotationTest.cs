@@ -311,7 +311,7 @@ namespace Autofac.Annotation.Test
 
             var a1 = container.Resolve<IA23>();
             var aaa = a1.GetSchool();
-            Assert.Equal("b", aaa);
+            Assert.Equal("a", aaa);
         }
 
 
@@ -327,7 +327,7 @@ namespace Autofac.Annotation.Test
 
             var a1 = container.Resolve<A24>();
             var aaa = a1.GetSchool();
-            Assert.Equal("b", aaa);
+            Assert.Equal("a", aaa);
         }
 
         [Fact]
@@ -417,7 +417,7 @@ namespace Autofac.Annotation.Test
             var builder = new ContainerBuilder();
 
             // autofac打标签模式
-            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).InstancePerLifetimeScope());
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetDefaultAutofacScopeToInstancePerLifetimeScope());
 
             var container = builder.Build();
 
@@ -441,7 +441,7 @@ namespace Autofac.Annotation.Test
             var builder = new ContainerBuilder();
 
             // autofac打标签模式
-            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).InstancePerLifetimeScope());
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetDefaultAutofacScopeToInstancePerLifetimeScope());
 
             var container = builder.Build();
 
@@ -462,7 +462,7 @@ namespace Autofac.Annotation.Test
             var builder = new ContainerBuilder();
 
             // autofac打标签模式
-            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).InstancePerLifetimeScope());
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetDefaultAutofacScopeToInstancePerLifetimeScope());
 
             var container = builder.Build();
 
@@ -502,7 +502,7 @@ namespace Autofac.Annotation.Test
             var builder = new ContainerBuilder();
 
             // autofac打标签模式
-            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).InstancePerLifetimeScope());
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetDefaultAutofacScopeToInstancePerLifetimeScope());
 
             var container = builder.Build();
 
@@ -526,25 +526,38 @@ namespace Autofac.Annotation.Test
 //            builder.RegisterType<A322>().As<A3122>().WithMetadata("tt", "A3212");
 //            builder.RegisterType<A323>().As<A3122>().WithMetadata("tt", "A3213");
             
-//            builder.RegisterType(typeof(A321)).As(new KeyedService("A3211",typeof(A3122)));
-//            builder.RegisterType(typeof(A321)).As(new TypedService(typeof(A3122))).WithMetadata("tt", "A3211");
-//            builder.RegisterType(typeof(A322)).As(new KeyedService("A3212",typeof(A3122)));
-//            builder.RegisterType(typeof(A322)).As(new TypedService(typeof(A3122))).WithMetadata("tt", "A3212");
-//            builder.RegisterType(typeof(A323)).As(new KeyedService("A3213",typeof(A3122)));
-//            builder.RegisterType(typeof(A323)).As(new TypedService(typeof(A3122))).WithMetadata("tt", "A3213");
-            
+             // builder.RegisterType(typeof(A321)).Keyed("A3211",typeof(A3122)).As(typeof(A321)).WithMetadata("tt", "A3211");
+             // builder.RegisterType(typeof(A322)).Keyed("A3212", typeof(A3122)).As(typeof(A322)).WithMetadata("tt", "A3211");
+             // builder.RegisterType(typeof(A323)).Keyed("A3213", typeof(A3122)).As(typeof(A323)).WithMetadata("tt", "A3211");
+
+
+
+              //builder.RegisterType(typeof(A321)).As(new KeyedService("A3211",typeof(A3122))).Named(typeof(A3122).FullName,typeof(A3122));
+              //builder.RegisterType(typeof(A322)).As(new KeyedService("A3212", typeof(A3122))).Named(typeof(A3122).FullName, typeof(A3122));
+              //builder.RegisterType(typeof(A323)).As(new KeyedService("A3213", typeof(A3122))).Named(typeof(A3122).FullName, typeof(A3122));
+
+
+            //            builder.RegisterType(typeof(A321)).As(new TypedService(typeof(A3122))).WithMetadata("tt", "A3211");
+
+            //            builder.RegisterType(typeof(A322)).As(new TypedService(typeof(A3122))).WithMetadata("tt", "A3212");
+
+            //            builder.RegisterType(typeof(A323)).As(new TypedService(typeof(A3122))).WithMetadata("tt", "A3213");
+
             var container = builder.Build();
             
 //            var warrior = container.Resolve<IEnumerable<Meta<A3122>>>();
 
-//            var b = container.Resolve<IEnumerable<Meta<A3122>>>();
+            //var b = container.Resolve<IEnumerable<Meta<A3122>>>();
             
-            var a = container.Resolve<A32>();
-            
-            Assert.Equal(4,a.A31List.Count());
+            var a = container.ResolveKeyed<IEnumerable<A3122>>(typeof(A3122).FullName);
+            var a1 = container.ResolveKeyed<IEnumerable<A3122>>("A3213");
+            var a11 = container.ResolveKeyed<A3122>("A3213");
+            var a111 = container.Resolve<A32>();
+
+            Assert.Equal(4,a111.A31List.Count());
 
         }
-        
+
         [Fact]
         public void Test_Type_30()
         {
@@ -644,8 +657,32 @@ namespace Autofac.Annotation.Test
             var container = builder.Build();
 
 
-            var a = container.Resolve<IAA>();
+            var a = container.Resolve<AImpl>();
+            var a1 = container.Resolve<A1>();
             Assert.NotNull(a);
+            Assert.NotNull(a1);
+
+        }
+
+        [Fact]
+        public void Test_Type_35()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetAllowCircularDependencies(true));
+
+
+            var container = builder.Build();
+
+            var b = container.ResolveKeyed<IA>("AImpl2");
+            var a = container.Resolve<IA>();
+            var a1 = container.Resolve<AImpl2>();
+            Assert.NotNull(a);
+            Assert.NotNull(a1);
+            Assert.NotNull(b);
+            Assert.NotEqual(b,a);
+            Assert.Equal(b.GetType(),a1.GetType());
 
         }
     }

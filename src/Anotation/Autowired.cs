@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Autofac.Annotation.Util;
-using Autofac.Features.Metadata;
 
 namespace Autofac.Annotation
 {
@@ -17,7 +16,7 @@ namespace Autofac.Annotation
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter)]
     public class Autowired : ParameterFilterAttribute
     {
-//     
+        //     
         /// <summary>
         /// 默认的
         /// </summary>
@@ -73,9 +72,10 @@ namespace Autofac.Annotation
         /// <param name="instance"></param>
         /// <param name="allowCircle"></param>
         /// <returns></returns>
-        public object ResolveField(FieldInfo property, IComponentContext context,IEnumerable<Parameter> Parameters,object instance,bool allowCircle)
+        public object ResolveField(FieldInfo property, IComponentContext context, IEnumerable<Parameter> Parameters, object instance, bool allowCircle)
         {
-            if(!allowCircle) return property == null ? null : Resolve(property.DeclaringType, property.FieldType, context, "field");
+            if (property == null) throw new ArgumentNullException(nameof(property));
+            if (!allowCircle) return Resolve(property.DeclaringType, property.FieldType, context, "field");
             if (context == null)
             {
                 throw new ArgumentNullException(nameof(context));
@@ -84,28 +84,32 @@ namespace Autofac.Annotation
             {
                 throw new ArgumentNullException(nameof(instance));
             }
-           
-            
+
+
             Service propertyService = null;
             if (!string.IsNullOrEmpty(this.Name))
             {
-                propertyService = new KeyedService(this.Name,property.FieldType);
+                propertyService = new KeyedService(this.Name, property.FieldType);
             }
             else
             {
                 propertyService = new TypedService(property.FieldType);
             }
 
+            // ReSharper disable once PossibleMultipleEnumeration
             if (Parameters != null && Parameters.Count() == 1)
             {
+                // ReSharper disable once PossibleMultipleEnumeration
                 if (!(Parameters.First() is AutowiredParmeter AutowiredParmeter)) return null;
-                if (AutowiredParmeter.AutowiredChains.TryGetValue(property.FieldType.FullName,out var objectInstance))
+                // ReSharper disable once AssignNullToNotNullAttribute
+                if (AutowiredParmeter.TryGet(getAutowiredParmeterKey(property.FieldType), out var objectInstance))
                 {
                     return objectInstance;
                 }
                 else
                 {
-                    AutowiredParmeter.Add(property.DeclaringType.FullName,instance);
+                    // ReSharper disable once PossibleNullReferenceException
+                    AutowiredParmeter.TryAdd(getAutowiredParmeterKey(property.DeclaringType), instance);
                     if (context.TryResolveService(propertyService, new Parameter[] { AutowiredParmeter }, out var propertyValue))
                     {
                         return propertyValue;
@@ -115,7 +119,8 @@ namespace Autofac.Annotation
             else
             {
                 var instanceTypeParameter = new AutowiredParmeter();
-                instanceTypeParameter.Add(property.DeclaringType.FullName,instance);
+                // ReSharper disable once PossibleNullReferenceException
+                instanceTypeParameter.TryAdd(getAutowiredParmeterKey(property.DeclaringType), instance);
                 if (context.TryResolveService(propertyService, new Parameter[] { instanceTypeParameter }, out var propertyValue))
                 {
                     return propertyValue;
@@ -133,10 +138,11 @@ namespace Autofac.Annotation
         /// <param name="instance"></param>
         /// <param name="alowCircle"></param>
         /// <returns></returns>
-        public object ResolveProperty(PropertyInfo property, IComponentContext context,IEnumerable<Parameter> Parameters,object instance,bool alowCircle)
+        public object ResolveProperty(PropertyInfo property, IComponentContext context, IEnumerable<Parameter> Parameters, object instance, bool alowCircle)
         {
-            if(!alowCircle)return property == null ? null : Resolve(property.DeclaringType, property.PropertyType, context, "property");
-            
+            if (property == null) throw new ArgumentNullException(nameof(property));
+            if (!alowCircle) return Resolve(property.DeclaringType, property.PropertyType, context, "property");
+
             if (context == null)
             {
                 throw new ArgumentNullException(nameof(context));
@@ -145,11 +151,11 @@ namespace Autofac.Annotation
             {
                 throw new ArgumentNullException(nameof(instance));
             }
-           
+
             Service propertyService = null;
             if (!string.IsNullOrEmpty(this.Name))
             {
-                propertyService = new KeyedService(this.Name,property.PropertyType);
+                propertyService = new KeyedService(this.Name, property.PropertyType);
             }
             else
             {
@@ -159,13 +165,15 @@ namespace Autofac.Annotation
             if (Parameters != null && Parameters.Count() == 1)
             {
                 if (!(Parameters.First() is AutowiredParmeter AutowiredParmeter)) return null;
-                if (AutowiredParmeter.AutowiredChains.TryGetValue(property.PropertyType.FullName,out var objectInstance))
+                // ReSharper disable once AssignNullToNotNullAttribute
+                if (AutowiredParmeter.TryGet(getAutowiredParmeterKey(property.PropertyType), out var objectInstance))
                 {
                     return objectInstance;
                 }
                 else
                 {
-                    AutowiredParmeter.Add(property.DeclaringType.FullName,instance);
+                    // ReSharper disable once PossibleNullReferenceException
+                    AutowiredParmeter.TryAdd(getAutowiredParmeterKey(property.DeclaringType), instance);
                     if (context.TryResolveService(propertyService, new Parameter[] { AutowiredParmeter }, out var propertyValue))
                     {
                         return propertyValue;
@@ -175,7 +183,8 @@ namespace Autofac.Annotation
             else
             {
                 var instanceTypeParameter = new AutowiredParmeter();
-                instanceTypeParameter.Add(property.DeclaringType.FullName,instance);
+                // ReSharper disable once PossibleNullReferenceException
+                instanceTypeParameter.TryAdd(getAutowiredParmeterKey(property.DeclaringType), instance);
                 if (context.TryResolveService(propertyService, new Parameter[] { instanceTypeParameter }, out var propertyValue))
                 {
                     return propertyValue;
@@ -195,7 +204,6 @@ namespace Autofac.Annotation
         /// <exception cref="DependencyResolutionException"></exception>
         private object Resolve(Type classType, Type type, IComponentContext context, string typeDescription)
         {
-
             object obj = null;
             if (!string.IsNullOrEmpty(this.Name))
             {
@@ -203,7 +211,20 @@ namespace Autofac.Annotation
             }
             else
             {
-                context.TryResolve(type, out obj);
+                if (type.IsGenericEnumerableInterfaceType())
+                {
+                    var genericType = type.GenericTypeArguments[0];
+                    if (genericType.FullName != null && genericType.FullName.StartsWith("System.Lazy`1"))
+                    {
+                        genericType = genericType.GenericTypeArguments[0];
+                    }
+
+                    context.TryResolveKeyed("`1System.Collections.Generic.IEnumerable`1" + genericType.FullName, type, out obj);
+                }
+                else
+                {
+                    context.TryResolve(type, out obj);
+                }
             }
 
             if (obj == null && this.Required)
@@ -213,7 +234,12 @@ namespace Autofac.Annotation
             }
 
             return obj;
+
         }
 
+        private static string getAutowiredParmeterKey(Type type)
+        {
+            return "`1CircularDependencies`1" +  type.FullName;
+        }
     }
 }

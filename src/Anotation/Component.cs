@@ -67,6 +67,12 @@ namespace Autofac.Annotation
         public string Key { get;}
 
         /// <summary>
+        /// 自定义注册顺序 越大越先注册 但是注意 相同的类型谁最小就会拿resolve谁
+        /// 注册同类型顺序越大越先注册但Resolve获取的是顺序越小的 和autofac本身是保持一致的
+        /// </summary>
+        public int OrderIndex { get; set; }
+
+        /// <summary>
         ///  注册key 在同一个类型注册多个的时候就需要用到key来做区分
         /// </summary>
         public string[] Keys { get; set; }
@@ -76,8 +82,9 @@ namespace Autofac.Annotation
 
         /// <summary>
         /// A Boolean indicating if the component should auto-activate.
+        /// SingleInstance Scope default is true
         /// </summary>
-        public bool AutoActivate { get; set; }
+        public bool? AutoActivate { get; set; }
 
         /// <summary>
         /// A Boolean indicating whether property (setter) injection for the component should be enabled.
@@ -145,12 +152,12 @@ namespace Autofac.Annotation
     public enum InjectPropertyType
     {
         /// <summary>
+        /// 代表打了Autowired标签的才会装配
+        /// </summary>
+        Autowired,
+        /// <summary>
         /// 代表全部自动装配
         /// </summary>
         ALL,
-        /// <summary>
-        /// 代表打了Autowired标签的才会装配
-        /// </summary>
-        Autowired
     }
 }

@@ -4,7 +4,7 @@
 
 ## 如何使用
 ### NUGET Install-Package Autofac.Annotation
-```
+```csharp
 var builder = new ContainerBuilder();
 
 // 注册autofac打标签模式
@@ -21,48 +21,65 @@ AutofacAnnotationModule有两种构造方法
 2. 可以传一个AsseblyName列表 (这种方式是先会根据AsseblyName查找Assebly 然后在注册)
 
 ## Supported Attributes [支持的标签说明]
-### Bean标签
-说明：只能打在class上面 把某个类注册到autofac容器
+### Component标签
+说明：只能打在class上面(且不能是抽象class) 把某个类注册到autofac容器
 例如：
 1. 无构造方法的方式	等同于 builder.RegisterType<A>();
-```
+```csharp
 //把class A 注册到容器
-[Bean]
+[Component]
 public class A
 {
 	public string Name { get; set; }
 }
+//如果 A有父类或者实现了接口 也会自动注册(排除非public的因为autofac不能注册私有类或接口)
+public interface IB
+{
+
+}	
+public class ParentB:IB
+{
+	public string Name1 { get; set; }
+}
+
+//把class B 注册到容器 并且把 B作为ParentB注册到容器 并且把B最为IB注册到容器
+[Component]
+public class B:ParentB
+{
+	public string Name { get; set; }
+}	
 ```
 2. 指定Scope [需要指定AutofacScope属性 如果不指定为则默认为AutofacScope.InstancePerDependency]
-```
-    [Bean(AutofacScope = AutofacScope.SingleInstance)]
+```csharp
+    [Component(AutofacScope = AutofacScope.SingleInstance)]
     public class A
     {
         public string Name { get; set; }
     }
 ```
 3. 指定类型注册 等同于 builder.RegisterType<A6>().As<B>()
-```
+```csharp
     public class B
     {
 
     }
 	
-    [Bean(typeof(B))]
+    [Component(typeof(B))]
     public class A6:B
     {
 
     }
 ```
 4. 指定名字注册 等同于 builder.RegisterType<A6>().Keyed<A4>("a4")
-```
-    [Bean("a4")]
+```csharp
+    [Component("a4")]
     public class A4
     {
         public string School { get; set; } = "测试2";
     }
 ```
 5. 其他属性说明
+* OrderIndex 注册顺序 【顺序值越大越早注册到容器，但是一个类型多次注册那么装配的时候会拿OrderIndex最小的值(因为autofac的规则会覆盖)】
 * InjectProperties 是否默认装配属性 【默认为true】
 * InjectPropertyType 属性自动装配的类型
 	1. Autowired 【默认值】代表打了Autowired标签的才会自动装配
@@ -78,8 +95,8 @@ public class A
 	可以是有参数(只能1个参数类型是IComponentContext)和无参数的方法
 * DestroyMetnod 当实例被Release时执行的方法 类似Spring的destroy-method
 	必须是无参数的方法
-```
-    [Bean(InitMethod = "start",DestroyMetnod = "destroy")]
+```csharp
+    [Component(InitMethod = "start",DestroyMetnod = "destroy")]
     public class A30
     {
         [Value("aaaaa")]
@@ -102,13 +119,13 @@ public class A
 	
 ```	
 
-```
+```csharp
     public class B
     {
 
     }
 	
-    [Bean(typeof(B),"a5")]
+    [Component(typeof(B),"a5")]
     public class A5:B
     {
         public string School { get; set; } = "测试a5";
@@ -122,8 +139,8 @@ public class A
 ### Autowired 自动装配
 可以打在Field Property 构造方法的Parameter上面
 其中Field 和 Property 支持在父类
-```
-    [Bean]
+```csharp
+    [Component]
     public class A16
     {
 	public A16([Autowired]A21 a21)
@@ -161,8 +178,8 @@ public class A
   "testInitProperty": 1,
 }
 ```
-```
-    [Bean]
+```csharp
+    [Component]
     [PropertySource("/file/appsettings1.json")]
     public class A10
     {
@@ -202,8 +219,8 @@ public class A
 
 ```
 
-```
-    [Bean]
+```csharp
+    [Component]
     [PropertySource("/file/appsettings1.xml")]
     public class A11
     {
@@ -221,3 +238,84 @@ public class A
 ```
 
 3. 不指定PropertySource的话会默认从工程目录的 appsettings.json获取值
+
+# AutofacAnnotation标签模式和autofac写代码性能测试对比
+```csharp
+    public class AutofacAutowiredResolveBenchmark
+    {
+        private IContainer _container;
+
+        [GlobalSetup]
+        public void Setup()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterType<A13>().As<B>().WithAttributeFiltering();
+            builder.RegisterType<Log>().As<AsyncInterceptor>();
+            builder.RegisterType<Log2>().Keyed<AsyncInterceptor>("log2");
+            builder.RegisterType<A21>().WithAttributeFiltering().PropertiesAutowired();
+            builder.RegisterType<A23>().As<IA23>().WithAttributeFiltering().PropertiesAutowired().EnableInterfaceInterceptors()
+                .InterceptedBy(typeof(AsyncInterceptor));
+            builder.RegisterType<A25>().WithAttributeFiltering().PropertiesAutowired().EnableClassInterceptors()
+                .InterceptedBy(new KeyedService("log2", typeof(AsyncInterceptor)));
+            _container = builder.Build();
+        }
+
+        [Benchmark]
+        public void Autofac()
+        {
+            var a1 = _container.Resolve<A25>();
+            var a2= a1.A23.GetSchool();
+        }
+    }
+```
+``` ini
+
+BenchmarkDotNet=v0.11.3, OS=Windows 10.0.18362
+Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cores
+.NET Core SDK=2.2.300
+  [Host]     : .NET Core 2.1.13 (CoreCLR 4.6.28008.01, CoreFX 4.6.28008.01), 64bit RyuJIT  [AttachedDebugger]
+  DefaultJob : .NET Core 2.1.13 (CoreCLR 4.6.28008.01, CoreFX 4.6.28008.01), 64bit RyuJIT
+
+
+```
+|  Method |     Mean |     Error |    StdDev |
+|-------- |---------:|----------:|----------:|
+| Autofac | 30.30 us | 0.2253 us | 0.1997 us |
+
+```csharp
+   //打标签模式
+   public class AutowiredResolveBenchmark
+    {
+        private IContainer _container;
+        
+        [GlobalSetup]
+        public void Setup()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(A13).Assembly));
+            _container = builder.Build();
+        }
+        
+        [Benchmark]
+        public void AutofacAnnotation()
+        {
+            var a1 = _container.Resolve<A25>();
+            var a2= a1.A23.GetSchool();
+        }
+    }
+```
+
+``` ini
+
+BenchmarkDotNet=v0.11.3, OS=Windows 10.0.18362
+Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cores
+.NET Core SDK=2.2.300
+  [Host]     : .NET Core 2.1.13 (CoreCLR 4.6.28008.01, CoreFX 4.6.28008.01), 64bit RyuJIT  [AttachedDebugger]
+  DefaultJob : .NET Core 2.1.13 (CoreCLR 4.6.28008.01, CoreFX 4.6.28008.01), 64bit RyuJIT
+
+
+```
+|            Method |     Mean |     Error |    StdDev |
+|------------------ |---------:|----------:|----------:|
+| AutofacAnnotation | 35.36 us | 0.1504 us | 0.1407 us |
+

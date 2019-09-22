@@ -84,7 +84,7 @@ namespace Autofac.Annotation
         /// A Boolean indicating if the component should auto-activate.
         /// SingleInstance Scope default is true
         /// </summary>
-        public bool? AutoActivate { get; set; }
+        public bool AutoActivate { get; set; }
 
         /// <summary>
         /// A Boolean indicating whether property (setter) injection for the component should be enabled.

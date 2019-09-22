@@ -43,11 +43,34 @@ namespace Autofac.Annotation.Util
         }
 
         /// <summary>
+        /// Get all the method of a class instance
+        /// </summary>
+        /// <param name="type">Type object of that class</param>
+        /// <param name="getBaseType">is get baseType methods</param>
+        /// <returns></returns>
+        public static IEnumerable<MethodInfo> GetAllInstanceMethod(this Type type, bool getBaseType = true)
+        {
+            if (type == null)
+            {
+                return Enumerable.Empty<MethodInfo>();
+            }
+
+            BindingFlags flags = BindingFlags.Public |
+                                 BindingFlags.NonPublic |
+                                 BindingFlags.Instance |
+                                 BindingFlags.DeclaredOnly;
+
+            if (!getBaseType) return type.GetMethods(flags);
+            return type.GetMethods(flags).Union(GetAllMethod(type.BaseType, getBaseType));
+        }
+
+        /// <summary>
         /// Get all the method of a class
         /// </summary>
         /// <param name="type">Type object of that class</param>
+        /// <param name="getBaseType">is get baseType methods</param>
         /// <returns></returns>
-        public static IEnumerable<MethodInfo> GetAllMethod(this Type type)
+        public static IEnumerable<MethodInfo> GetAllMethod(this Type type, bool getBaseType = true)
         {
             if (type == null)
             {
@@ -60,7 +83,8 @@ namespace Autofac.Annotation.Util
                                  BindingFlags.Instance |
                                  BindingFlags.DeclaredOnly;
 
-            return type.GetMethods(flags).Union(GetAllMethod(type.BaseType));
+            if (!getBaseType) return type.GetMethods(flags);
+            return type.GetMethods(flags).Union(GetAllMethod(type.BaseType,getBaseType));
         }
         
         /// <summary>

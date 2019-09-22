@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Autofac.Annotation.Anotation;
 
 namespace Autofac.Annotation
 {
@@ -25,7 +26,7 @@ namespace Autofac.Annotation
         /// </summary>
         internal static readonly ConcurrentDictionary<Type, ComponentModel> ComponentModelCache = new ConcurrentDictionary<Type, ComponentModel>();
 
-        private readonly Assembly[] _assemblyList;
+        private readonly List<Assembly> _assemblyList;
 
         /// <summary>
         /// 当前默认的Scope
@@ -38,6 +39,11 @@ namespace Autofac.Annotation
         public bool AllowCircularDependencies { get; private set; }
 
         /// <summary>
+        /// 容器注册完开始找AutofacConfiguration标签的class 有多个的时候指定Key
+        /// </summary>
+        public string AutofacConfigurationKey { get; private set; }
+
+        /// <summary>
         /// 根据程序集来实例化
         /// </summary>
         /// <param name="assemblyList"></param>
@@ -48,7 +54,8 @@ namespace Autofac.Annotation
                 throw new ArgumentException(nameof(assemblyList));
             }
 
-            _assemblyList = assemblyList;
+            _assemblyList = assemblyList.ToList();
+            _assemblyList.Add(typeof(AutofacAnnotationModule).Assembly);
         }
 
         /// <summary>
@@ -62,8 +69,19 @@ namespace Autofac.Annotation
                 throw new ArgumentException(nameof(assemblyNameList));
             }
 
-            _assemblyList = GetAssemblies().Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).ToArray();
+            _assemblyList = GetAssemblies().Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).ToList();
         }
+
+        /// <summary>
+        /// 容器注册完开始找AutofacConfiguration标签的class 有多个的时候指定Key
+        /// </summary>
+        /// <returns></returns>
+        public AutofacAnnotationModule SetAutofacConfigurationKey(string key)
+        {
+            this.AutofacConfigurationKey = key ?? throw new ArgumentException(nameof(key));
+            return this;
+        }
+
 
         /// <summary>
         /// 设置瞬时
@@ -163,6 +181,8 @@ namespace Autofac.Annotation
                 //方法注册
                 RegisterMethods(component, registrar);
             }
+
+            DoAutofacConfiguration(builder);
         }
 
         /// <summary>
@@ -313,18 +333,12 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(registrar));
             }
 
-            if (component.AutoActivate != null)
+            if (!component.AutoActivate)
             {
-                if (component.AutoActivate.Value)
-                {
-                    registrar.AutoActivate();
-                    return;
-                }
-
                 return;
             }
 
-            if (component.AutofacScope == AutofacScope.SingleInstance) 
+            if (component.AutoActivate && component.AutofacScope == AutofacScope.SingleInstance) 
             {
                 //默认单例注册完成后自动装载
                 registrar.AutoActivate();
@@ -608,7 +622,7 @@ namespace Autofac.Annotation
         /// <exception cref="ArgumentNullException"></exception>
         private List<ComponentModel> GetAllComponent()
         {
-            if (_assemblyList == null || _assemblyList.Length < 1)
+            if (_assemblyList == null || _assemblyList.Count < 1)
             {
                 throw new ArgumentNullException(nameof(_assemblyList));
             }
@@ -639,6 +653,89 @@ namespace Autofac.Annotation
             }
 
             return result;
+        }
+
+        private void DoAutofacConfiguration(ContainerBuilder builder)
+        {
+            AutoConfigurationList list = new AutoConfigurationList
+            {
+                AutoConfigurationDetailList = new List<AutoConfigurationDetail>()
+            };
+            try
+            {
+                var allConfiguration = GetAllAutofacConfiguration();
+                if (!allConfiguration.Any()) return;
+                if (!string.IsNullOrEmpty(this.AutofacConfigurationKey))
+                {
+                    allConfiguration = allConfiguration.Where(r => r.Key.Equals(this.AutofacConfigurationKey)).ToList();
+                }
+
+                foreach (var configuration in allConfiguration)
+                {
+                    var beanTypeMethodList = configuration.Type.GetAllInstanceMethod(false);
+                    var bean = new AutoConfigurationDetail
+                    {
+                        AutoConfigurationClassType = configuration.Type,
+                        BeanMethodInfoList = new List<Tuple<Bean, MethodInfo>>()
+                    };
+                    foreach (var beanTypeMethod in beanTypeMethodList)
+                    {
+                        var beanAttribute = beanTypeMethod.GetCustomAttribute<Bean>();
+                        if (beanAttribute == null) continue;
+                        bean.BeanMethodInfoList.Add(new Tuple<Bean, MethodInfo>(beanAttribute,beanTypeMethod));
+                    }
+
+                    builder.RegisterType(configuration.Type).AsSelf().SingleInstance();//注册为单例模式
+                    list.AutoConfigurationDetailList.Add(bean);
+                }
+            }
+            finally
+            {
+                builder.RegisterInstance(list);
+            }
+           
+        }
+
+        /// <summary>
+        /// 解析程序集的AutofacConfiguration
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        private List<AutofacConfigurationInfo> GetAllAutofacConfiguration()
+        {
+            if (_assemblyList == null || _assemblyList.Count < 1)
+            {
+                throw new ArgumentNullException(nameof(_assemblyList));
+            }
+
+            var result = new List<AutofacConfigurationInfo>();
+            var assemblyList = _assemblyList.Distinct();
+            foreach (var assembly in assemblyList)
+            {
+                var types = assembly.GetExportedTypes();
+                //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
+                var typeList = (from type in types
+                    let bean = type.GetCustomAttribute<Anotation.AutoConfiguration>()
+                    where type.IsClass && !type.IsAbstract && bean != null
+                    select new
+                    {
+                        Type = type,
+                        Bean = bean
+                    }).ToList();
+
+                foreach (var configuration in typeList)
+                {
+                    result.Add(new AutofacConfigurationInfo
+                    {
+                        Type = configuration.Type,
+                        AutofacConfiguration = configuration.Bean,
+                        Key = configuration.Bean.Key,
+                        OrderIndex = configuration.Bean.OrderIndex
+                    });
+                }
+            }
+
+            return result.OrderByDescending(r=>r.OrderIndex).ToList();
         }
 
         /// <summary>

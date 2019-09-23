@@ -339,6 +339,15 @@ namespace Autofac.Annotation.Test
 
             var container = builder.Build();
 
+
+            //var builder1 = new ContainerBuilder();
+
+            //// autofac打标签模式
+            //builder1.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            //var container1 = builder1.Build();
+
+
             var a1 = container.Resolve<A25>();
             Assert.NotNull(a1);
             var aaa = a1.GetSchool();

@@ -21,10 +21,7 @@ namespace Autofac.Annotation
     /// </summary>
     public class AutofacAnnotationModule : Module
     {
-        /// <summary>
-        /// ComponentModel缓存
-        /// </summary>
-        internal static readonly ConcurrentDictionary<Type, ComponentModel> ComponentModelCache = new ConcurrentDictionary<Type, ComponentModel>();
+        
 
         private readonly List<Assembly> _assemblyList;
 
@@ -144,7 +141,7 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(builder));
             }
 
-            var componetList = GetAllComponent();
+            var componetList = GetAllComponent(builder);
 
             foreach (var component in componetList)
             {
@@ -538,7 +535,8 @@ namespace Autofac.Annotation
                 }
 
                 if (RealInstance == null) return;
-                if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
+                var componentModelCacheSingleton = e.Context.Resolve<ComponentModelCacheSingleton>();
+                if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
                 foreach (var field in model.ValueFieldInfoList)
                 {
                     var value = field.Item2.ResolveFiled(field.Item1, e.Context);
@@ -620,39 +618,49 @@ namespace Autofac.Annotation
         /// </summary>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        private List<ComponentModel> GetAllComponent()
+        private List<ComponentModel> GetAllComponent(ContainerBuilder builder)
         {
             if (_assemblyList == null || _assemblyList.Count < 1)
             {
                 throw new ArgumentNullException(nameof(_assemblyList));
             }
-
-            var result = new List<ComponentModel>();
-            var assemblyList = _assemblyList.Distinct();
-            foreach (var assembly in assemblyList)
+            ComponentModelCacheSingleton singleton = new ComponentModelCacheSingleton
             {
-                var types = assembly.GetExportedTypes();
-                //找到类型中含有 Component 标签的类 排除掉抽象类
-                var beanTypeList = (from type in types
-                                    let bean = type.GetCustomAttribute<Component>()
-                                    where type.IsClass && !type.IsAbstract && bean != null
-                                    select new
-                                    {
-                                        Type = type,
-                                        Bean = bean,
-                                        OrderIndex = bean.OrderIndex
-                                    }).ToList();
-
-                foreach (var bean in beanTypeList.OrderByDescending(r=>r.OrderIndex))
+                ComponentModelCache = new ConcurrentDictionary<Type, ComponentModel>()
+            };
+            try
+            {
+                var result = new List<ComponentModel>();
+                var assemblyList = _assemblyList.Distinct();
+                foreach (var assembly in assemblyList)
                 {
-                    var component = EnumerateComponentServices(bean.Bean, bean.Type);
-                    EnumerateMetaSourceAttributes(component);
-                    result.Add(component);
-                    ComponentModelCache[bean.Type] = component;
-                }
-            }
+                    var types = assembly.GetExportedTypes();
+                    //找到类型中含有 Component 标签的类 排除掉抽象类
+                    var beanTypeList = (from type in types
+                        let bean = type.GetCustomAttribute<Component>()
+                        where type.IsClass && !type.IsAbstract && bean != null
+                        select new
+                        {
+                            Type = type,
+                            Bean = bean,
+                            OrderIndex = bean.OrderIndex
+                        }).ToList();
 
-            return result;
+                    foreach (var bean in beanTypeList.OrderByDescending(r => r.OrderIndex))
+                    {
+                        var component = EnumerateComponentServices(bean.Bean, bean.Type);
+                        EnumerateMetaSourceAttributes(component);
+                        result.Add(component);
+                        singleton.ComponentModelCache[bean.Type] = component;
+                    }
+                }
+
+                return result;
+            }
+            finally
+            {
+                builder.RegisterInstance(singleton);
+            }
         }
 
         private void DoAutofacConfiguration(ContainerBuilder builder)
@@ -979,8 +987,8 @@ namespace Autofac.Annotation
             }
 
             if (RealInstance == null) return;
-            
-            if (!ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
+            var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
+            if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
             //字段注入
             foreach (var field in model.AutowiredFieldInfoList)
             {
@@ -1035,5 +1043,10 @@ namespace Autofac.Annotation
                 }
             }
         }
+    }
+
+    internal class ComponentModelCacheSingleton
+    {
+        public ConcurrentDictionary<Type, ComponentModel> ComponentModelCache  { get; set; }
     }
 }

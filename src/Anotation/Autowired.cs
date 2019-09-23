@@ -100,7 +100,10 @@ namespace Autofac.Annotation
             if (Parameters != null && Parameters.Count() == 1)
             {
                 // ReSharper disable once PossibleMultipleEnumeration
-                if (!(Parameters.First() is AutowiredParmeter AutowiredParmeter)) return null;
+                if (!(Parameters.First() is AutowiredParmeter AutowiredParmeter))
+                {
+                    return null;
+                }
                 // ReSharper disable once AssignNullToNotNullAttribute
                 if (AutowiredParmeter.TryGet(getAutowiredParmeterKey(property.FieldType), out var objectInstance))
                 {
@@ -164,7 +167,10 @@ namespace Autofac.Annotation
 
             if (Parameters != null && Parameters.Count() == 1)
             {
-                if (!(Parameters.First() is AutowiredParmeter AutowiredParmeter)) return null;
+                if (!(Parameters.First() is AutowiredParmeter AutowiredParmeter))
+                {
+                    return null;
+                }
                 // ReSharper disable once AssignNullToNotNullAttribute
                 if (AutowiredParmeter.TryGet(getAutowiredParmeterKey(property.PropertyType), out var objectInstance))
                 {

@@ -39,7 +39,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public override object ResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
-            return parameter == null ? null : Resolve(parameter.Member.DeclaringType, parameter.ParameterType, null, parameter);
+            return parameter == null ? null : Resolve(context,parameter.Member.DeclaringType, parameter.ParameterType, null, parameter);
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public object ResolveProperty(PropertyInfo parameter, IComponentContext context)
         {
-            return parameter == null ? null : Resolve(parameter.DeclaringType, parameter.PropertyType, parameter);
+            return parameter == null ? null : Resolve(context,parameter.DeclaringType, parameter.PropertyType, parameter);
         }
 
         /// <summary>
@@ -61,18 +61,19 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public object ResolveFiled(FieldInfo parameter, IComponentContext context)
         {
-            return parameter == null ? null : Resolve(parameter.DeclaringType, parameter.FieldType, parameter);
+            return parameter == null ? null : Resolve(context,parameter.DeclaringType, parameter.FieldType, parameter);
         }
 
         /// <summary>
         /// 对于memberInfo 或者  parameterInfo 进行设值
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="classType"></param>
         /// <param name="memberType"></param>
         /// <param name="memberInfo"></param>
         /// <param name="parameterInfo"></param>
         /// <returns></returns>
-        private object Resolve(Type classType, Type memberType, MemberInfo memberInfo, ParameterInfo parameterInfo = null)
+        private object Resolve(IComponentContext context,Type classType, Type memberType, MemberInfo memberInfo, ParameterInfo parameterInfo = null)
         {
             if (classType == null) return null;
             if (string.IsNullOrEmpty(this.value)) return null;
@@ -89,8 +90,9 @@ namespace Autofac.Annotation
                 else
                 {
                     var key = this.value.Substring(2, this.value.Length - 3)?.Trim();
-                    
-                    if (AutofacAnnotationModule.ComponentModelCache.TryGetValue(classType, out var component))
+
+                    var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
+                    if (componentModelCacheSingleton.ComponentModelCache.TryGetValue(classType, out ComponentModel component))
                     {
                         foreach (var metaSource in component.MetaSourceList)
                         {

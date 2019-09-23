@@ -79,8 +79,29 @@ namespace Autofac.Annotation
             var activator = new ProvidedInstanceActivator(instance);
             var instanceType = instance.GetType();
             var rb = RegistrationBuilder.ForDelegate(instanceType, ((context, parameters) => instance ));
-            if (!string.IsNullOrEmpty(key)) rb.Keyed(key, instanceType);
-            if(returnType!=instanceType) rb.As(returnType);
+            if (returnType != instanceType)
+            {
+                if (!string.IsNullOrEmpty(key))
+                {
+                    rb.Keyed(key, returnType);
+                }
+                else
+                {
+                    rb.As(returnType);
+                }
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(key))
+                {
+                    rb.Keyed(key, instanceType);
+                }
+                else
+                {
+                    rb.As(instanceType);
+                }
+            }
+            
             rb.SingleInstance();
             if (!(rb.RegistrationData.Lifetime is RootScopeLifetime) ||
                 rb.RegistrationData.Sharing != InstanceSharing.Shared)

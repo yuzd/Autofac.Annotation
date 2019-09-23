@@ -44,5 +44,21 @@ namespace Autofac.Configuration.Test.test3
                 Name = "getTest5"
             };
         }
+        [Bean(nameof(getTest61))]
+        private ITestModel5 getTest61()
+        {
+            return new TestModel5
+            {
+                Name = "getTest61"
+            };
+        }
+        [Bean(nameof(getTest62))]
+        private ITestModel5 getTest62()
+        {
+            return new TestModel5
+            {
+                Name = "getTest62"
+            };
+        }
     }
 }

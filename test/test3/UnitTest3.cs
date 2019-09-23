@@ -59,5 +59,22 @@ namespace Autofac.Configuration.Test.test3
             Assert.NotEqual(a1, a12);
 
         }
+
+        [Fact]
+        public void Test_Type_04()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest3).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.ResolveKeyed<ITestModel5>("getTest61");
+            var a12 = container.ResolveKeyed<ITestModel5>("getTest62");
+            Assert.Equal("getTest61", a1.Name);
+            Assert.Equal("getTest62", a12.Name);
+
+        }
     }
 }

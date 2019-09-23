@@ -21,4 +21,15 @@ namespace Autofac.Configuration.Test.test3
     public class TestModel4: TestModel4Parent
     {
     }
+
+
+    public interface ITestModel5
+    {
+        string Name { get; set; }
+    }
+
+    public class TestModel5 : ITestModel5
+    {
+        public string Name { get; set; } = "TestModel4Parent";
+    }
 }

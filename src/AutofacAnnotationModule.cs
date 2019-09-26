@@ -780,20 +780,24 @@ namespace Autofac.Annotation
 
             var re = new List<ComponentServiceModel>();
 
-            //if (currentType.Name.Contains("A23"))
-            //{
-
-            //}
-
             if (bean.Service == null)
             {
                 //接口自动注册 父类自动注册
                 var typeInterfaces = currentType.GetParentTypes();
                 foreach (var iInterface in typeInterfaces)
                 {
-                    if(iInterface.IsValueType || iInterface.IsEnum || iInterface == typeof(object) || iInterface.IsGenericEnumerableInterfaceType() || !ProxyUtil.IsAccessible(iInterface)) continue;
+                    
+                    if (iInterface.IsValueType || iInterface.IsEnum || iInterface == typeof(object) || iInterface.IsGenericEnumerableInterfaceType() || !ProxyUtil.IsAccessible(iInterface)) continue;
                     if (bean.Services == null || !bean.Services.Contains(iInterface))
                     {
+                        if (bean.Interceptor!=null)
+                        {
+                            //有配置接口拦截器 但是当前不是注册成接口
+                            if(bean.InterceptorType == InterceptorType.Interface && !iInterface.IsInterface) continue;
+                            //有配置class拦截器 但是当前不是注册成class
+                            if (bean.InterceptorType == InterceptorType.Class && !iInterface.IsClass) continue;
+                        }
+
                         //如果父类直接是接口 也没有特别指定 Service 或者 Services集合
                         re.Add(new ComponentServiceModel
                         {

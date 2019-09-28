@@ -12,6 +12,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Autofac.Annotation.Anotation;
+using Autofac.Annotation.Intercepter.Aspect;
+using Autofac.Aspect;
 
 namespace Autofac.Annotation
 {
@@ -281,7 +283,12 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(registrar));
             }
 
-            if (component.Interceptor != null)
+            var aspAttribute = component.CurrentType.GetCustomAttribute<AspectAttribute>();
+            if (aspAttribute != null && component.Interceptor != null)
+            {
+                throw new InvalidOperationException($"'{component.CurrentType.FullName}' can not interceptor by both AspectAttribute:'{aspAttribute.GetType().FullName}' and Interceptor:'{component.Interceptor.FullName}' ");
+            }
+            else if (component.Interceptor != null)
             {
                 //配置拦截器
                 switch (component.InterceptorType)
@@ -305,6 +312,11 @@ namespace Autofac.Annotation
                         registrar.EnableClassInterceptors().InterceptedBy(component.Interceptor);
                         return;
                 }
+            }
+            else if (aspAttribute!=null)
+            {
+                //有配置方法的拦截器
+                registrar.EnableClassInterceptors().InterceptedBy(typeof(AopIntercept));
             }
             else
             {

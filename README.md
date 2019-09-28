@@ -20,7 +20,7 @@ AutofacAnnotationModule有两种构造方法
 1. 可以传一个Assebly列表 （这种方式会注册传入的Assebly里面打了标签的类）
 2. 可以传一个AsseblyName列表 (这种方式是先会根据AsseblyName查找Assebly 然后在注册)
 
-## Supported Attributes [支持的标签说明【AutoConfiguration】【Bean】【Component】【Value】【PropertySource】【Autowired】]
+## Supported Attributes [支持的标签说明【AutoConfiguration】【Bean】【Component】【Value】【PropertySource】【Autowired】【Aspect】]
 ### Component标签
 说明：只能打在class上面(且不能是抽象class) 把某个类注册到autofac容器
 例如：
@@ -271,7 +271,92 @@ Bean标签的其他属性：
 * Key 也可以通过Key属性设置
 比如有多个方法返回的类型相同 可以设置Key来区分
 
+# Aspect拦截器
 
+```csharp
+
+    [Component] //注册到容器
+    [Aspect]//开启AOP拦截器
+    public class TestModel
+    {
+
+        [TestHelloBefor]//参考下面的类 这是一个前置拦截器
+        public virtual void Say()
+        {
+            Console.WriteLine("say");
+        }
+
+        [TestHelloAfter]//参考下面的类，这是一个后置拦截器
+        public virtual void SayAfter()
+        {
+            Console.WriteLine("SayAfter");
+        }
+
+        [TestHelloArround]//参考下面的类，这是一个环绕拦截器
+        public virtual void SayArround()
+        {
+            Console.WriteLine("SayArround");
+        }
+    }
+    
+    //定义一个前置拦截器
+    public class TestHelloBefor : AspectBeforeAttribute
+    {
+        public override Task Before(IInvocation invocation)
+        {
+            Console.WriteLine("TestHelloBefor");
+            return Task.CompletedTask;
+        }
+    }
+    
+    //定义一个后置拦截器
+    public class TestHelloAfter : AspectAfterAttribute
+    {
+
+        public override Task After(IInvocation invocation, Exception exp)
+        {
+            if(exp!=null) Console.WriteLine(exp.Message);
+            Console.WriteLine("TestHelloAfter");
+            return Task.CompletedTask;
+        }
+    }
+
+    //定义一个环绕拦截器
+    public class TestHelloArround : AspectAroundAttribute
+    {
+
+        public override Task After(IInvocation invocation, Exception exp)
+        {
+            if (exp != null) Console.WriteLine(exp.Message);
+            Console.WriteLine("TestHelloArround");
+            return Task.CompletedTask;
+        }
+
+        public override Task Before(IInvocation invocation)
+        {
+            Console.WriteLine("TestHelloArround.Before");
+            return Task.CompletedTask;
+        }
+    }
+    
+    //测试代码
+     public void Test_Type_08()
+     {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(TestModel).Assembly));
+
+            var container = builder.Build();
+
+            var a12 = container.Resolve<TestModel>();
+
+            a12.Say();
+            a12.SayAfter();
+            a12.SayArround();
+
+    }
+```
 
 # AutofacAnnotation标签模式和autofac写代码性能测试对比
 ```csharp

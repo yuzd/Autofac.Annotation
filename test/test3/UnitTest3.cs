@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Autofac.Annotation;
 using Autofac.Configuration.Test.test2;
 using Xunit;
@@ -131,5 +132,91 @@ namespace Autofac.Configuration.Test.test3
             Assert.NotNull(a12.TestModel81.TestModel8);
 
         }
+
+        [Fact]
+        public void Test_Type_08()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest3).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+
+            var a12 = container.Resolve<TestModel9>();
+
+            a12.Say();
+            a12.SayAfter();
+            a12.SayArround();
+
+        }
+
+
+        [Fact]
+        public void Test_Type_09()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest3).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+
+            var a12 = container.Resolve<TestModel911>();
+
+            Assert.Throws<Exception>(() => a12.Say());
+            Assert.Throws<Exception>(() => a12.SayAfter());
+            Assert.Throws<Exception>(() => a12.SayArround());
+
+        }
+
+        [Fact]
+        public async Task Test_Type_10()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest3).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+
+            var a12 = container.Resolve<TestModel91>();
+
+            await a12.Say();
+            await a12.SayAfter();
+            await a12.SayArround();
+
+        }
+
+        [Fact]
+        public async Task Test_Type_11()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest3).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+
+            var a12 = container.Resolve<TestModel912>();
+
+            await Assert.ThrowsAsync<Exception>(  () =>  a12.Say());
+            await Assert.ThrowsAsync<Exception>(  () =>  a12.SayAfter());
+            await Assert.ThrowsAsync<Exception>(  () =>  a12.SayArround());
+            
+
+        }
+
+        //[Fact]
+        //public void Test_Type_12()
+        //{
+        //    var builder = new ContainerBuilder();
+
+        //    // autofac打标签模式
+        //    builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest3).Assembly).SetAllowCircularDependencies(true));
+        //    builder.Build();
+        //    //Assert.Throws<InvalidOperationException>(() => );
+
+        //}
     }
 }

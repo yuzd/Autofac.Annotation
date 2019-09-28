@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Autofac.Annotation;
 using Autofac.Annotation.Test;
+using Autofac.Aspect;
+using Castle.DynamicProxy;
 
 namespace Autofac.Configuration.Test.test3
 {
@@ -102,4 +105,175 @@ namespace Autofac.Configuration.Test.test3
         public TestModel8 TestModel8 { get; set; }
     }
 
+    [Component]
+    [Aspect]
+    public class TestModel9
+    {
+
+        [TestHelloBefor]
+        public virtual void Say()
+        {
+            Console.WriteLine("say");
+        }
+
+        [TestHelloAfter]
+        public virtual void SayAfter()
+        {
+            Console.WriteLine("SayAfter");
+        }
+
+        [TestHelloArround]
+        public virtual void SayArround()
+        {
+            Console.WriteLine("SayArround");
+        }
+    }
+
+    [Component]
+    [Aspect]
+    public class TestModel911
+    {
+
+        [TestHelloBefor]
+        public virtual void Say()
+        {
+            Console.WriteLine("say");
+            throw new Exception("ddd");
+        }
+
+        [TestHelloAfter]
+        public virtual void SayAfter()
+        {
+            Console.WriteLine("SayAfter");
+            throw new Exception("ddd");
+        }
+
+        [TestHelloArround]
+        public virtual void SayArround()
+        {
+            Console.WriteLine("SayArround");
+            throw new Exception("ddd");
+        }
+    }
+    public class TestHelloBefor : AspectBeforeAttribute
+    {
+        public override Task Before(IInvocation invocation)
+        {
+            Console.WriteLine("TestHelloBefor");
+            return Task.CompletedTask;
+        }
+    }
+
+    public class TestHelloAfter : AspectAfterAttribute
+    {
+
+        public override Task After(IInvocation invocation, Exception exp)
+        {
+            if(exp!=null) Console.WriteLine(exp.Message);
+            Console.WriteLine("TestHelloAfter");
+            return Task.CompletedTask;
+        }
+    }
+
+
+    public class TestHelloArround : AspectAroundAttribute
+    {
+
+        public override Task After(IInvocation invocation, Exception exp)
+        {
+            if (exp != null) Console.WriteLine(exp.Message);
+            Console.WriteLine("TestHelloArround");
+            return Task.CompletedTask;
+        }
+
+        public override Task Before(IInvocation invocation)
+        {
+            Console.WriteLine("TestHelloArround.Before");
+            return Task.CompletedTask;
+        }
+    }
+    [Component]
+    [Aspect]
+    public class TestModel91
+    {
+
+        [TestHelloBefor]
+        public virtual async Task Say()
+        {
+            Console.WriteLine("say");
+            await Task.Delay(1000);
+        }
+
+        [TestHelloAfter]
+        public virtual async Task<string> SayAfter()
+        {
+            Console.WriteLine("SayAfter");
+            await Task.Delay(1000);
+            return "SayAfter";
+        }
+
+        [TestHelloArround]
+        public virtual async Task<string> SayArround()
+        {
+            Console.WriteLine("SayArround");
+            await Task.Delay(1000);
+            return "SayArround";
+        }
+    }
+
+    [Component]
+    [Aspect]
+    public class TestModel912
+    {
+
+        [TestHelloBefor]
+        public virtual async Task Say()
+        {
+            Console.WriteLine("say");
+            await Task.Delay(1000);
+            throw new Exception("ddd");
+        }
+
+        [TestHelloAfter]
+        public virtual async Task<string> SayAfter()
+        {
+            Console.WriteLine("SayAfter");
+            await Task.Delay(1000);
+            throw new Exception("ddd");
+            return "SayAfter";
+        }
+
+        [TestHelloArround]
+        public virtual async Task<string> SayArround()
+        {
+            Console.WriteLine("SayArround");
+            await Task.Delay(1000);
+            throw new Exception("ddd");
+            return "SayArround";
+        }
+    }
+
+    //[Component(Interceptor = typeof(Log))]
+    [Aspect]
+    public class TestModel10
+    {
+
+        [TestHelloBefor]
+        public virtual void Say()
+        {
+            Console.WriteLine("say");
+        }
+
+        [TestHelloAfter]
+        public virtual void SayAfter()
+        {
+            Console.WriteLine("SayAfter");
+        }
+
+        [TestHelloArround]
+        public virtual void SayArround()
+        {
+            Console.WriteLine("SayArround");
+        }
+    }
 }

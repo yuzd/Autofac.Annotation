@@ -10,9 +10,9 @@
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <PackageId>Autofac.Annotation</PackageId>
-    <PackageTags>autofac spring</PackageTags>
+    <PackageTags>autofac spring aspect</PackageTags>
     <PackageReleaseNotes>autofac spring 
-【AutoConfiguration】【Bean】【Component】【Value】【PropertySource】</PackageReleaseNotes>
+【AutoConfiguration】【Bean】【Component】【Value】【PropertySource】【Aspect】</PackageReleaseNotes>
     <PackageIconUrl></PackageIconUrl>
     <PackageProjectUrl>https://github.com/yuzd/Autofac.Annotation</PackageProjectUrl>
     <PackageLicenseUrl></PackageLicenseUrl>
@@ -29,8 +29,9 @@
     <RootNamespace>Autofac.Annotation</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Version>2.0.2</Version>
-    <AssemblyVersion>2.0.2.0</AssemblyVersion>
+    <Version>2.0.3</Version>
+    <AssemblyVersion>2.0.3.0</AssemblyVersion>
+    <Authors>zdyu</Authors>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">

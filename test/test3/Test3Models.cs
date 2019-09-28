@@ -57,4 +57,49 @@ namespace Autofac.Configuration.Test.test3
             Console.WriteLine(nameof(TestModel61.Hello));
         }
     }
+
+    [Component]
+    public class TestModel7
+    {
+        [Autowired]
+        public TestModel71 TestModel71 { get; set; }
+    }
+
+    [Component]
+    public class TestModel71
+    {
+        [Autowired]
+        public TestModel7 TestModel7 { get; set; }
+    }
+
+
+    [Component]
+    public class TestModel8
+    {
+
+        public TestModel8([Autowired]ITestModel6 _TestModel81)
+        {
+            TestModel6 = _TestModel81;
+        }
+
+        public ITestModel6 TestModel6 { get; set; }
+
+        [Autowired]
+        public TestModel81 TestModel81 { get; set; }
+    }
+
+    [Component]
+    public class TestModel81
+    {
+        public TestModel81([Autowired]ITestModel6 _TestModel8)
+        {
+            TestModel6 = _TestModel8;
+        }
+
+        public ITestModel6 TestModel6 { get; set; }
+
+        [Autowired]
+        public TestModel8 TestModel8 { get; set; }
+    }
+
 }

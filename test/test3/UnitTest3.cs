@@ -94,5 +94,42 @@ namespace Autofac.Configuration.Test.test3
             a12.Hello("test");
             
         }
+
+
+        [Fact]
+        public void Test_Type_06()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest3).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+
+            var a12 = container.Resolve<TestModel7>();
+            
+            Assert.NotNull(a12);
+            Assert.NotNull(a12.TestModel71);
+            Assert.NotNull(a12.TestModel71.TestModel7);
+
+        }
+
+        [Fact]
+        public void Test_Type_07()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest3).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+
+            var a12 = container.Resolve<TestModel8>();
+
+            Assert.NotNull(a12);
+            Assert.NotNull(a12.TestModel6);
+            Assert.NotNull(a12.TestModel81.TestModel8);
+
+        }
     }
 }

@@ -37,16 +37,18 @@ namespace Autofac.Aspect
         /// <summary>
         /// 后置执行
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="invocation"></param>
         /// <param name="exp"></param>
-        public abstract Task After(IInvocation invocation, Exception exp);
+        public abstract Task After(IComponentContext context, IInvocation invocation, Exception exp);
 
 
         /// <summary>
         /// 前置执行
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="invocation"></param>
-        public abstract Task Before(IInvocation invocation);
+        public abstract Task Before(IComponentContext context,IInvocation invocation);
 
     }
 
@@ -61,8 +63,9 @@ namespace Autofac.Aspect
         /// <summary>
         /// 前置执行
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="invocation"></param>
-        public abstract Task Before(IInvocation invocation);
+        public abstract Task Before(IComponentContext context, IInvocation invocation);
 
     }
 
@@ -77,9 +80,10 @@ namespace Autofac.Aspect
         /// <summary>
         /// 后置执行
         /// </summary>
+        /// <param name="context"></param>
         /// <param name="invocation"></param>
         /// <param name="exp"></param>
-        public abstract Task After(IInvocation invocation, Exception exp);
+        public abstract Task After(IComponentContext context, IInvocation invocation, Exception exp);
 
     }
 

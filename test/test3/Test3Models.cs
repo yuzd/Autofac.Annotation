@@ -157,8 +157,9 @@ namespace Autofac.Configuration.Test.test3
     }
     public class TestHelloBefor : AspectBeforeAttribute
     {
-        public override Task Before(IInvocation invocation)
+        public override Task Before(IComponentContext context, IInvocation invocation)
         {
+            var aa1 = context.Resolve<TestModel81>();
             Console.WriteLine("TestHelloBefor");
             return Task.CompletedTask;
         }
@@ -167,7 +168,7 @@ namespace Autofac.Configuration.Test.test3
     public class TestHelloAfter : AspectAfterAttribute
     {
 
-        public override Task After(IInvocation invocation, Exception exp)
+        public override Task After(IComponentContext context, IInvocation invocation, Exception exp)
         {
             if(exp!=null) Console.WriteLine(exp.Message);
             Console.WriteLine("TestHelloAfter");
@@ -179,14 +180,14 @@ namespace Autofac.Configuration.Test.test3
     public class TestHelloArround : AspectAroundAttribute
     {
 
-        public override Task After(IInvocation invocation, Exception exp)
+        public override Task After(IComponentContext context, IInvocation invocation, Exception exp)
         {
             if (exp != null) Console.WriteLine(exp.Message);
             Console.WriteLine("TestHelloArround");
             return Task.CompletedTask;
         }
 
-        public override Task Before(IInvocation invocation)
+        public override Task Before(IComponentContext context, IInvocation invocation)
         {
             Console.WriteLine("TestHelloArround.Before");
             return Task.CompletedTask;

@@ -14,6 +14,14 @@ namespace Autofac.Annotation.Intercepter.Aspect
     [Component(typeof(AopIntercept))]
     public class AopIntercept : AsyncInterceptor
     {
+        private readonly IComponentContext _component;
+        /// <summary>
+        /// 构造方法
+        /// </summary>
+        public AopIntercept(IComponentContext context)
+        {
+            _component = context;
+        }
         /// <summary>
         /// 拦截器
         /// </summary>
@@ -26,11 +34,11 @@ namespace Autofac.Annotation.Intercepter.Aspect
             {
                 if (attribute is AspectAroundAttribute aspectAroundAttribute)
                 {
-                    await aspectAroundAttribute.Before(invocation);
+                    await aspectAroundAttribute.Before(_component,invocation);
                 }
                 else  if (attribute is AspectBeforeAttribute aspectBeforeAttribute)
                 {
-                    await aspectBeforeAttribute.Before(invocation);
+                    await aspectBeforeAttribute.Before(_component, invocation);
                 }
             }
 
@@ -43,11 +51,11 @@ namespace Autofac.Annotation.Intercepter.Aspect
             {
                 if (attribute is AspectAroundAttribute aspectAroundAttribute)
                 {
-                    await aspectAroundAttribute.After(invocation, exp);
+                    await aspectAroundAttribute.After(_component, invocation, exp);
                 }
                 else if (attribute is AspectAfterAttribute aspectAfterAttribute)
                 {
-                    await aspectAfterAttribute.After(invocation, exp);
+                    await aspectAfterAttribute.After(_component, invocation, exp);
                 }
             }
         }

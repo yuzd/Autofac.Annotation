@@ -87,4 +87,33 @@ namespace Autofac.Aspect
 
     }
 
+    /// <summary>
+    /// 切入点拦截器
+    /// </summary>
+    public abstract class PointcutAttribute : AspectMethodAttribute
+    {
+
+        /// <summary>
+        /// 没有返回值的拦截器
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="invocation"></param>
+        /// <param name="proceed"></param>
+        public abstract Task InterceptAsync(IComponentContext context, IInvocation invocation,
+            Func<IInvocation, Task> proceed);
+
+
+        /// <summary>
+        /// 有返回值的拦截器
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="context"></param>
+        /// <param name="invocation"></param>
+        /// <param name="proceed"></param>
+        /// <returns></returns>
+        public abstract Task<TResult> InterceptAsync<TResult>(IComponentContext context, IInvocation invocation,
+            Func<IInvocation, Task<TResult>> proceed);
+
+    }
+
 }

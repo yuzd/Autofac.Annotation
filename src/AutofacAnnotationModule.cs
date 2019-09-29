@@ -12,7 +12,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Autofac.Annotation.Anotation;
-using Autofac.Annotation.Intercepter.Aspect;
 using Autofac.Aspect;
 
 namespace Autofac.Annotation

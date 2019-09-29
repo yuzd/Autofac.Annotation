@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Autofac.Annotation;
 using Autofac.Aspect;
 using Castle.DynamicProxy;
 
-namespace Autofac.Annotation.Intercepter.Aspect
+namespace Autofac.Aspect
 {
     /// <summary>
     /// AOP拦截器
@@ -26,42 +27,44 @@ namespace Autofac.Annotation.Intercepter.Aspect
         /// 拦截器
         /// </summary>
         /// <param name="invocation"></param>
-        private async Task<List<object>> BeforeInterceptAttribute(IInvocation invocation)
+        private async Task<Tuple<PointcutAttribute, List<object>>> BeforeInterceptAttribute(IInvocation invocation)
         {
             var Attributes = invocation.MethodInvocationTarget.GetCustomAttributes(true).ToList();
 
             foreach (var attribute in Attributes)
             {
-                if (attribute is AspectAroundAttribute aspectAroundAttribute)
+                switch (attribute)
                 {
-                    await aspectAroundAttribute.Before(_component,invocation);
-                }
-                else  if (attribute is AspectBeforeAttribute aspectBeforeAttribute)
-                {
-                    await aspectBeforeAttribute.Before(_component, invocation);
+                    case AspectAroundAttribute aspectAroundAttribute:
+                        await aspectAroundAttribute.Before(_component, invocation);
+                        break;
+                    case AspectBeforeAttribute aspectBeforeAttribute:
+                        await aspectBeforeAttribute.Before(_component, invocation);
+                        break;
                 }
             }
 
-            return Attributes;
+            return new Tuple<PointcutAttribute, List<object>>(Attributes.FirstOrDefault(r => r is PointcutAttribute) as PointcutAttribute, Attributes);
         }
 
         private async Task AfterInterceptAttribute(List<object> Attributes, IInvocation invocation, Exception exp)
         {
             foreach (var attribute in Attributes)
             {
-                if (attribute is AspectAroundAttribute aspectAroundAttribute)
+                switch (attribute)
                 {
-                    await aspectAroundAttribute.After(_component, invocation, exp);
-                }
-                else if (attribute is AspectAfterAttribute aspectAfterAttribute)
-                {
-                    await aspectAfterAttribute.After(_component, invocation, exp);
+                    case AspectAroundAttribute aspectAroundAttribute:
+                        await aspectAroundAttribute.After(_component, invocation, exp);
+                        break;
+                    case AspectAfterAttribute aspectAfterAttribute:
+                        await aspectAfterAttribute.After(_component, invocation, exp);
+                        break;
                 }
             }
         }
 
         /// <summary>
-        /// 
+        /// 无返回值拦截器
         /// </summary>
         /// <param name="invocation"></param>
         /// <param name="proceed"></param>
@@ -71,18 +74,25 @@ namespace Autofac.Annotation.Intercepter.Aspect
             var attribute = await BeforeInterceptAttribute(invocation);
             try
             {
-                await proceed(invocation);
-                await AfterInterceptAttribute(attribute, invocation, null);
+                if (attribute.Item1 == null)
+                {
+                    await proceed(invocation);
+                }
+                else
+                {
+                    await attribute.Item1.InterceptAsync(_component, invocation, proceed);
+                }
+                await AfterInterceptAttribute(attribute.Item2, invocation, null);
             }
             catch (Exception e)
             {
-                await AfterInterceptAttribute(attribute, invocation, e);
+                await AfterInterceptAttribute(attribute.Item2, invocation, e);
                 throw;
             }
         }
 
         /// <summary>
-        /// 
+        /// 有返回值拦截器
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="invocation"></param>
@@ -94,13 +104,22 @@ namespace Autofac.Annotation.Intercepter.Aspect
 
             try
             {
-                var r = await proceed(invocation);
-                await AfterInterceptAttribute(attribute, invocation, null);
+                TResult r;
+                if (attribute.Item1 == null)
+                {
+                    r = await proceed(invocation);
+                }
+                else
+                {
+                    r = await attribute.Item1.InterceptAsync<TResult>(_component, invocation, proceed);
+                }
+                
+                await AfterInterceptAttribute(attribute.Item2, invocation, null);
                 return r;
             }
             catch (Exception e)
             {
-                await AfterInterceptAttribute(attribute, invocation, e);
+                await AfterInterceptAttribute(attribute.Item2, invocation, e);
                 throw;
             }
         }

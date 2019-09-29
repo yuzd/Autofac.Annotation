@@ -314,8 +314,15 @@ namespace Autofac.Annotation
             }
             else if (aspAttribute!=null)
             {
-                //有配置方法的拦截器
-                registrar.EnableClassInterceptors().InterceptedBy(typeof(AopIntercept));
+                if (aspAttribute.AspectType == InterceptorType.Class)
+                {
+                    //有配置方法的拦截器
+                    registrar.EnableClassInterceptors().InterceptedBy(typeof(AopIntercept));
+                }
+                else
+                {
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AopIntercept));
+                }
             }
             else
             {

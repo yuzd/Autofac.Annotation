@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Autofac.Annotation;
 using Castle.DynamicProxy;
 
 namespace Autofac.Aspect
@@ -17,6 +18,7 @@ namespace Autofac.Aspect
 
 
     }
+
     /// <summary>
     /// 开启AOP拦截器
     /// 配合 AspectAroundAttribute  AspectBeforeAttribute AspectAfterAttribute 使用
@@ -24,8 +26,27 @@ namespace Autofac.Aspect
     [AttributeUsage(AttributeTargets.Class)]
     public class AspectAttribute : Attribute
     {
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public AspectAttribute()
+        {
+            
+        }
 
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="type"></param>
+        public AspectAttribute(InterceptorType type)
+        {
+            AspectType = type;
+        }
 
+        /// <summary>
+        /// 拦截器类型 默认是当前class的拦截器
+        /// </summary>
+        public InterceptorType AspectType { get; set; } = InterceptorType.Class;
     }
     /// <summary>
     /// AOP环绕拦截器

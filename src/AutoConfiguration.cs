@@ -45,11 +45,6 @@ namespace Autofac.Annotation
                                 $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` can not be virtual!");
                         }
 
-                        if (beanMethod.Item2.GetParameters().Length != 0)
-                        {
-                            throw new InvalidOperationException(
-                                $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` can only none parameters!");
-                        }
                         if (!ProxyUtil.IsAccessible(beanMethod.Item2.ReturnType))
                         {
                             throw new InvalidOperationException(
@@ -61,7 +56,7 @@ namespace Autofac.Annotation
                                 $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` returnType is invalid!");
                         }
 
-                        var result = beanMethod.Item2.Invoke(autoConfigurationInstance, null);
+                        var result = AutoConfigurationHelper.InvokeInstanceMethod(context, autoConfigurationDetail, autoConfigurationInstance, beanMethod.Item2);
                         if (result == null) continue;
                         context.ComponentRegistry.Register(AutoConfigurationHelper.RegisterInstance(context.ComponentRegistry, beanMethod.Item2.ReturnType, result, beanMethod.Item1.Key).CreateRegistration());
                     }
@@ -74,6 +69,73 @@ namespace Autofac.Annotation
 
     internal static class AutoConfigurationHelper
     {
+        public static object InvokeInstanceMethod(IComponentContext context, AutoConfigurationDetail autoConfigurationDetail, object autoConfigurationInstance, MethodInfo methodInfo)
+        {
+            try
+            {
+                var parameters = methodInfo.GetParameters();
+                if (parameters.Length == 0)
+                {
+                    return methodInfo.Invoke(autoConfigurationInstance, null);
+                }
+
+                //自动类型注入
+
+                List<object> parameterObj = new List<object>();
+                foreach (var parameter in parameters)
+                {
+                    var autowired = parameter.GetCustomAttribute<Autowired>();
+                    if (autowired != null)
+                    {
+                        parameterObj.Add(autowired.ResolveParameter(parameter, context));
+                        continue;
+                    }
+
+                    var value = parameter.GetCustomAttribute<Value>();
+                    if (value != null)
+                    {
+                        parameterObj.Add(value.ResolveParameterWithConfiguration(autoConfigurationDetail,parameter, context));
+                        continue;
+                    }
+
+                    if (parameter.HasDefaultValue)
+                    {
+                        parameterObj.Add(parameter.RawDefaultValue);
+                        continue;
+                    }
+
+                    if (parameter.IsOptional)
+                    {
+                        parameterObj.Add(Type.Missing);
+                        continue;
+                    }
+
+                    if (parameter.IsOut)
+                    {
+                        parameterObj.Add(Type.Missing);
+                        continue;
+                    }
+
+                    if (parameter.ParameterType.IsValueType || parameter.ParameterType.IsEnum)
+                    {
+                        parameterObj.Add(parameter.RawDefaultValue);
+                        continue;
+                    }
+
+
+                    parameterObj.Add(context.Resolve(parameter.ParameterType));
+
+                }
+
+                return methodInfo.Invoke(autoConfigurationInstance, parameterObj.ToArray());
+
+            }
+            catch (Exception e)
+            {
+                throw new InvalidOperationException($"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{methodInfo.Name}` invoke fail!", e);
+            }
+
+        }
 
         public static IRegistrationBuilder<object, SimpleActivatorData, SingleRegistrationStyle> RegisterInstance(IComponentRegistry cr, Type returnType, object instance, string key)
         {
@@ -147,6 +209,12 @@ namespace Autofac.Annotation
         /// Configuration 所在的类的里面有Bean标签的所有方法
         /// </summary>
         public List<Tuple<Bean, MethodInfo>> BeanMethodInfoList { get; set; }
+
+
+        /// <summary>
+        /// 数据源
+        /// </summary>
+        public List<MetaSourceData> MetaSourceDataList { get; set; }
 
     }
 }

@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Autofac.Annotation;
 using Autofac.Annotation.Anotation;
 
 namespace Autofac.Configuration.Test.test3
 {
 
-    [AutoConfiguration]
+    [Annotation.Anotation.AutoConfiguration]
     public class TestConfiguration
     {
         [Bean]
@@ -58,6 +59,16 @@ namespace Autofac.Configuration.Test.test3
             return new TestModel5
             {
                 Name = "getTest62"
+            };
+        }
+
+
+        [Bean]
+        private TestModel88 getTest7(TestModel99 testModel99,[Value("#{a9}")] string test)
+        {
+            return new TestModel88
+            {
+                Name = testModel99.Name + test
             };
         }
     }

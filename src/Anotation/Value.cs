@@ -3,6 +3,7 @@ using Autofac.Annotation.Util;
 using Autofac.Features.AttributeFilters;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Autofac.Core;
@@ -43,6 +44,18 @@ namespace Autofac.Annotation
         }
 
         /// <summary>
+        /// AutoConfiguration类的value注入
+        /// </summary>
+        /// <param name="detail"></param>
+        /// <param name="parameter"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        internal object ResolveParameterWithConfiguration(AutoConfigurationDetail detail, ParameterInfo parameter, IComponentContext context)
+        {
+            return Resolve(context, parameter.Member.DeclaringType, parameter.ParameterType, null, parameter, detail);
+        }
+
+        /// <summary>
         /// 注入Property的值
         /// </summary>
         /// <param name="parameter"></param>
@@ -72,8 +85,9 @@ namespace Autofac.Annotation
         /// <param name="memberType"></param>
         /// <param name="memberInfo"></param>
         /// <param name="parameterInfo"></param>
+        /// <param name="autoConfigurationDetail"></param>
         /// <returns></returns>
-        private object Resolve(IComponentContext context,Type classType, Type memberType, MemberInfo memberInfo, ParameterInfo parameterInfo = null)
+        private object Resolve(IComponentContext context,Type classType, Type memberType, MemberInfo memberInfo, ParameterInfo parameterInfo = null, AutoConfigurationDetail autoConfigurationDetail = null)
         {
             if (classType == null) return null;
             if (string.IsNullOrEmpty(this.value)) return null;
@@ -90,30 +104,41 @@ namespace Autofac.Annotation
                 else
                 {
                     var key = this.value.Substring(2, this.value.Length - 3)?.Trim();
-
-                    var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
-                    if (componentModelCacheSingleton.ComponentModelCache.TryGetValue(classType, out ComponentModel component))
+                    List<MetaSourceData> MetaSourceList;
+                    if (autoConfigurationDetail != null)
                     {
-                        foreach (var metaSource in component.MetaSourceList)
+                        MetaSourceList = autoConfigurationDetail.MetaSourceDataList;
+                    }
+                    else
+                    {
+                        var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
+                        if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(classType, out var component))
                         {
-                            if (metaSource.Configuration == null)
-                            {
-                                continue;
-                            }
-                            IConfigurationSection metData = metaSource.Configuration.GetSection(key);
-                            var parameterValue = ConfigurationUtil.GetConfiguredParameterValue(metData);
-
-                            if (parameterValue == null)
-                            {
-                                //表示key不存在 从下一个source里面去寻找
-                                continue;
-                            }
-
-                            var parseValue = parameterInfo == null
-                                ? TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, memberInfo)
-                                : TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, parameterInfo);
-                            return parseValue;
+                            return null;
                         }
+                        MetaSourceList = component.MetaSourceList;
+                    }
+
+                    if (MetaSourceList == null) return null;
+                    foreach (var metaSource in MetaSourceList)
+                    {
+                        if (metaSource.Configuration == null)
+                        {
+                            continue;
+                        }
+                        IConfigurationSection metData = metaSource.Configuration.GetSection(key);
+                        var parameterValue = ConfigurationUtil.GetConfiguredParameterValue(metData);
+
+                        if (parameterValue == null)
+                        {
+                            //表示key不存在 从下一个source里面去寻找
+                            continue;
+                        }
+
+                        var parseValue = parameterInfo == null
+                            ? TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, memberInfo)
+                            : TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, parameterInfo);
+                        return parseValue;
                     }
                 }
 

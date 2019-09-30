@@ -667,7 +667,8 @@ namespace Autofac.Annotation
                     foreach (var bean in beanTypeList.OrderByDescending(r => r.OrderIndex))
                     {
                         var component = EnumerateComponentServices(bean.Bean, bean.Type);
-                        EnumerateMetaSourceAttributes(component);
+                        component.MetaSourceList = new List<MetaSourceData>();
+                        EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
                         result.Add(component);
                         singleton.ComponentModelCache[bean.Type] = component;
                     }
@@ -677,7 +678,7 @@ namespace Autofac.Annotation
             }
             finally
             {
-                builder.RegisterInstance(singleton);
+                builder.RegisterInstance(singleton).SingleInstance();
             }
         }
 
@@ -702,7 +703,8 @@ namespace Autofac.Annotation
                     var bean = new AutoConfigurationDetail
                     {
                         AutoConfigurationClassType = configuration.Type,
-                        BeanMethodInfoList = new List<Tuple<Bean, MethodInfo>>()
+                        BeanMethodInfoList = new List<Tuple<Bean, MethodInfo>>(),
+                        MetaSourceDataList =  new List<MetaSourceData>()
                     };
                     foreach (var beanTypeMethod in beanTypeMethodList)
                     {
@@ -713,11 +715,13 @@ namespace Autofac.Annotation
 
                     builder.RegisterType(configuration.Type).AsSelf().SingleInstance();//注册为单例模式
                     list.AutoConfigurationDetailList.Add(bean);
+
+                    EnumerateMetaSourceAttributes(bean.AutoConfigurationClassType,bean.MetaSourceDataList);
                 }
             }
             finally
             {
-                builder.RegisterInstance(list);
+                builder.RegisterInstance(list).SingleInstance();
             }
            
         }
@@ -879,16 +883,25 @@ namespace Autofac.Annotation
             return result;
         }
 
+        private static MetaSourceData GetDefaultMetaSource()
+        {
+            MetaSourceData  metaSource = new MetaSourceData();
+            metaSource.Origin = "appsettings.json";
+            metaSource.Embedded = false;
+            metaSource.MetaSourceType = MetaSourceType.JSON;
+            metaSource.Path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, metaSource.Origin);
+            metaSource.Configuration = EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded);
+            return metaSource;
+        }
+
         /// <summary>
         /// 设置source源
         /// </summary>
-        /// <param name="componentModel"></param>
-        private void EnumerateMetaSourceAttributes(ComponentModel componentModel)
+        private void EnumerateMetaSourceAttributes(Type classType,List<MetaSourceData> MetaSourceList)
         {
             #region PropertySource
 
-            componentModel.MetaSourceList = new List<MetaSourceData>();
-            var metaSourceAttributes = componentModel.CurrentType.GetCustomAttributes<PropertySource>().ToList();
+            var metaSourceAttributes = classType.GetCustomAttributes<PropertySource>().ToList();
             if (metaSourceAttributes.Any())
             {
                 metaSourceAttributes = metaSourceAttributes.OrderBy(r => r.Order).ToList();
@@ -904,12 +917,7 @@ namespace Autofac.Annotation
 
                     if (string.IsNullOrEmpty(metaSourceAttribute.Path))
                     {
-                        metaSource.Origin = "appsettings.json";
-                        metaSource.Embedded = false;
-                        metaSource.MetaSourceType = MetaSourceType.JSON;
-                        metaSource.Path = Path.Combine(GetAssemblyLocation(), metaSource.Origin);
-                        metaSource.Configuration = EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded);
-                        componentModel.MetaSourceList.Add(metaSource);
+                        MetaSourceList.Add(GetDefaultMetaSource());
                         continue;
                     }
 
@@ -925,10 +933,10 @@ namespace Autofac.Annotation
                             : metaSource.Origin;
                     }
 
-                    metaSource.Configuration = EmbeddedConfiguration.Load(componentModel.CurrentType, metaSource.Path, metaSource.MetaSourceType,
+                    metaSource.Configuration = EmbeddedConfiguration.Load(classType, metaSource.Path, metaSource.MetaSourceType,
                         metaSourceAttribute.Embedded);
 
-                    componentModel.MetaSourceList.Add(metaSource);
+                    MetaSourceList.Add(metaSource);
                 }
             }
             else
@@ -942,7 +950,7 @@ namespace Autofac.Annotation
                 };
                 metaSource.Path = Path.Combine(GetAssemblyLocation(), metaSource.Origin);
                 metaSource.Configuration = EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded);
-                componentModel.MetaSourceList.Add(metaSource);
+                MetaSourceList.Add(metaSource);
             }
 
             #endregion

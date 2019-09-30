@@ -277,4 +277,15 @@ namespace Autofac.Configuration.Test.test3
             Console.WriteLine("SayArround");
         }
     }
+
+    public class TestModel88 
+    {
+        public string Name { get; set; } = "TestModel88";
+    }
+
+    [Component]
+    public class TestModel99
+    {
+        public string Name { get; set; } = "TestModel99";
+    }
 }

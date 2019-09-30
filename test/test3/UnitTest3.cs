@@ -218,5 +218,23 @@ namespace Autofac.Configuration.Test.test3
         //    //Assert.Throws<InvalidOperationException>(() => );
 
         //}
+
+        [Fact]
+        public async Task Test_Type_13()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest3).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+
+            var a12 = container.Resolve<TestModel88>();
+            
+            Assert.NotEmpty(a12.Name);
+            Assert.NotEqual("TestModel88", a12.Name);
+
+
+        }
     }
 }

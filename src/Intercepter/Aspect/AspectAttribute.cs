@@ -58,18 +58,15 @@ namespace Autofac.Aspect
         /// <summary>
         /// 后置执行
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="invocation"></param>
-        /// <param name="exp"></param>
-        public abstract Task After(IComponentContext context, IInvocation invocation, Exception exp);
+        /// <param name="aspectContext"></param>
+        public abstract Task After(AspectContext aspectContext);
 
 
         /// <summary>
         /// 前置执行
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="invocation"></param>
-        public abstract Task Before(IComponentContext context,IInvocation invocation);
+        /// <param name="aspectContext"></param>
+        public abstract Task Before(AspectContext aspectContext);
 
     }
 
@@ -84,9 +81,8 @@ namespace Autofac.Aspect
         /// <summary>
         /// 前置执行
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="invocation"></param>
-        public abstract Task Before(IComponentContext context, IInvocation invocation);
+        /// <param name="aspectContext"></param>
+        public abstract Task Before(AspectContext aspectContext);
 
     }
 
@@ -101,10 +97,8 @@ namespace Autofac.Aspect
         /// <summary>
         /// 后置执行
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="invocation"></param>
-        /// <param name="exp"></param>
-        public abstract Task After(IComponentContext context, IInvocation invocation, Exception exp);
+        /// <param name="aspectContext"></param>
+        public abstract Task After(AspectContext aspectContext);
 
     }
 
@@ -115,26 +109,144 @@ namespace Autofac.Aspect
     {
 
         /// <summary>
-        /// 没有返回值的拦截器
+        /// 拦截器
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="invocation"></param>
-        /// <param name="proceed"></param>
-        public abstract Task InterceptAsync(IComponentContext context, IInvocation invocation,
-            Func<IInvocation, Task> proceed);
-
-
-        /// <summary>
-        /// 有返回值的拦截器
-        /// </summary>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="context"></param>
-        /// <param name="invocation"></param>
-        /// <param name="proceed"></param>
+        /// <param name="aspectContext">拦截上下文</param>
+        /// <param name="_next">下一个拦截器 最后一个是执行被拦截的方法</param>
         /// <returns></returns>
-        public abstract Task<TResult> InterceptAsync<TResult>(IComponentContext context, IInvocation invocation,
-            Func<IInvocation, Task<TResult>> proceed);
+        public abstract Task OnInvocation(AspectContext aspectContext,AspectDelegate _next);
 
     }
 
+    
+    /// <summary>
+    /// 拦截器上下文
+    /// </summary>
+    public class AspectContext
+    {
+        /// <summary>
+        /// 空的构造方法
+        /// </summary>
+        public AspectContext()
+        {
+            
+        }
+
+        /// <summary>
+        /// 构造方法
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="invocation"></param>
+        public AspectContext(IComponentContext context,IInvocation invocation)
+        {
+            this.ComponentContext = context;
+            this.InvocationContext = invocation;
+        }
+
+        /// <summary>
+        /// 构造方法
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="invocation"></param>
+        /// <param name="exception"></param>
+        public AspectContext(IComponentContext context,IInvocation invocation,Exception exception)
+        {
+            this.ComponentContext = context;
+            this.InvocationContext = invocation;
+            this.Exception = exception;
+        }
+
+        /// <summary>
+        /// autofac容器
+        /// </summary>
+        public IComponentContext ComponentContext { get; set; }
+        
+        /// <summary>
+        /// 执行环节上下文
+        /// </summary>
+
+        public IInvocation InvocationContext { get; set; }
+        
+        /// <summary>
+        /// 错误
+        /// </summary>
+        public Exception Exception { get; set; }
+        
+        /// <summary>
+        /// 有返回结果的
+        /// </summary>
+        internal object Result { get; set; }
+        
+        
+    }
+
+    /// <summary>
+    /// 拦截器
+    /// </summary>
+    /// <param name="context"></param>
+    public delegate System.Threading.Tasks.Task AspectDelegate(AspectContext context);
+    
+    /// <summary>
+    /// 拦截node组装
+    /// </summary>
+    internal class AspectMiddlewareComponentNode
+    {
+        /// <summary>
+        /// 下一个
+        /// </summary>
+        public AspectDelegate Next;
+        /// <summary>
+        /// 执行器
+        /// </summary>
+        public AspectDelegate Process;
+        /// <summary>
+        /// 组件
+        /// </summary>
+        public Func<AspectDelegate, AspectDelegate> Component;
+    }
+
+    internal class AspectMiddlewareBuilder
+    {
+        private readonly LinkedList<AspectMiddlewareComponentNode> Components = new LinkedList<AspectMiddlewareComponentNode>();
+       
+        /// <summary>
+        /// 新增拦截器链
+        /// </summary>
+        /// <param name="component"></param>
+        public void Use(Func<AspectDelegate, AspectDelegate> component)
+        {
+            var node = new AspectMiddlewareComponentNode
+            {
+                Component = component
+            };
+ 
+            Components.AddLast(node);
+        }
+        
+        /// <summary>
+        /// 构建拦截器链
+        /// </summary>
+        /// <returns></returns>
+        public AspectDelegate Build()
+        {
+            var node = Components.Last;
+            while(node != null)
+            {
+                node.Value.Next = GetNextFunc(node);
+                node.Value.Process = node.Value.Component(node.Value.Next);
+                node = node.Previous;
+            }
+            return Components.First.Value.Process;
+        }
+ 
+        /// <summary>
+        /// 获取下一个
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        private AspectDelegate GetNextFunc(LinkedListNode<AspectMiddlewareComponentNode> node)
+        {
+            return node.Next == null ? ctx => Task.CompletedTask : node.Next.Value.Process;
+        }
+    }
 }

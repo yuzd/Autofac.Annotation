@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 using Autofac.Annotation;
 using Autofac.Annotation.Test;
 using Autofac.Aspect;
+using Autofac.Configuration.Test.test2;
 using Castle.DynamicProxy;
 
 namespace Autofac.Configuration.Test.test3
@@ -157,9 +160,9 @@ namespace Autofac.Configuration.Test.test3
     }
     public class TestHelloBefor : AspectBeforeAttribute
     {
-        public override Task Before(IComponentContext context, IInvocation invocation)
+        public override Task Before(AspectContext aspectContext)
         {
-            var aa1 = context.Resolve<TestModel81>();
+            var aa1 = aspectContext.ComponentContext.Resolve<TestModel81>();
             Console.WriteLine("TestHelloBefor");
             return Task.CompletedTask;
         }
@@ -168,9 +171,9 @@ namespace Autofac.Configuration.Test.test3
     public class TestHelloAfter : AspectAfterAttribute
     {
 
-        public override Task After(IComponentContext context, IInvocation invocation, Exception exp)
+        public override Task After(AspectContext aspectContext)
         {
-            if(exp!=null) Console.WriteLine(exp.Message);
+            if(aspectContext.Exception!=null) Console.WriteLine(aspectContext.Exception.Message);
             Console.WriteLine("TestHelloAfter");
             return Task.CompletedTask;
         }
@@ -180,14 +183,14 @@ namespace Autofac.Configuration.Test.test3
     public class TestHelloArround : AspectAroundAttribute
     {
 
-        public override Task After(IComponentContext context, IInvocation invocation, Exception exp)
+        public override Task After(AspectContext aspectContext)
         {
-            if (exp != null) Console.WriteLine(exp.Message);
+            if (aspectContext.Exception != null) Console.WriteLine(aspectContext.Exception.Message);
             Console.WriteLine("TestHelloArround");
             return Task.CompletedTask;
         }
 
-        public override Task Before(IComponentContext context, IInvocation invocation)
+        public override Task Before(AspectContext aspectContext)
         {
             Console.WriteLine("TestHelloArround.Before");
             return Task.CompletedTask;
@@ -288,4 +291,64 @@ namespace Autofac.Configuration.Test.test3
     {
         public string Name { get; set; } = "TestModel99";
     }
+
+    [Component]
+    [Aspect]
+    public class TestModel101
+    {
+        public string Name { get; set; } = "TestModel101";
+
+        [StopWatchInterceptor]
+        [TransactionInterceptor]
+        public virtual void TestInterceptor()
+        {
+            Console.WriteLine("TestInterceptor");
+        }
+        
+        [StopWatchInterceptor]
+        [TransactionInterceptor]
+        public virtual async Task<string> TestInterceptor2()
+        {
+            Task.Delay(1000);   
+            Console.WriteLine("TestInterceptor2");
+            return "TestInterceptor2";
+        }
+    }
+
+    public class StopWatchInterceptor : PointcutAttribute
+    {
+        public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
+        {
+            Console.WriteLine("StopWatchInterceptor Start");
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            try
+            {
+                await _next(aspectContext);
+            } 
+            finally
+            {
+                stopwatch.Stop();
+                Console.WriteLine("StopWatchInterceptor End");
+            }
+        }
+    }
+    
+    
+    public class TransactionInterceptor : PointcutAttribute
+    {
+        public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
+        {
+            Console.WriteLine("TransactionInterceptor Start");
+            using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                await _next(aspectContext);
+                transactionScope.Complete();
+                Console.WriteLine("TransactionInterceptor End");
+                
+            }
+        }
+    }
+    
+    
 }

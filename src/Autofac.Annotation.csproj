@@ -29,8 +29,8 @@
     <RootNamespace>Autofac.Annotation</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Version>2.0.7</Version>
-    <AssemblyVersion>2.0.7.0</AssemblyVersion>
+    <Version>2.0.8</Version>
+    <AssemblyVersion>2.0.8.0</AssemblyVersion>
     <Authors>zdyu</Authors>
   </PropertyGroup>
 

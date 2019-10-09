@@ -18,7 +18,18 @@ namespace Autofac.Annotation
     public class Value : ParameterFilterAttribute
     {
         /// <summary>
-        /// 
+        /// The default placeholder prefix.
+        /// </summary>
+        public static readonly string DefaultPlaceholderPrefix = "${";
+
+        /// <summary>
+        /// The default placeholder suffix.
+        /// </summary>
+        public static readonly string DefaultPlaceholderSuffix = "}";
+
+
+        /// <summary>
+        /// 构造方法
         /// </summary>
         /// <param name="_value"></param>
         public Value(string _value)
@@ -32,6 +43,16 @@ namespace Autofac.Annotation
         public string value { get; set; }
 
         /// <summary>
+        /// 如果拿不到是否报错
+        /// </summary>
+        public bool IgnoreUnresolvablePlaceholders { get; set; }
+
+        /// <summary>
+        /// 设置是否从环境变量拿 默认是从文件里面拿不到 就从环境里面去拿
+        /// </summary>
+        public EnvironmentVariableMode EnvironmentVariableMode { get; set; } = EnvironmentVariableMode.Fallback;
+
+        /// <summary>
         /// 注入
         /// 只能支持值类型string int boolean dic list
         /// </summary>
@@ -40,7 +61,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public override object ResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
-            return parameter == null ? null : Resolve(context,parameter.Member.DeclaringType, parameter.ParameterType, null, parameter);
+            return parameter == null ? null : Resolve(context, parameter.Member.DeclaringType, parameter.ParameterType, null, parameter);
         }
 
         /// <summary>
@@ -63,7 +84,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public object ResolveProperty(PropertyInfo parameter, IComponentContext context)
         {
-            return parameter == null ? null : Resolve(context,parameter.DeclaringType, parameter.PropertyType, parameter);
+            return parameter == null ? null : Resolve(context, parameter.DeclaringType, parameter.PropertyType, parameter);
         }
 
         /// <summary>
@@ -74,7 +95,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public object ResolveFiled(FieldInfo parameter, IComponentContext context)
         {
-            return parameter == null ? null : Resolve(context,parameter.DeclaringType, parameter.FieldType, parameter);
+            return parameter == null ? null : Resolve(context, parameter.DeclaringType, parameter.FieldType, parameter);
         }
 
         /// <summary>
@@ -87,69 +108,122 @@ namespace Autofac.Annotation
         /// <param name="parameterInfo"></param>
         /// <param name="autoConfigurationDetail"></param>
         /// <returns></returns>
-        private object Resolve(IComponentContext context,Type classType, Type memberType, MemberInfo memberInfo, ParameterInfo parameterInfo = null, AutoConfigurationDetail autoConfigurationDetail = null)
+        private object Resolve(IComponentContext context, Type classType, Type memberType, MemberInfo memberInfo, ParameterInfo parameterInfo = null, AutoConfigurationDetail autoConfigurationDetail = null)
         {
             if (classType == null) return null;
             if (string.IsNullOrEmpty(this.value)) return null;
             try
             {
-                if (!this.value.StartsWith("#{") || !this.value.EndsWith("}"))
+                var parameterValue = ResolveEmbeddedValue(context,classType,this.value,autoConfigurationDetail);
+                if (this.value.Equals(parameterValue))
                 {
-                    var parameterValue = this.value;
-                    var parseValue = parameterInfo == null
-                        ? TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, memberInfo)
-                        : TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, parameterInfo);
-                    return parseValue;
+                    //El表达式
+
+                    
                 }
-                else
+
+                if (parameterValue == null) return null;
+                var parseValue = parameterInfo == null
+                    ? TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, memberInfo)
+                    : TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, parameterInfo);
+                return parseValue;
+            }
+            catch (Exception ex)
+            {
+                throw new DependencyResolutionException($"Value set error,can not resolve class type:{classType.FullName} =====>" +
+                                                        $" {(parameterInfo == null ? memberType.Name : parameterInfo.Name)} "
+                                                        + (!string.IsNullOrEmpty(this.value) ? $",with value:[{this.value}]" : ""), ex);
+            }
+        }
+
+
+       
+        private string ResolveEmbeddedValue(IComponentContext context, Type classType, string strVal, AutoConfigurationDetail autoConfigurationDetail = null)
+        {
+            int startIndex = strVal.IndexOf(DefaultPlaceholderPrefix, StringComparison.Ordinal);
+            while (startIndex != -1)
+            {
+                int endIndex = strVal.IndexOf(DefaultPlaceholderSuffix, startIndex + DefaultPlaceholderPrefix.Length, StringComparison.Ordinal);
+                if (endIndex != -1)
                 {
-                    var key = this.value.Substring(2, this.value.Length - 3)?.Trim();
-                    List<MetaSourceData> MetaSourceList;
-                    if (autoConfigurationDetail != null)
+                    int pos = startIndex + DefaultPlaceholderPrefix.Length;
+                    string placeholder = strVal.Substring(pos, endIndex - pos);
+                    string resolvedValue = ResolvePlaceholder(context,classType,placeholder, autoConfigurationDetail);
+                    if (resolvedValue != null)
                     {
-                        MetaSourceList = autoConfigurationDetail.MetaSourceDataList;
+                        strVal = strVal.Substring(0, startIndex) + resolvedValue + strVal.Substring(endIndex + 1);
+                        startIndex = strVal.IndexOf(DefaultPlaceholderPrefix, startIndex + resolvedValue.Length, StringComparison.Ordinal);
+                    }
+                    else if (IgnoreUnresolvablePlaceholders)
+                    {
+                        return strVal;
                     }
                     else
                     {
-                        var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
-                        if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(classType, out var component))
-                        {
-                            return null;
-                        }
+                        throw new Exception(string.Format("Could not resolve placeholder '{0}'.", placeholder));
+                    }
+                }
+                else
+                {
+                    startIndex = -1;
+                }
+            }
+            return strVal;
+        }
+
+
+        private string ResolvePlaceholder(IComponentContext context, Type classType, string placeholder, AutoConfigurationDetail autoConfigurationDetail = null)
+        {
+            string propertyValue = null;
+            if (this.EnvironmentVariableMode == EnvironmentVariableMode.Override)
+            {
+                propertyValue = Environment.GetEnvironmentVariable(placeholder);
+            }
+
+            if (propertyValue == null)
+            {
+                List<MetaSourceData> MetaSourceList = null;
+                if (autoConfigurationDetail != null)
+                {
+                    MetaSourceList = autoConfigurationDetail.MetaSourceDataList;
+                }
+                else
+                {
+                    var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
+                    if (componentModelCacheSingleton.ComponentModelCache.TryGetValue(classType, out var component))
+                    {
                         MetaSourceList = component.MetaSourceList;
                     }
+                }
 
-                    if (MetaSourceList == null) return null;
+                if (MetaSourceList != null)
+                {
                     foreach (var metaSource in MetaSourceList)
                     {
                         if (metaSource.Configuration == null)
                         {
                             continue;
                         }
-                        IConfigurationSection metData = metaSource.Configuration.GetSection(key);
-                        var parameterValue = ConfigurationUtil.GetConfiguredParameterValue(metData);
 
+                        IConfigurationSection metData = metaSource.Configuration.GetSection(placeholder);
+                        var parameterValue = metData?.Value;
                         if (parameterValue == null)
                         {
                             //表示key不存在 从下一个source里面去寻找
                             continue;
                         }
-
-                        var parseValue = parameterInfo == null
-                            ? TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, memberInfo)
-                            : TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, parameterInfo);
-                        return parseValue;
+                        propertyValue = parameterValue;
+                        break;
                     }
                 }
-
-                return null;
             }
-            catch (Exception ex)
+            if (propertyValue == null && EnvironmentVariableMode == EnvironmentVariableMode.Fallback)
             {
-                throw new DependencyResolutionException($"Value set error,can not resolve class type:{classType.FullName} =====>" +
-                                                        $" {(parameterInfo == null?memberType.Name:parameterInfo.Name)} "
-                                                        + (!string.IsNullOrEmpty(this.value) ? $",with value:[{this.value}]" : ""),ex);
+                propertyValue = Environment.GetEnvironmentVariable(placeholder);
             }
+            return propertyValue;
         }
     }
+
+
 }

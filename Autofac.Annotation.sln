@@ -1,13 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.106
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29326.143
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autofac.Annotation", "src\Autofac.Annotation.csproj", "{0EE9D75B-B022-4AC5-B78C-CE1E63EEEE15}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autofac.Configuration.Test", "test\Autofac.Configuration.Test.csproj", "{F97AF76F-36BD-4638-90ED-D732A4A58D84}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autofac.Annotation.Benchmark", "Autofac.Annotation.Benchmark\Autofac.Annotation.Benchmark.csproj", "{025383BC-5535-4FF3-9021-0116E8B8471E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autofac.Annotation.Benchmark", "Autofac.Annotation.Benchmark\Autofac.Annotation.Benchmark.csproj", "{025383BC-5535-4FF3-9021-0116E8B8471E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spring.EL", "Spring.EL\Spring.EL.csproj", "{2FC1D6CC-0A5B-4218-B051-21D95F47F8DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpringELTest", "SpringELTest\SpringELTest.csproj", "{95410F8A-3A5A-48A0-8F6C-B13F68F366F2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +31,14 @@ Global
 		{025383BC-5535-4FF3-9021-0116E8B8471E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{025383BC-5535-4FF3-9021-0116E8B8471E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{025383BC-5535-4FF3-9021-0116E8B8471E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FC1D6CC-0A5B-4218-B051-21D95F47F8DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FC1D6CC-0A5B-4218-B051-21D95F47F8DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FC1D6CC-0A5B-4218-B051-21D95F47F8DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FC1D6CC-0A5B-4218-B051-21D95F47F8DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95410F8A-3A5A-48A0-8F6C-B13F68F366F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95410F8A-3A5A-48A0-8F6C-B13F68F366F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95410F8A-3A5A-48A0-8F6C-B13F68F366F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95410F8A-3A5A-48A0-8F6C-B13F68F366F2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -9,10 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autofac.Configuration.Test"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autofac.Annotation.Benchmark", "Autofac.Annotation.Benchmark\Autofac.Annotation.Benchmark.csproj", "{025383BC-5535-4FF3-9021-0116E8B8471E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spring.EL", "Spring.EL\Spring.EL.csproj", "{2FC1D6CC-0A5B-4218-B051-21D95F47F8DE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpringELTest", "SpringELTest\SpringELTest.csproj", "{95410F8A-3A5A-48A0-8F6C-B13F68F366F2}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

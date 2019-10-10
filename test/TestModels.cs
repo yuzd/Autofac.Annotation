@@ -147,7 +147,7 @@ namespace Autofac.Annotation.Test
     [Component]
     public class A9
     {
-        public A9([Value("#{a9}")]string school,[Value("#{list}")]List<int> list,[Value("#{dic}")]Dictionary<string,string> dic)
+        public A9([Value("${a9}")]string school,[Value("${list}")]int[] list,[Value("#{${dic}}")]Dictionary<string,string> dic)
         {
             this.School = school;
             this.list = list;
@@ -155,7 +155,7 @@ namespace Autofac.Annotation.Test
 
         }
         public string School { get; set; } = "测试a9";
-        public List<int> list { get; set; } 
+        public int[] list { get; set; } 
         public Dictionary<string,string> dic { get; set; } 
         public string GetSchool()
         {
@@ -167,7 +167,7 @@ namespace Autofac.Annotation.Test
     [PropertySource("/file/appsettings1.json")]
     public class A10
     {
-        public A10([Value("#{a10}")]string school,[Value("#{list}")]List<int> list,[Value("#{dic}")]Dictionary<string,string> dic,[Value("")]int dddd)
+        public A10([Value("${a10}")]string school,[Value("${list}")]int[] list,[Value("#{${dic}}")]Dictionary<string,string> dic,[Value("")]int dddd)
         {
             this.School = school;
             this.list = list;
@@ -175,7 +175,7 @@ namespace Autofac.Annotation.Test
 
         }
         public string School { get; set; }
-        public List<int> list { get; set; } 
+        public int[] list { get; set; } 
         public Dictionary<string,string> dic { get; set; } 
         public string GetSchool()
         {
@@ -187,7 +187,7 @@ namespace Autofac.Annotation.Test
     [PropertySource("/file/appsettings1.xml")]
     public class A11
     {
-        public A11([Value("#{a11}")]string school,[Value("#{list}")]List<int> list,[Value("#{dic}")]Dictionary<string,string> dic,[Value("")]int dddd)
+        public A11([Value("${a11}")]string school,[Value("${list}")]List<int> list,[Value("#{${dic}}")]Dictionary<string,string> dic,[Value("")]int dddd)
         {
             this.School = school;
             this.list = list;
@@ -238,10 +238,10 @@ namespace Autofac.Annotation.Test
     [Component]
     public class A15
     {
-        [Value("#{a9}")]
+        [Value("${a9}")]
         public string test = "t";
 
-        [Value("#{a9}")]
+        [Value("${a9}")]
         public string School { get; set; } = "A14";
 
     }

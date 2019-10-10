@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Autofac.Core;
+using Spring.Core.TypeConversion;
+using Spring.Expressions;
 
 namespace Autofac.Annotation
 {
@@ -114,19 +116,38 @@ namespace Autofac.Annotation
             if (string.IsNullOrEmpty(this.value)) return null;
             try
             {
+                //先把 ${} 的 placehoder 全部替换掉
                 var parameterValue = ResolveEmbeddedValue(context,classType,this.value,autoConfigurationDetail);
-                if (this.value.Equals(parameterValue))
+                int startIndex = parameterValue.ToString().IndexOf("#{", StringComparison.Ordinal);
+                if (startIndex != -1)
                 {
-                    //El表达式
+                    int endIndex = parameterValue.ToString().LastIndexOf(DefaultPlaceholderSuffix, StringComparison.Ordinal);
+                    if (endIndex != -1)
+                    {
+                        Dictionary<string, object> vars = new Dictionary<string, object>
+                        {
+                            ["_sprint_context_resove_"] = new SprintContextResove((type, name) =>
+                            {
+                                if (!string.IsNullOrEmpty(name)) return context.ResolveKeyed(name, type);
+                                return context.Resolve(type);
+                            })
+                        };
+                        //El表达式
 
-                    
+                        int pos = startIndex + DefaultPlaceholderPrefix.Length;
+                        string expression = parameterValue.ToString().Substring(pos, endIndex - pos);
+                        parameterValue = ExpressionEvaluator.GetValue(null, expression,vars);
+                    }
                 }
 
                 if (parameterValue == null) return null;
-                var parseValue = parameterInfo == null
-                    ? TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, memberInfo)
-                    : TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, parameterInfo);
-                return parseValue;
+
+                return TypeConversionUtils.ConvertValueIfNecessary(memberType, parameterValue, null);
+
+                //var parseValue = parameterInfo == null
+                //    ? TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, memberInfo)
+                //    : TypeManipulation.ChangeToCompatibleType(parameterValue, memberType, parameterInfo);
+                //return parseValue;
             }
             catch (Exception ex)
             {
@@ -138,7 +159,7 @@ namespace Autofac.Annotation
 
 
        
-        private string ResolveEmbeddedValue(IComponentContext context, Type classType, string strVal, AutoConfigurationDetail autoConfigurationDetail = null)
+        private object ResolveEmbeddedValue(IComponentContext context, Type classType, string strVal, AutoConfigurationDetail autoConfigurationDetail = null)
         {
             int startIndex = strVal.IndexOf(DefaultPlaceholderPrefix, StringComparison.Ordinal);
             while (startIndex != -1)

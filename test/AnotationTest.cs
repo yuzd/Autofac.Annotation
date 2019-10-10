@@ -98,7 +98,7 @@ namespace Autofac.Annotation.Test
 
             var a1 = container.Resolve<A8>();
             var a2 = container.Resolve<A9>();
-            Assert.Equal(4, a2.list.Count);
+            Assert.Equal(4, a2.list.Length);
             Assert.Equal(2, a2.dic.Keys.Count);
             Assert.Equal("a8", a1.GetSchool());
             Assert.Equal("aaaaaaaaa", a2.GetSchool());
@@ -116,7 +116,7 @@ namespace Autofac.Annotation.Test
 
 
             var a2 = container.Resolve<A10>();
-            Assert.Equal(3, a2.list.Count);
+            Assert.Equal(3, a2.list.Length);
             Assert.Single(a2.dic.Keys);
             Assert.Equal("aaaaaaaaa1", a2.GetSchool());
         }

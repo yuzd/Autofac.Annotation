@@ -349,6 +349,51 @@ namespace Autofac.Configuration.Test.test3
             }
         }
     }
-    
+    public interface IRepository
+    {
+
+    }
+    public interface IRepository<T> : IRepository where T : class
+    {
+
+    }
+
+    public class AopClass
+    {
+
+    }
+    public class BaseRepository : IRepository
+    {
+
+    }
+    public class BaseRepository<T> : BaseRepository, IRepository<T> where T : class
+    {
+
+    }
+
+    public interface IAopModel : IRepository<AopClass>
+    {
+        void SayHello();
+    }
+
+    [Component]
+    [Aspect(InterceptorType.Interface)]
+    [StopWatchInterceptor(OrderIndex = 100)]
+    public class AopModel1 : BaseRepository<AopClass>, IAopModel
+    {
+        [StopWatchInterceptor(OrderIndex = 101)]
+        [TransactionInterceptor]
+        public void SayHello()
+        {
+            Console.WriteLine("hello");
+        }
+    }
+
+    [Component]
+    public class AopModel2
+    {
+        [Autowired]
+        public IAopModel AopModel1 { get; set; }
+    }
     
 }

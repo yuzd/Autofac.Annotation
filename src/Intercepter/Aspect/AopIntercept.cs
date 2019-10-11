@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using AspectCore.Extensions.Reflection;
 using Autofac.Annotation;
 using Autofac.Aspect;
 using Castle.DynamicProxy;
@@ -11,27 +14,93 @@ using Castle.DynamicProxy;
 namespace Autofac.Aspect
 {
     /// <summary>
+    /// AOP拦截器方法Attribute的缓存
+    /// </summary>
+    [Component(AutofacScope = AutofacScope.SingleInstance,AutoActivate = true)]
+    public class AopMethodInvokeCache
+    {
+
+        /// <summary>
+        /// 构造方法
+        /// </summary>
+        public AopMethodInvokeCache(IComponentContext context)
+        {
+            CacheList = new ConcurrentDictionary<MethodInfo, List<AspectInvokeAttribute>>();
+            var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
+            var aspectClassList = componentModelCacheSingleton.ComponentModelCache.Values
+                .Where(r => r.AspectAttribute != null).ToList();
+            foreach (var aspectClass in aspectClassList)
+            {
+                var allAttributes = aspectClass.CurrentType.GetReflector()
+                    .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
+                    .Select(r => new {IsClass = true, Attribute = r, Index = r.OrderIndex});
+
+                var myArrayMethodInfo = aspectClass.CurrentType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(m => !m.IsSpecialName);
+
+                foreach (var method in myArrayMethodInfo)
+                {
+                    allAttributes = allAttributes.Concat(method.GetReflector()
+                            .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
+                            .Select(r => new { IsClass = false, Attribute = r, Index = r.OrderIndex }));
+
+                    var attributes = allAttributes
+                        .OrderBy(r => r.IsClass).ThenByDescending(r => r.Index)
+                        .GroupBy(r => r.Attribute.GetType().FullName)
+                        .Select(r => r.First().Attribute).ToList();
+
+                    CacheList.TryAdd(method, attributes);
+                }
+            }
+        }
+        /// <summary>
+        /// 缓存
+        /// </summary>
+        public ConcurrentDictionary<MethodInfo,List<AspectInvokeAttribute>> CacheList { get; set; }
+    }
+
+
+    /// <summary>
     /// AOP拦截器
     /// </summary>
     [Component(typeof(AopIntercept))]
     public class AopIntercept : AsyncInterceptor
     {
         private readonly IComponentContext _component;
+        private readonly AopMethodInvokeCache _cache;
+
+
         /// <summary>
         /// 构造方法
         /// </summary>
-        public AopIntercept(IComponentContext context)
+        public AopIntercept(IComponentContext context, AopMethodInvokeCache cache)
         {
             _component = context;
+            _cache = cache;
         }
+
         /// <summary>
         /// 拦截器
         /// </summary>
         /// <param name="invocation"></param>
-        private async Task<Tuple<List<PointcutAttribute>, List<object>>> BeforeInterceptAttribute(IInvocation invocation)
+        private async Task<Tuple<List<PointcutAttribute>, List<AspectInvokeAttribute>>> BeforeInterceptAttribute(IInvocation invocation)
         {
-            var Attributes = invocation.MethodInvocationTarget.GetCustomAttributes(true).ToList();
+            if(!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget,out var Attributes))
+            {
+                var allAttributes = invocation.TargetType.GetReflector()
+                    .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
+                    .Select(r => new { IsClass = true, Attribute = r, Index = r.OrderIndex })
+                    .Concat(invocation.MethodInvocationTarget.GetReflector()
+                        .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
+                        .Select(r => new { IsClass = false, Attribute = r, Index = r.OrderIndex }));
 
+                Attributes = allAttributes
+                    .OrderBy(r => r.IsClass).ThenByDescending(r => r.Index)
+                    .GroupBy(r => r.Attribute.GetType().FullName)
+                    .Select(r => r.First().Attribute).ToList();
+
+                _cache.CacheList.TryAdd(invocation.MethodInvocationTarget, Attributes);
+            }
+           
             var aspectContext = new AspectContext(_component, invocation);
             foreach (var attribute in Attributes)
             {
@@ -46,12 +115,12 @@ namespace Autofac.Aspect
                 }
             }
 
-            return new Tuple<List<PointcutAttribute>, List<object>>(Attributes.OfType<PointcutAttribute>().ToList(), Attributes);
+            return new Tuple<List<PointcutAttribute>, List<AspectInvokeAttribute>>(Attributes.OfType<PointcutAttribute>().ToList(), Attributes);
         }
 
-        private async Task AfterInterceptAttribute(List<object> Attributes, IInvocation invocation, Exception exp)
+        private async Task AfterInterceptAttribute(List<AspectInvokeAttribute> Attributes, IInvocation invocation, Exception exp)
         {
-            var aspectContext = new AspectContext(_component, invocation,exp);
+            var aspectContext = new AspectContext(_component, invocation, exp);
             foreach (var attribute in Attributes)
             {
                 switch (attribute)
@@ -86,12 +155,12 @@ namespace Autofac.Aspect
                     AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
                     foreach (var pointAspect in attribute.Item1)
                     {
-                        builder.Use(next =>  async  ctx => {  await pointAspect.OnInvocation(ctx, next); });
+                        builder.Use(next => async ctx => { await pointAspect.OnInvocation(ctx, next); });
                     }
-                    
-                    builder.Use(next=> async ctx => { await proceed(invocation); });
 
-                    var aspectfunc  = builder.Build();
+                    builder.Use(next => async ctx => { await proceed(invocation); });
+
+                    var aspectfunc = builder.Build();
                     await aspectfunc(new AspectContext(_component, invocation));
                 }
                 await AfterInterceptAttribute(attribute.Item2, invocation, null);
@@ -126,21 +195,21 @@ namespace Autofac.Aspect
                     AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
                     foreach (var pointAspect in attribute.Item1)
                     {
-                        builder.Use(next =>  async  ctx => {  await pointAspect.OnInvocation(ctx, next); });
+                        builder.Use(next => async ctx => { await pointAspect.OnInvocation(ctx, next); });
                     }
-                    
-                    
-                    builder.Use(next=> async ctx => 
-                    {
-                        ctx.Result  =  await proceed(invocation);
-                    });
 
-                    var aspectfunc  = builder.Build();
+
+                    builder.Use(next => async ctx =>
+                     {
+                         ctx.Result = await proceed(invocation);
+                     });
+
+                    var aspectfunc = builder.Build();
                     var aspectContext = new AspectContext(_component, invocation);
                     await aspectfunc(aspectContext);
                     r = (TResult)aspectContext.Result;
                 }
-                
+
                 await AfterInterceptAttribute(attribute.Item2, invocation, null);
                 return r;
             }

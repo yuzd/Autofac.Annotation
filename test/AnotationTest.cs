@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Autofac.Core;
-using Autofac.Extras.DynamicProxy;
 using Autofac.Features.AttributeFilters;
 using Autofac.Features.Metadata;
 using Castle.DynamicProxy;

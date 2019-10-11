@@ -2,8 +2,6 @@
 using Autofac.Annotation.Util;
 using Autofac.Builder;
 using Autofac.Core;
-using Autofac.Extras.DynamicProxy;
-using Autofac.Features.AttributeFilters;
 using Castle.DynamicProxy;
 using System;
 using System.Collections.Concurrent;
@@ -13,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using Autofac.Annotation.Anotation;
 using Autofac.Aspect;
+using Autofac.Features.AttributeFilters;
 
 namespace Autofac.Annotation
 {
@@ -668,6 +667,7 @@ namespace Autofac.Annotation
                     {
                         var component = EnumerateComponentServices(bean.Bean, bean.Type);
                         component.MetaSourceList = new List<MetaSourceData>();
+                        component.AspectAttribute = bean.Type.GetCustomAttribute<AspectAttribute>();
                         EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
                         result.Add(component);
                         singleton.ComponentModelCache[bean.Type] = component;

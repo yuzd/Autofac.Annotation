@@ -407,7 +407,7 @@ Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cor
 ```
 |  Method |     Mean |     Error |    StdDev |
 |-------- |---------:|----------:|----------:|
-| Autofac | 30.30 us | 0.2253 us | 0.1997 us |
+| Autofac | 28.61 us | 0.2120 us | 0.1879 us |
 
 ```csharp
    //打标签模式
@@ -431,7 +431,6 @@ Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cor
         }
     }
 ```
-
 ``` ini
 
 BenchmarkDotNet=v0.11.3, OS=Windows 10.0.18362
@@ -444,5 +443,7 @@ Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cor
 ```
 |            Method |     Mean |     Error |    StdDev |
 |------------------ |---------:|----------:|----------:|
-| AutofacAnnotation | 35.36 us | 0.1504 us | 0.1407 us |
+| AutofacAnnotation | 29.77 us | 0.2726 us | 0.2550 us |
+
+## 利用Benchmark进行autofac原生方式和打标签模式进行性能测试 不但没有损耗，对于属性注入性能还提高了
 

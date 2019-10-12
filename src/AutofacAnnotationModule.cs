@@ -784,7 +784,6 @@ namespace Autofac.Annotation
             var result = new ComponentModel
             {
                 AutoActivate = bean.AutoActivate,
-                AutofacScope = this.DefaultAutofacScope.Equals(AutofacScope.Default) ? bean.AutofacScope : this.DefaultAutofacScope,
                 CurrentType = currentType,
                 InjectProperties = bean.InjectProperties,
                 InjectPropertyType = bean.InjectPropertyType,
@@ -796,6 +795,16 @@ namespace Autofac.Annotation
                 DestroyMetnod = bean.DestroyMetnod,
                 OrderIndex = bean.OrderIndex
             };
+
+            if (bean.AutofacScope == AutofacScope.Default)
+            {
+                //说明没有特别指定
+                result.AutofacScope = this.DefaultAutofacScope.Equals(AutofacScope.Default) ? AutofacScope.InstancePerDependency : this.DefaultAutofacScope;
+            }
+            else
+            {
+                result.AutofacScope = bean.AutofacScope;
+            }
 
 
             #region 解析注册对应的类的列表

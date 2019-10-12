@@ -435,9 +435,9 @@ namespace Autofac.Annotation.Test
             a1.Test = "bbbbb";
 
             var a2 = container.Resolve<A28>();
-            Assert.True(a1 == a2);
+            Assert.NotEqual(a1 , a2);
             Assert.Equal("bbbbb", a2.A282.Test);
-            Assert.Equal("bbbbb", a2.Test);
+            Assert.NotEqual("bbbbb", a2.Test);
         }
 
         [Fact]

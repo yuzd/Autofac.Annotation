@@ -58,7 +58,8 @@ namespace Autofac.Annotation
 
                         var result = AutoConfigurationHelper.InvokeInstanceMethod(context, autoConfigurationDetail, autoConfigurationInstance, beanMethod.Item2);
                         if (result == null) continue;
-                        context.ComponentRegistry.Register(AutoConfigurationHelper.RegisterInstance(context.ComponentRegistry, beanMethod.Item2.ReturnType, result, beanMethod.Item1.Key).CreateRegistration());
+                        AutoConfigurationHelper.RegisterInstance(context.ComponentRegistry, beanMethod.Item2.ReturnType,
+                            result, beanMethod.Item1.Key).CreateRegistration();
                     }
 
                 }
@@ -148,22 +149,22 @@ namespace Autofac.Annotation
             {
                 if (!string.IsNullOrEmpty(key))
                 {
-                    rb.Keyed(key, returnType);
+                    rb.Keyed(key, returnType).Named("`1System.Collections.Generic.IEnumerable`1" + returnType.FullName, returnType); 
                 }
                 else
                 {
-                    rb.As(returnType);
+                    rb.As(returnType).Named("`1System.Collections.Generic.IEnumerable`1" + returnType.FullName, returnType);
                 }
             }
             else
             {
                 if (!string.IsNullOrEmpty(key))
                 {
-                    rb.Keyed(key, instanceType);
+                    rb.Keyed(key, instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
                 }
                 else
                 {
-                    rb.As(instanceType);
+                    rb.As(instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
                 }
             }
 

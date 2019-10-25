@@ -7,8 +7,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>Autofac.Annotation</AssemblyName>
-    <SignAssembly>true</SignAssembly>
-    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <PackageId>Autofac.Annotation</PackageId>
     <PackageTags>autofac spring aspect</PackageTags>
     <PackageReleaseNotes>autofac spring 

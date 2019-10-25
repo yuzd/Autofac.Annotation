@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Autofac.Core;
-using Autofac.Extras.DynamicProxy;
 using Autofac.Features.AttributeFilters;
 using Autofac.Features.Metadata;
 using Castle.DynamicProxy;
@@ -98,7 +97,7 @@ namespace Autofac.Annotation.Test
 
             var a1 = container.Resolve<A8>();
             var a2 = container.Resolve<A9>();
-            Assert.Equal(4, a2.list.Count);
+            Assert.Equal(4, a2.list.Length);
             Assert.Equal(2, a2.dic.Keys.Count);
             Assert.Equal("a8", a1.GetSchool());
             Assert.Equal("aaaaaaaaa", a2.GetSchool());
@@ -116,7 +115,7 @@ namespace Autofac.Annotation.Test
 
 
             var a2 = container.Resolve<A10>();
-            Assert.Equal(3, a2.list.Count);
+            Assert.Equal(3, a2.list.Length);
             Assert.Single(a2.dic.Keys);
             Assert.Equal("aaaaaaaaa1", a2.GetSchool());
         }
@@ -436,9 +435,9 @@ namespace Autofac.Annotation.Test
             a1.Test = "bbbbb";
 
             var a2 = container.Resolve<A28>();
-            Assert.True(a1 == a2);
+            Assert.NotEqual(a1 , a2);
             Assert.Equal("bbbbb", a2.A282.Test);
-            Assert.Equal("bbbbb", a2.Test);
+            Assert.NotEqual("bbbbb", a2.Test);
         }
 
         [Fact]

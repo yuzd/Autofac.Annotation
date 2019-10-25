@@ -12,10 +12,14 @@ namespace Autofac.Aspect
     /// <summary>
     /// AOP拦截器
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method)]
-    public class AspectMethodAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Method|AttributeTargets.Class)]
+    public class AspectInvokeAttribute : Attribute
     {
 
+        /// <summary>
+        /// 排序 越大的先先调用
+        /// </summary>
+        public int OrderIndex { get; set; }
 
     }
 
@@ -51,7 +55,7 @@ namespace Autofac.Aspect
     /// <summary>
     /// AOP环绕拦截器
     /// </summary>
-    public abstract class AspectAroundAttribute : AspectMethodAttribute
+    public abstract class AspectAroundAttribute : AspectInvokeAttribute
     {
 
 
@@ -75,7 +79,7 @@ namespace Autofac.Aspect
     /// <summary>
     /// AOP前置拦截器
     /// </summary>
-    public abstract class AspectBeforeAttribute : AspectMethodAttribute
+    public abstract class AspectBeforeAttribute : AspectInvokeAttribute
     {
 
         /// <summary>
@@ -91,7 +95,7 @@ namespace Autofac.Aspect
     /// <summary>
     /// AOP后置拦截器
     /// </summary>
-    public abstract class AspectAfterAttribute : AspectMethodAttribute
+    public abstract class AspectAfterAttribute : AspectInvokeAttribute
     {
 
         /// <summary>
@@ -105,7 +109,7 @@ namespace Autofac.Aspect
     /// <summary>
     /// 切入点拦截器
     /// </summary>
-    public abstract class PointcutAttribute : AspectMethodAttribute
+    public abstract class PointcutAttribute : AspectInvokeAttribute
     {
 
         /// <summary>

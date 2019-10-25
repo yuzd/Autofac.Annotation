@@ -1,8 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <autofac>
   <a11>aaaaaaaaa1</a11>
-  <list name="0">1</list>
-  <list name="1">2</list>
-  <list name="2">3</list>
-  <dic name="name">name1</dic>
+  <list>1,2,3</list>
+  <dic>#{'name': 'name1'}</dic>
 </autofac>

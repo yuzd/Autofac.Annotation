@@ -64,7 +64,7 @@ namespace Autofac.Configuration.Test.test3
 
 
         [Bean]
-        private TestModel88 getTest7(TestModel99 testModel99,[Value("#{a9}")] string test)
+        private TestModel88 getTest7(TestModel99 testModel99,[Value("${a9}")] string test)
         {
             return new TestModel88
             {

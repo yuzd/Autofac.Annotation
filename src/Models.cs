@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Autofac.Aspect;
 
 namespace Autofac.Annotation
 {
@@ -57,6 +58,11 @@ namespace Autofac.Annotation
         /// PropertySource
         /// </summary>
         public List<MetaSourceData> MetaSourceList { get; set; }
+
+        /// <summary>
+        /// Aspect标签
+        /// </summary>
+        internal AspectAttribute AspectAttribute { get; set; }
 
 
 

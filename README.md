@@ -20,7 +20,7 @@ AutofacAnnotationModule有两种构造方法
 1. 可以传一个Assebly列表 （这种方式会注册传入的Assebly里面打了标签的类）
 2. 可以传一个AsseblyName列表 (这种方式是先会根据AsseblyName查找Assebly 然后在注册)
 
-## Supported Attributes [支持的标签说明【AutoConfiguration】【Bean】【Component】【Value】【PropertySource】【Autowired】【Aspect】]
+## Supported Attributes [支持的标签说明【AutoConfiguration】【Bean】【Component】【Value[支持SpEL表达式]】【PropertySource】【Autowired】【Aspect】]
 ### Component标签
 说明：只能打在class上面(且不能是抽象class) 把某个类注册到autofac容器
 例如：
@@ -166,13 +166,20 @@ public class B:ParentB
 * PropertySource类似Spring里面的PropertySource 可以指定数据源
 支持 xml json格式 支持内嵌资源
 
+### Value标签
+
+- ${xxx} 的格式代表是 从配置文件读取 xxx的值
+- #{} 的格式代表是 执行 SPEL表达式 , #{}内部可以嵌入 ${}
+- 更多关于SPEL表达式请参考  [Spring.EL](https://github.com/yuzd/Spring.EL)
+
 1. json格式的文件
 ```/file/appsettings1.json
 {
-  "a10": "aaaaaaaaa1",
-  "list": [ 1, 2, 3 ],
-  "dic": {
-    "name": "name1"
+  "a9": "aaaaaaaaa",
+  "list": "1, 2, 3, 4 ",
+  "dic": "#{'name': 'name1','school': 'school1'}",
+  "parent": {
+    "name" : "yuzd"
   },
   "testInitField": 1,
   "testInitProperty": 1,
@@ -183,7 +190,7 @@ public class B:ParentB
     [PropertySource("/file/appsettings1.json")]
     public class A10
     {
-        public A10([Value("#{a10}")]string school,[Value("#{list}")]List<int> list,[Value("#{dic}")]Dictionary<string,string> dic)
+        public A10([Value("${a10}")]string school,[Value("${list}")]List<int> list,[Value("#{${dic}}")]Dictionary<string,string> dic)
         {
             this.School = school;
             this.list = list;
@@ -194,16 +201,19 @@ public class B:ParentB
         public List<int> list { get; set; } 
         public Dictionary<string,string> dic { get; set; } 
 		
-	[Value("#{testInitField}")]
+		[Value("${testInitField}")]
         public int test;
 		
-	[Value("#{testInitProperty}")]
+		[Value("${testInitProperty}")]
         public int test2 { get; set; }
 		
-	//可以直接指定值
-	[Value("2")]
-	public int test3 { get; set; }
-    }
+		[Value("${parent:name}")]//json文件如果嵌套对象可以冒号隔开
+        public string ParentName { get; set; }
+
+		//可以直接指定值
+		[Value("2")]
+		public int test3 { get; set; }
+	}
 ```
 
 2. xml格式的文件
@@ -211,10 +221,8 @@ public class B:ParentB
 <?xml version="1.0" encoding="utf-8" ?>
 <autofac>
   <a11>aaaaaaaaa1</a11>
-  <list name="0">1</list>
-  <list name="1">2</list>
-  <list name="2">3</list>
-  <dic name="name">name1</dic>
+  <list>1,2,3</list>
+  <dic>#{'name': 'name1'}</dic>
 </autofac>
 
 ```
@@ -224,7 +232,7 @@ public class B:ParentB
     [PropertySource("/file/appsettings1.xml")]
     public class A11
     {
-        public A11([Value("#{a11}")]string school,[Value("#{list}")]List<int> list,[Value("#{dic}")]Dictionary<string,string> dic)
+        public A11([Value("${a11}")]string school,[Value("${list}")]List<int> list,[Value("#{${dic}}")]Dictionary<string,string> dic)
         {
             this.School = school;
             this.list = list;
@@ -399,7 +407,7 @@ Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cor
 ```
 |  Method |     Mean |     Error |    StdDev |
 |-------- |---------:|----------:|----------:|
-| Autofac | 30.30 us | 0.2253 us | 0.1997 us |
+| Autofac | 28.61 us | 0.2120 us | 0.1879 us |
 
 ```csharp
    //打标签模式
@@ -423,7 +431,6 @@ Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cor
         }
     }
 ```
-
 ``` ini
 
 BenchmarkDotNet=v0.11.3, OS=Windows 10.0.18362
@@ -436,5 +443,7 @@ Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cor
 ```
 |            Method |     Mean |     Error |    StdDev |
 |------------------ |---------:|----------:|----------:|
-| AutofacAnnotation | 35.36 us | 0.1504 us | 0.1407 us |
+| AutofacAnnotation | 29.77 us | 0.2726 us | 0.2550 us |
+
+## 利用Benchmark进行autofac原生方式和打标签模式进行性能测试 不但没有损耗，对于属性注入性能还提高了
 

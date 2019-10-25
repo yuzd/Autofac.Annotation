@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using Autofac.Annotation.Test;
 using Autofac.Core;
-using Autofac.Extras.DynamicProxy;
 using Autofac.Features.AttributeFilters;
 using BenchmarkDotNet.Attributes;
 using Castle.DynamicProxy;

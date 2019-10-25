@@ -2,8 +2,6 @@
 using Autofac.Annotation.Util;
 using Autofac.Builder;
 using Autofac.Core;
-using Autofac.Extras.DynamicProxy;
-using Autofac.Features.AttributeFilters;
 using Castle.DynamicProxy;
 using System;
 using System.Collections.Concurrent;
@@ -13,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using Autofac.Annotation.Anotation;
 using Autofac.Aspect;
+using Autofac.Features.AttributeFilters;
 
 namespace Autofac.Annotation
 {
@@ -669,6 +668,7 @@ namespace Autofac.Annotation
                     {
                         var component = EnumerateComponentServices(bean.Bean, bean.Type);
                         component.MetaSourceList = new List<MetaSourceData>();
+                        component.AspectAttribute = bean.Type.GetCustomAttribute<AspectAttribute>();
                         EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
                         result.Add(component);
                         singleton.ComponentModelCache[bean.Type] = component;
@@ -785,7 +785,6 @@ namespace Autofac.Annotation
             var result = new ComponentModel
             {
                 AutoActivate = bean.AutoActivate,
-                AutofacScope = this.DefaultAutofacScope.Equals(AutofacScope.Default) ? bean.AutofacScope : this.DefaultAutofacScope,
                 CurrentType = currentType,
                 InjectProperties = bean.InjectProperties,
                 InjectPropertyType = bean.InjectPropertyType,
@@ -797,6 +796,16 @@ namespace Autofac.Annotation
                 DestroyMetnod = bean.DestroyMetnod,
                 OrderIndex = bean.OrderIndex
             };
+
+            if (bean.AutofacScope == AutofacScope.Default)
+            {
+                //说明没有特别指定
+                result.AutofacScope = this.DefaultAutofacScope.Equals(AutofacScope.Default) ? AutofacScope.InstancePerDependency : this.DefaultAutofacScope;
+            }
+            else
+            {
+                result.AutofacScope = bean.AutofacScope;
+            }
 
 
             #region 解析注册对应的类的列表

@@ -12,7 +12,7 @@
     <PackageId>Autofac.Annotation</PackageId>
     <PackageTags>autofac spring aspect</PackageTags>
     <PackageReleaseNotes>autofac spring 
-【AutoConfiguration】【Bean】【Component】【Value】【PropertySource】【Aspect】</PackageReleaseNotes>
+【AutoConfiguration】【Bean】【Component】【Value[支持SpEL表达式]】【PropertySource】【Aspect】</PackageReleaseNotes>
     <PackageIconUrl></PackageIconUrl>
     <PackageProjectUrl>https://github.com/yuzd/Autofac.Annotation</PackageProjectUrl>
     <PackageLicenseUrl></PackageLicenseUrl>
@@ -29,8 +29,8 @@
     <RootNamespace>Autofac.Annotation</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Version>2.0.7</Version>
-    <AssemblyVersion>2.0.7.0</AssemblyVersion>
+    <Version>3.0.4</Version>
+    <AssemblyVersion>3.0.4.0</AssemblyVersion>
     <Authors>zdyu</Authors>
   </PropertyGroup>
 
@@ -51,8 +51,9 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="1.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="1.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Xml" Version="1.0.2" />
-    <PackageReference Include="Autofac.Extras.DynamicProxy" Version="4.5.0" />
+    <PackageReference Include="Spring.EL" Version="1.0.4" />
     <PackageReference Include="AspectCore.Extensions.Reflection" Version="1.3.0" />
+    <PackageReference Include="Castle.Core" Version="4.4.0" />
   </ItemGroup>
 
 </Project>

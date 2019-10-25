@@ -18,7 +18,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// 自启动注册Configuration
     /// </summary>
-    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, InitMethod = "Start")]
+    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, InitMethod = nameof(AutoConfiguration.Start))]
     public class AutoConfiguration
     {
         /// <summary>

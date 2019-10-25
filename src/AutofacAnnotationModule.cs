@@ -197,6 +197,7 @@ namespace Autofac.Annotation
         {
             Tuple<MethodInfo, bool> AssertMethod(Type type, string methodName, bool havaParams = false)
             {
+                var emethodName = methodName.Contains(".") ? methodName.Split('.').LastOrDefault() : methodName;
                 MethodInfo method = null;
                 try
                 {
@@ -205,7 +206,7 @@ namespace Autofac.Annotation
                                          BindingFlags.Static |
                                          BindingFlags.Instance |
                                          BindingFlags.DeclaredOnly;
-                    method = type.GetMethod(methodName, flags);
+                    method = type.GetMethod(emethodName, flags);
                 }
                 catch (Exception)
                 {

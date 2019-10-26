@@ -22,7 +22,7 @@ namespace Autofac.Annotation.Util
 
             return type;
         }
-        
+
         /// <summary>
         /// Maps from a property-set-value parameter to the declaring property.
         /// </summary>
@@ -32,7 +32,7 @@ namespace Autofac.Annotation.Util
         public static bool TryGetDeclaringProperty(this ParameterInfo pi, out PropertyInfo prop)
         {
             var mi = pi.Member as MethodInfo;
-            if (mi != null && mi.DeclaringType!=null && mi.IsSpecialName && mi.Name.StartsWith("set_", System.StringComparison.Ordinal))
+            if (mi != null && mi.DeclaringType != null && mi.IsSpecialName && mi.Name.StartsWith("set_", System.StringComparison.Ordinal))
             {
                 prop = mi.DeclaringType.GetProperty(mi.Name.Substring(4));
                 return true;
@@ -84,16 +84,16 @@ namespace Autofac.Annotation.Util
                                  BindingFlags.DeclaredOnly;
 
             if (!getBaseType) return type.GetMethods(flags);
-            return type.GetMethods(flags).Union(GetAllMethod(type.BaseType,getBaseType));
+            return type.GetMethods(flags).Union(GetAllMethod(type.BaseType, getBaseType));
         }
-        
+
         /// <summary>
         /// 先获取当前类的method，没有的话在找父类的
         /// </summary>
         /// <param name="type"></param>
         /// <param name="methodName"></param>
         /// <returns></returns>
-        public static MethodInfo GetMethod(this Type type,string methodName)
+        public static MethodInfo GetMethod(this Type type, string methodName)
         {
             if (type == null)
             {
@@ -111,10 +111,10 @@ namespace Autofac.Annotation.Util
             {
                 return method;
             }
-            
-            return GetMethod(type.BaseType,methodName);
+
+            return GetMethod(type.BaseType, methodName);
         }
-        
+
         /// <summary>
         /// Get all the fields of a class
         /// </summary>
@@ -156,7 +156,7 @@ namespace Autofac.Annotation.Util
 
             return type.GetProperties(flags).Union(GetAllProperties(type.BaseType));
         }
-        
+
         public static bool IsGenericEnumerableInterfaceType(this Type type)
         {
             return type.IsGenericTypeDefinedBy(typeof(IEnumerable<>))
@@ -178,6 +178,12 @@ namespace Autofac.Annotation.Util
                    && @this.GetGenericTypeDefinition() == openGeneric;
         }
 
+
+        /// <summary>
+        /// 获取一个类型所有的父类和继承的接口
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static IEnumerable<Type> GetParentTypes(this Type type)
         {
             // is there any base type?
@@ -187,7 +193,7 @@ namespace Autofac.Annotation.Util
             }
 
             // return all implemented or inherited interfaces
-            foreach (var i in type.GetInterfaces())
+            foreach (var i in GetImplementedInterfaces(type))
             {
                 yield return i;
             }
@@ -199,6 +205,30 @@ namespace Autofac.Annotation.Util
                 yield return currentBaseType;
                 currentBaseType = currentBaseType.BaseType;
             }
+        }
+
+
+        private static Type[] GetImplementedInterfaces(Type type)
+        {
+            var interfaces = type.GetTypeInfo().ImplementedInterfaces.Where(i => i != typeof(IDisposable));
+            return type.GetTypeInfo().IsInterface ? interfaces.AppendItem(type).ToArray() : interfaces.ToArray();
+        }
+
+        /// <summary>
+        /// Appends the item to the specified sequence.
+        /// </summary>
+        /// <typeparam name="T">The type of element in the sequence.</typeparam>
+        /// <param name="sequence">The sequence.</param>
+        /// <param name="trailingItem">The trailing item.</param>
+        /// <returns>The sequence with an item appended to the end.</returns>
+        private static IEnumerable<T> AppendItem<T>(this IEnumerable<T> sequence, T trailingItem)
+        {
+            if (sequence == null) throw new ArgumentNullException(nameof(sequence));
+
+            foreach (var t in sequence)
+                yield return t;
+
+            yield return trailingItem;
         }
     }
 }

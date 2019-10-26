@@ -41,6 +41,13 @@ namespace Autofac.Annotation
         public string AutofacConfigurationKey { get; private set; }
 
         /// <summary>
+        /// 是否开启EventBus
+        /// </summary>
+        public bool EnableAutofacEventBus { get; private set; } = true;
+        
+        
+
+        /// <summary>
         /// 根据程序集来实例化
         /// </summary>
         /// <param name="assemblyList"></param>
@@ -129,7 +136,18 @@ namespace Autofac.Annotation
             this.AllowCircularDependencies = flag;
             return this;
         }
-
+        
+        /// <summary>
+        /// 设置是否启动eventBus
+        /// </summary>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        public AutofacAnnotationModule SetEnableAutofacEventBug(bool flag)
+        {
+            this.EnableAutofacEventBus = flag;
+            return this;
+        }
+        
         /// <summary>
         /// autofac加载
         /// </summary>
@@ -139,6 +157,12 @@ namespace Autofac.Annotation
             if (builder == null)
             {
                 throw new ArgumentNullException(nameof(builder));
+            }
+            
+            if (EnableAutofacEventBus)
+            {
+                builder.RegisterSource(new Autofac.Features.Variance.ContravariantRegistrationSource());
+                builder.RegisterEventing();
             }
 
             var componetList = GetAllComponent(builder);
@@ -818,7 +842,6 @@ namespace Autofac.Annotation
                 var typeInterfaces = currentType.GetParentTypes();
                 foreach (var iInterface in typeInterfaces)
                 {
-                    
                     if (iInterface.IsValueType || iInterface.IsEnum || iInterface == typeof(object) || iInterface.IsGenericEnumerableInterfaceType() || !ProxyUtil.IsAccessible(iInterface)) continue;
                     if (bean.Services == null || !bean.Services.Contains(iInterface))
                     {

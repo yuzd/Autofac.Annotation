@@ -450,7 +450,7 @@ namespace Autofac.Annotation.Test
         public A282 A282;    
     }
     
-    [Component(InitMethod = "start",DestroyMetnod = "destroy")]
+    [Component(InitMethod = "start",DestroyMethod = "destroy")]
     public class A29
     {
         [Value("aaaaa")]
@@ -467,7 +467,7 @@ namespace Autofac.Annotation.Test
         }
     }
     
-    [Component(InitMethod = "start",DestroyMetnod = "destroy")]
+    [Component(InitMethod = "start",DestroyMethod = "destroy")]
     public class A30
     {
         [Value("aaaaa")]

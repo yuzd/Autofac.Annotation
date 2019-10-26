@@ -1,0 +1,1 @@
+https://github.com/autofac/Autofac.Extras.DynamicProxy

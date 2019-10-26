@@ -218,7 +218,7 @@ namespace Autofac.Annotation
             where TReflectionActivatorData : ReflectionActivatorData
             where TSingleRegistrationStyle : SingleRegistrationStyle
         {
-            Tuple<MethodInfo, bool> AssertMethod(Type type, string methodName, bool havaParams = false)
+            MethodInfo AssertMethod(Type type, string methodName)
             {
                 var emethodName = methodName.Contains(".") ? methodName.Split('.').LastOrDefault() : methodName;
                 MethodInfo method = null;
@@ -242,21 +242,7 @@ namespace Autofac.Annotation
                     throw new DependencyResolutionException($"find method: {methodName} in type:{type.FullName} error");
                 }
 
-                var withParameter = false;
-                var parameters = method.GetParameters();
-                if (havaParams && parameters.Any())
-                {
-                    if (parameters.Length > 1)
-                        throw new DependencyResolutionException($"method: {methodName} in type:{type.FullName} must without any parameters");
-                    if (parameters.First().ParameterType != typeof(IComponentContext))
-                    {
-                        throw new DependencyResolutionException($"method: {methodName} in type:{type.FullName} ,the parameter type must be IComponentContext");
-                    }
-
-                    withParameter = true;
-                }
-
-                return new Tuple<MethodInfo, bool>(method, withParameter);
+                return method;
             }
 
             if (component == null)
@@ -271,21 +257,18 @@ namespace Autofac.Annotation
 
             if (!string.IsNullOrEmpty(component.InitMethod))
             {
-                var method = AssertMethod(component.CurrentType, component.InitMethod, true);
-                if (!method.Item2)
-                {
-                    registrar.OnActivated(e => { method.Item1.Invoke(e.Instance, null); });
-                }
-                else
-                {
-                    registrar.OnActivated(e => { method.Item1.Invoke(e.Instance, new object[] { e.Context }); });
-                }
+                var method = AssertMethod(component.CurrentType, component.InitMethod);
+                registrar.OnActivated(e => { AutoConfigurationHelper.InvokeInstanceMethod(e.Instance,method, e.Context); });
             }
 
-            if (!string.IsNullOrEmpty(component.DestroyMetnod))
+            if (!string.IsNullOrEmpty(component.DestroyMethod))
             {
-                var method = AssertMethod(component.CurrentType, component.DestroyMetnod);
-                registrar.OnRelease(e => { method.Item1.Invoke(e, null); });
+                var method = AssertMethod(component.CurrentType, component.DestroyMethod);
+                if (method.GetParameters().Any())
+                {
+                    throw new DependencyResolutionException($"class `{component.CurrentType.FullName}` DestroyMethod `{component.DestroyMethod}` must be no parameters");
+                }
+                registrar.OnRelease(e => { method.Invoke(e, null); });
             }
         }
 
@@ -817,7 +800,7 @@ namespace Autofac.Annotation
                 InterceptorKey = bean.InterceptorKey,
                 InterceptorType = bean.InterceptorType,
                 InitMethod = bean.InitMethod,
-                DestroyMetnod = bean.DestroyMetnod,
+                DestroyMethod = bean.DestroyMethod,
                 OrderIndex = bean.OrderIndex
             };
 

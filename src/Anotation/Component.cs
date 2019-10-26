@@ -127,7 +127,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 被Release时执行的方法
         /// </summary>
-        public string DestroyMetnod { get; set; }
+        public string DestroyMethod { get; set; }
 
     }
 

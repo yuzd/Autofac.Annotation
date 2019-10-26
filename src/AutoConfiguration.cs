@@ -70,6 +70,74 @@ namespace Autofac.Annotation
 
     internal static class AutoConfigurationHelper
     {
+        public static void InvokeInstanceMethod(object instance, MethodInfo methodInfo,IComponentContext context)
+        {
+            try
+            {
+                var parameters = methodInfo.GetParameters();
+                if (parameters.Length == 0)
+                { 
+                    methodInfo.Invoke(instance, null);
+                    return;
+                }
+
+                //自动类型注入
+
+                List<object> parameterObj = new List<object>();
+                foreach (var parameter in parameters)
+                {
+                    var autowired = parameter.GetCustomAttribute<Autowired>();
+                    if (autowired != null)
+                    {
+                        parameterObj.Add(autowired.ResolveParameter(parameter, context));
+                        continue;
+                    }
+
+                    var value = parameter.GetCustomAttribute<Value>();
+                    if (value != null)
+                    {
+                        parameterObj.Add(value.ResolveParameter(parameter, context));
+                        continue;
+                    }
+
+                    if (parameter.HasDefaultValue)
+                    {
+                        parameterObj.Add(parameter.RawDefaultValue);
+                        continue;
+                    }
+
+                    if (parameter.IsOptional)
+                    {
+                        parameterObj.Add(Type.Missing);
+                        continue;
+                    }
+
+                    if (parameter.IsOut)
+                    {
+                        parameterObj.Add(Type.Missing);
+                        continue;
+                    }
+
+                    if (parameter.ParameterType.IsValueType || parameter.ParameterType.IsEnum)
+                    {
+                        parameterObj.Add(parameter.RawDefaultValue);
+                        continue;
+                    }
+
+
+                    parameterObj.Add(context.Resolve(parameter.ParameterType));
+
+                }
+                
+                methodInfo.Invoke(instance, parameterObj.ToArray());
+
+            }
+            catch (Exception e)
+            {
+                throw new InvalidOperationException($"The class `{methodInfo.DeclaringType.FullName}` method `{methodInfo.Name}` invoke fail!", e);
+            }
+        }
+        
         public static object InvokeInstanceMethod(IComponentContext context, AutoConfigurationDetail autoConfigurationDetail, object autoConfigurationInstance, MethodInfo methodInfo)
         {
             try

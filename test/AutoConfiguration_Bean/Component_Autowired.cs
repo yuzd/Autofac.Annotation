@@ -17,7 +17,7 @@ namespace Autofac.Configuration.Test.Component_Autowired
             // autofac打标签模式
             builder.RegisterModule(new AutofacAnnotationModule(typeof(Student).Assembly));
             var container = builder.Build();
-            var a1 = container.Resolve<Student7>();
+            var a1 = container.Resolve<Student9>();
             container.Dispose();
             
             Assert.NotNull(a1);
@@ -117,5 +117,20 @@ namespace Autofac.Configuration.Test.Component_Autowired
         {
             _student6 = student6;
         }
+    }
+
+//    [PropertySource("/file/appsettings1.json")]
+    [PropertySource("appsettings.json")] //也可以不用谢
+    [Component]
+    public class Student9
+    {
+        [Value("${a9}")]
+        public string Name { get; set; }
+
+        [Value("#{@(Autofac.Configuration.Test.Component_Autowired.Student8,Autofac.Configuration.Test).Student5.Name}")]
+        public string Name2 { get; set; }
+        
+        [Value("#{${dic}}")]
+        public Dictionary<string, string> Dic;
     }
 }

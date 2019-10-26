@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Autofac.Annotation.Anotation;
 using Autofac.Annotation.Util;
 using Autofac.Builder;
 using Autofac.Core;
@@ -18,8 +17,8 @@ namespace Autofac.Annotation
     /// <summary>
     /// 自启动注册Configuration
     /// </summary>
-    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, InitMethod = nameof(AutoConfiguration.Start))]
-    public class AutoConfiguration
+    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, InitMethod = nameof(AutoConfigurationSource.Start))]
+    public class AutoConfigurationSource
     {
         /// <summary>
         /// 执行自动注册

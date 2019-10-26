@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 using Autofac.Annotation;
-using Autofac.Annotation.Anotation;
 
 namespace Autofac.Configuration.Test.test3
 {
 
-    [Annotation.Anotation.AutoConfiguration]
+//    [PropertySource("/file/appsettings1.json")]
+    [AutoConfiguration]
     public class TestConfiguration
     {
         [Bean]

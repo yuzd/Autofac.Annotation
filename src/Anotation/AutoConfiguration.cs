@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Autofac.Annotation.Anotation
+namespace Autofac.Annotation
 {
     /// <summary>
     /// 和Spring的Configuration功能类似

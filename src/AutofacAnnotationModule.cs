@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Autofac.Annotation.Anotation;
 using Autofac.Aspect;
 using Autofac.Features.AttributeFilters;
 
@@ -753,7 +752,7 @@ namespace Autofac.Annotation
                 var types = assembly.GetExportedTypes();
                 //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
                 var typeList = (from type in types
-                    let bean = type.GetCustomAttribute<Anotation.AutoConfiguration>()
+                    let bean = type.GetCustomAttribute<AutoConfiguration>()
                     where type.IsClass && !type.IsAbstract && bean != null
                     select new
                     {
@@ -920,7 +919,7 @@ namespace Autofac.Annotation
             var metaSourceAttributes = classType.GetCustomAttributes<PropertySource>().ToList();
             if (metaSourceAttributes.Any())
             {
-                metaSourceAttributes = metaSourceAttributes.OrderBy(r => r.Order).ToList();
+                metaSourceAttributes = metaSourceAttributes.OrderByDescending(r => r.OrderIndex).ToList();
                 foreach (var metaSourceAttribute in metaSourceAttributes)
                 {
                     MetaSourceData metaSource = new MetaSourceData
@@ -928,7 +927,7 @@ namespace Autofac.Annotation
                         Origin = metaSourceAttribute.Path,
                         Embedded = metaSourceAttribute.Embedded,
                         MetaSourceType = metaSourceAttribute.MetaSourceType,
-                        Order = metaSourceAttribute.Order
+                        Order = metaSourceAttribute.OrderIndex
                     };
 
                     if (string.IsNullOrEmpty(metaSourceAttribute.Path))

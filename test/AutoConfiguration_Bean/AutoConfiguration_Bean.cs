@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Autofac.Annotation;
-using Autofac.Annotation.Anotation;
 using Autofac.Configuration.Test.test3;
 using Xunit;
 

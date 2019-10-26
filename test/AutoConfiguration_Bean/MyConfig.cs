@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 using Autofac.Annotation;
-using Autofac.Annotation.Anotation;
 
 namespace Autofac.Configuration.Test.AutoConfiguration_Bean
 {
-    [Annotation.Anotation.AutoConfiguration("Test")]
+    [AutoConfiguration("Test")]
     public class MyConfig
     {
         [Bean]
@@ -27,7 +26,7 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
         }
     }
 
-    [Annotation.Anotation.AutoConfiguration("Test2")]
+    [AutoConfiguration("Test2")]
     public class MyConfig2
     {
         [Bean]

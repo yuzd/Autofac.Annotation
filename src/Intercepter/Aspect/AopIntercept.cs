@@ -82,7 +82,7 @@ namespace Autofac.Aspect
         /// 拦截器
         /// </summary>
         /// <param name="invocation"></param>
-        private async Task<Tuple<List<PointcutAttribute>, List<AspectInvokeAttribute>>> BeforeInterceptAttribute(IInvocation invocation)
+        private async Task<Tuple<List<PointcutAttribute>, List<AspectInvokeAttribute>,Exception>> BeforeInterceptAttribute(IInvocation invocation)
         {
             if(!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget,out var Attributes))
             {
@@ -102,20 +102,27 @@ namespace Autofac.Aspect
             }
            
             var aspectContext = new AspectContext(_component, invocation);
-            foreach (var attribute in Attributes)
+            Exception ex = null;
+            try
             {
-                switch (attribute)
+                foreach (var attribute in Attributes)
                 {
-                    case AspectAroundAttribute aspectAroundAttribute:
-                        await aspectAroundAttribute.Before(aspectContext);
-                        break;
-                    case AspectBeforeAttribute aspectBeforeAttribute:
-                        await aspectBeforeAttribute.Before(aspectContext);
-                        break;
+                    switch (attribute)
+                    {
+                        case AspectAroundAttribute aspectAroundAttribute:
+                            await aspectAroundAttribute.Before(aspectContext);
+                            break;
+                        case AspectBeforeAttribute aspectBeforeAttribute:
+                            await aspectBeforeAttribute.Before(aspectContext);
+                            break;
+                    }
                 }
             }
-
-            return new Tuple<List<PointcutAttribute>, List<AspectInvokeAttribute>>(Attributes.OfType<PointcutAttribute>().ToList(), Attributes);
+            catch (Exception e)
+            {
+                ex = e;
+            }
+            return new Tuple<List<PointcutAttribute>, List<AspectInvokeAttribute>,Exception>(Attributes.OfType<PointcutAttribute>().ToList(), Attributes,ex);
         }
 
         private async Task AfterInterceptAttribute(List<AspectInvokeAttribute> Attributes, IInvocation invocation, Exception exp)
@@ -146,6 +153,12 @@ namespace Autofac.Aspect
             var attribute = await BeforeInterceptAttribute(invocation);
             try
             {
+                if (attribute.Item3 != null)
+                {
+                    await AfterInterceptAttribute(attribute.Item2, invocation, attribute.Item3);
+                    throw attribute.Item3;
+                }
+                
                 if (attribute.Item1 == null || !attribute.Item1.Any())
                 {
                     await proceed(invocation);
@@ -182,9 +195,14 @@ namespace Autofac.Aspect
         protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, Func<IInvocation, Task<TResult>> proceed)
         {
             var attribute = await BeforeInterceptAttribute(invocation);
-
             try
             {
+                if (attribute.Item3 != null)
+                {
+                    await AfterInterceptAttribute(attribute.Item2, invocation, attribute.Item3);
+                    throw attribute.Item3;
+                }
+                
                 TResult r;
                 if (attribute.Item1 == null || !attribute.Item1.Any())
                 {

@@ -1,8 +1,8 @@
-# Autofac Annotation Configuration [Autofac标签配置]
+# Autofac extras library for component registration via attributes
 
 支持netcore2.0 + framework4.6+
 
-## 如何使用
+## 如何使用 https://github.com/yuzd/Autofac.Annotation/wiki
 ### NUGET Install-Package Autofac.Annotation
 ```csharp
 var builder = new ContainerBuilder();

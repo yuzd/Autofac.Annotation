@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Autofac.Annotation.Test.test5
@@ -5,7 +9,7 @@ namespace Autofac.Annotation.Test.test5
     public class EventBusTest
     {
         [Fact]
-        public void Test_Type_01()
+        public async Task Test_Type_01()
         {
             var builder = new ContainerBuilder();
 
@@ -18,8 +22,12 @@ namespace Autofac.Annotation.Test.test5
 
             Assert.NotNull(a1);
             a1.EventPublisher.Publish(new WorkModel1());
-            
 
+            List<WorkReturnListener2Model> sendResult = a1.EventPublisher.Send<WorkReturnListener2Model>(new WorkModel1());
+
+            await a1.AsyncEventPublisher.PublishAsync(new WorkModel1());
+            
+            List<WorkReturnListener2Model> sendAsyncResult = await a1.AsyncEventPublisher.SendAsync<WorkReturnListener2Model>(new WorkModel1());
         }
     }
 }

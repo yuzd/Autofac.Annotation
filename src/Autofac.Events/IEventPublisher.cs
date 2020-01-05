@@ -14,5 +14,14 @@ namespace Autofac.Events
         /// </summary>
         /// <param name="event"></param>
         void Publish(object @event);
+        
+        
+        /// <summary>
+        /// 发布消息并且拿到返回值
+        /// </summary>
+        /// <param name="event"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        List<T> Send<T>(object @event);
     }
 }

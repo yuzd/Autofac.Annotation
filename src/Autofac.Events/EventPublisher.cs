@@ -36,7 +36,7 @@ namespace Autofac.Events
         /// <param name="event"></param>
         /// <typeparam name="T">返回值类型</typeparam>
         /// <returns></returns>
-        public List<T> Send<T>(object @event)
+        public List<T> Publish<T>(object @event)
         {
             return _scope.SendEvent<T>(@event);
         }
@@ -57,7 +57,7 @@ namespace Autofac.Events
         /// <param name="event"></param>
         /// <typeparam name="T">返回值类型</typeparam>
         /// <returns></returns>
-        public Task<List<T>> SendAsync<T>(object @event)
+        public Task<List<T>> PublishAsync<T>(object @event)
         {
             return _scope.SendEventAsync<T>(@event);
         }

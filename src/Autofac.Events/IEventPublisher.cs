@@ -22,6 +22,6 @@ namespace Autofac.Events
         /// <param name="event"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        List<T> Send<T>(object @event);
+        List<T> Publish<T>(object @event);
     }
 }

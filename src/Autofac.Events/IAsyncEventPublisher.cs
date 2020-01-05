@@ -24,6 +24,6 @@ namespace Autofac.Events
         /// <param name="event"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<List<T>> SendAsync<T>(object @event);
+        Task<List<T>> PublishAsync<T>(object @event);
     }
 }

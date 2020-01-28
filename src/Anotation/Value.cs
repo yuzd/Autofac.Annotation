@@ -110,14 +110,15 @@ namespace Autofac.Annotation
         /// <param name="parameterInfo"></param>
         /// <param name="autoConfigurationDetail"></param>
         /// <returns></returns>
-        private object Resolve(IComponentContext context, Type classType, Type memberType, MemberInfo memberInfo, ParameterInfo parameterInfo = null, AutoConfigurationDetail autoConfigurationDetail = null)
+        private object Resolve(IComponentContext context, Type classType, Type memberType, MemberInfo memberInfo, ParameterInfo parameterInfo = null,
+            AutoConfigurationDetail autoConfigurationDetail = null)
         {
             if (classType == null) return null;
             if (string.IsNullOrEmpty(this.value)) return null;
             try
             {
                 //先把 ${} 的 placehoder 全部替换掉
-                var parameterValue = ResolveEmbeddedValue(context,classType,this.value,autoConfigurationDetail);
+                var parameterValue = ResolveEmbeddedValue(context, classType, this.value, autoConfigurationDetail);
                 int startIndex = parameterValue.ToString().IndexOf("#{", StringComparison.Ordinal);
                 if (startIndex != -1)
                 {
@@ -128,15 +129,32 @@ namespace Autofac.Annotation
                         {
                             ["_sprint_context_resove_"] = new SprintContextResove((type, name) =>
                             {
-                                if (!string.IsNullOrEmpty(name)) return context.ResolveKeyed(name, type);
-                                return context.Resolve(type);
+                                if (type != null && !string.IsNullOrEmpty(name)) return context.ResolveKeyed(name, type);
+                                if (type != null) return context.Resolve(type);
+                                if (!string.IsNullOrEmpty(name))
+                                {
+                                    //从当前的Assembly去loadType
+                                    var arr = name.Split('>');
+                                    if (arr.Length == 2)
+                                    {
+                                        var resolveType = classType.Assembly.GetType(classType.Namespace + "." + arr[0]);
+                                        return resolveType == null ? null : context.ResolveKeyed(arr[1], resolveType);
+                                    }
+                                    else
+                                    {
+                                        var resolveType = classType.Assembly.GetType(classType.Namespace + "." + name);
+                                        return resolveType == null ? null : context.Resolve(resolveType);
+                                    }
+                                }
+
+                                return null;
                             })
                         };
                         //El表达式
 
                         int pos = startIndex + DefaultPlaceholderPrefix.Length;
                         string expression = parameterValue.ToString().Substring(pos, endIndex - pos);
-                        parameterValue = ExpressionEvaluator.GetValue(null, expression,vars);
+                        parameterValue = ExpressionEvaluator.GetValue(null, expression, vars);
                     }
                 }
 
@@ -158,7 +176,6 @@ namespace Autofac.Annotation
         }
 
 
-       
         private object ResolveEmbeddedValue(IComponentContext context, Type classType, string strVal, AutoConfigurationDetail autoConfigurationDetail = null)
         {
             int startIndex = strVal.IndexOf(DefaultPlaceholderPrefix, StringComparison.Ordinal);
@@ -169,7 +186,7 @@ namespace Autofac.Annotation
                 {
                     int pos = startIndex + DefaultPlaceholderPrefix.Length;
                     string placeholder = strVal.Substring(pos, endIndex - pos);
-                    string resolvedValue = ResolvePlaceholder(context,classType,placeholder, autoConfigurationDetail);
+                    string resolvedValue = ResolvePlaceholder(context, classType, placeholder, autoConfigurationDetail);
                     if (resolvedValue != null)
                     {
                         strVal = strVal.Substring(0, startIndex) + resolvedValue + strVal.Substring(endIndex + 1);
@@ -189,6 +206,7 @@ namespace Autofac.Annotation
                     startIndex = -1;
                 }
             }
+
             return strVal;
         }
 
@@ -233,18 +251,19 @@ namespace Autofac.Annotation
                             //表示key不存在 从下一个source里面去寻找
                             continue;
                         }
+
                         propertyValue = parameterValue;
                         break;
                     }
                 }
             }
+
             if (propertyValue == null && EnvironmentVariableMode == EnvironmentVariableMode.Fallback)
             {
                 propertyValue = Environment.GetEnvironmentVariable(placeholder);
             }
+
             return propertyValue;
         }
     }
-
-
 }

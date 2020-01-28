@@ -19,7 +19,7 @@ namespace Autofac.Configuration.Test.test4
         [Autowired]
         public ValueModel1 ValueModel1 { get; set; }
 
-        [Value("#{@(Autofac.Configuration.Test.test4.ValueModel1,Autofac.Configuration.Test).A9}")]
+        [Value("#{@(ValueModel1).A9}")]
         public string CallA9 { get; set; }
     }
 
@@ -61,6 +61,9 @@ namespace Autofac.Configuration.Test.test4
 
         [Value("#{@(Autofac.Configuration.Test.test4.ParentValueModel,Autofac.Configuration.Test@key32).GetName()}")]
         public string CallA9 { get; set; }
+        
+        [Value("#{@(ParentValueModel>key32).GetName()}")]
+        public string CallA92 { get; set; }
     }
 
     [Component]

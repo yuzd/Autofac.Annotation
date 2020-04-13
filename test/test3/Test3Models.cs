@@ -304,6 +304,11 @@ namespace Autofac.Configuration.Test.test3
         {
             Console.WriteLine("TestInterceptor");
         }
+
+        public virtual void TestNoInterceptor()
+        {
+            Console.WriteLine("TestNoInterceptor");
+        }
         
         [StopWatchInterceptor]
         [TransactionInterceptor]

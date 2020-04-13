@@ -31,15 +31,15 @@ namespace Autofac.Aspect
                 .Where(r => r.AspectAttribute != null).ToList();
             foreach (var aspectClass in aspectClassList)
             {
-                var allAttributes = aspectClass.CurrentType.GetReflector()
+                var allAttributesinClass = aspectClass.CurrentType.GetReflector()
                     .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
-                    .Select(r => new {IsClass = true, Attribute = r, Index = r.OrderIndex});
+                    .Select(r => new {IsClass = true, Attribute = r, Index = r.OrderIndex}).ToList();
 
                 var myArrayMethodInfo = aspectClass.CurrentType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(m => !m.IsSpecialName);
 
                 foreach (var method in myArrayMethodInfo)
                 {
-                    allAttributes = allAttributes.Concat(method.GetReflector()
+                    var allAttributes = allAttributesinClass.Concat(method.GetReflector()
                             .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
                             .Select(r => new { IsClass = false, Attribute = r, Index = r.OrderIndex }));
 
@@ -84,21 +84,9 @@ namespace Autofac.Aspect
         /// <param name="invocation"></param>
         private async Task<Tuple<List<PointcutAttribute>, List<AspectInvokeAttribute>,Exception>> BeforeInterceptAttribute(IInvocation invocation)
         {
-            if(!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget,out var Attributes))
+            if(!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget,out var Attributes) || Attributes==null || !Attributes.Any())
             {
-                var allAttributes = invocation.TargetType.GetReflector()
-                    .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
-                    .Select(r => new { IsClass = true, Attribute = r, Index = r.OrderIndex })
-                    .Concat(invocation.MethodInvocationTarget.GetReflector()
-                        .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
-                        .Select(r => new { IsClass = false, Attribute = r, Index = r.OrderIndex }));
-
-                Attributes = allAttributes
-                    .OrderBy(r => r.IsClass).ThenByDescending(r => r.Index)
-                    .GroupBy(r => r.Attribute.GetType().FullName)
-                    .Select(r => r.First().Attribute).ToList();
-
-                _cache.CacheList.TryAdd(invocation.MethodInvocationTarget, Attributes);
+                return null;
             }
            
             var aspectContext = new AspectContext(_component, invocation);
@@ -153,6 +141,12 @@ namespace Autofac.Aspect
             var attribute = await BeforeInterceptAttribute(invocation);
             try
             {
+                if (attribute == null)
+                {
+                    await proceed(invocation);
+                    return;
+                }
+
                 if (attribute.Item3 != null)
                 {
                     await AfterInterceptAttribute(attribute.Item2, invocation, attribute.Item3);
@@ -197,13 +191,21 @@ namespace Autofac.Aspect
             var attribute = await BeforeInterceptAttribute(invocation);
             try
             {
+                TResult r;
+
+                if (attribute == null)
+                {
+                    r = await proceed(invocation);
+                    return r;
+                }
+
                 if (attribute.Item3 != null)
                 {
                     await AfterInterceptAttribute(attribute.Item2, invocation, attribute.Item3);
                     throw attribute.Item3;
                 }
                 
-                TResult r;
+             
                 if (attribute.Item1 == null || !attribute.Item1.Any())
                 {
                     r = await proceed(invocation);

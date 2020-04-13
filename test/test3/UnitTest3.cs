@@ -250,6 +250,7 @@ namespace Autofac.Configuration.Test.test3
             var a12 = container.Resolve<TestModel101>();
             
             a12.TestInterceptor();
+            a12.TestNoInterceptor();
             Assert.NotEmpty(a12.Name);
 
            var ss1 = await a12.TestInterceptor2();

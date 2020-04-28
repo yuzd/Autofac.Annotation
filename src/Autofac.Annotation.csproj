@@ -40,6 +40,10 @@
     <CodeAnalysisRuleSet />
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net46|AnyCPU'">
+    <DefineConstants>DEBUG;TRACE;NETSTANDARD2_0</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Include="..\README.md" Link="README.md" />
   </ItemGroup>

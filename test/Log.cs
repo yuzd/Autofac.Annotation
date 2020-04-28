@@ -7,22 +7,26 @@ namespace Autofac.Annotation.Test
     [Component]
     public class Log : AsyncInterceptor
     {
-        protected override async Task InterceptAsync(IInvocation invocation, Func<IInvocation, Task> proceed)
+        protected override async Task InterceptAsync(
+            IInvocation invocation,
+            IInvocationProceedInfo proceedInfo,
+            Func<IInvocation, IInvocationProceedInfo, Task> proceed)
         {
-            await proceed(invocation).ConfigureAwait(false);
+            await proceed(invocation, proceedInfo).ConfigureAwait(false);
         }
 
-        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, Func<IInvocation, Task<TResult>> proceed)
+        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
         {
-            TResult result = await proceed(invocation).ConfigureAwait(false);
+            TResult result = await proceed(invocation, proceedInfo).ConfigureAwait(false);
             if (result is string)
             {
-                var tt =  (TResult) Activator.CreateInstance(typeof(String),new char[]{'a'});
+                var tt = (TResult)Activator.CreateInstance(typeof(String), new char[] { 'a' });
                 invocation.ReturnValue = tt;
                 return tt;
             }
             return result;
         }
+
     }
 
     [Component("log2")]
@@ -34,17 +38,20 @@ namespace Autofac.Annotation.Test
         //[Autowired]
         public A21 A21 { get; set; }
 
-        protected override async Task InterceptAsync(IInvocation invocation, Func<IInvocation, Task> proceed)
+        protected override async Task InterceptAsync(
+            IInvocation invocation,
+            IInvocationProceedInfo proceedInfo,
+            Func<IInvocation, IInvocationProceedInfo, Task> proceed)
         {
-            await proceed(invocation).ConfigureAwait(false);
+            await proceed(invocation, proceedInfo).ConfigureAwait(false);
         }
 
-        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, Func<IInvocation, Task<TResult>> proceed)
+        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
         {
-            TResult result = await proceed(invocation).ConfigureAwait(false);
+            TResult result = await proceed(invocation, proceedInfo).ConfigureAwait(false);
             if (result is string)
             {
-                var tt =  (TResult) Activator.CreateInstance(typeof(String),new char[]{'b'});
+                var tt = (TResult)Activator.CreateInstance(typeof(String), new char[] { 'b' });
                 invocation.ReturnValue = tt;
                 return tt;
             }

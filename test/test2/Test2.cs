@@ -212,7 +212,7 @@ namespace Autofac.Configuration.Test.test2
 
             var container = builder.Build();
 
-            var a1 = container.Resolve<IList<IInterceptor>>();
+            var a1 = container.Resolve<IList<IAsyncInterceptor>>();
             Assert.True(a1.Count == 2); //用autofac本身的Resolve方法只能获取到2个 因为另外2个是加了key
 
         }

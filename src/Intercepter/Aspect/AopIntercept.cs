@@ -134,16 +134,17 @@ namespace Autofac.Aspect
         /// 无返回值拦截器
         /// </summary>
         /// <param name="invocation"></param>
+        /// <param name="proceedInfo"></param>
         /// <param name="proceed"></param>
         /// <returns></returns>
-        protected override async Task InterceptAsync(IInvocation invocation, Func<IInvocation, Task> proceed)
+        protected override async Task InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task> proceed)
         {
             var attribute = await BeforeInterceptAttribute(invocation);
             try
             {
                 if (attribute == null)
                 {
-                    await proceed(invocation);
+                    await proceed(invocation, proceedInfo);
                     return;
                 }
 
@@ -155,7 +156,7 @@ namespace Autofac.Aspect
                 
                 if (attribute.Item1 == null || !attribute.Item1.Any())
                 {
-                    await proceed(invocation);
+                    await proceed(invocation, proceedInfo);
                 }
                 else
                 {
@@ -165,7 +166,7 @@ namespace Autofac.Aspect
                         builder.Use(next => async ctx => { await pointAspect.OnInvocation(ctx, next); });
                     }
 
-                    builder.Use(next => async ctx => { await proceed(invocation); });
+                    builder.Use(next => async ctx => { await proceed(invocation, proceedInfo); });
 
                     var aspectfunc = builder.Build();
                     await aspectfunc(new AspectContext(_component, invocation));
@@ -184,9 +185,10 @@ namespace Autofac.Aspect
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="invocation"></param>
+        /// <param name="proceedInfo"></param>
         /// <param name="proceed"></param>
         /// <returns></returns>
-        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, Func<IInvocation, Task<TResult>> proceed)
+        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
         {
             var attribute = await BeforeInterceptAttribute(invocation);
             try
@@ -195,7 +197,7 @@ namespace Autofac.Aspect
 
                 if (attribute == null)
                 {
-                    r = await proceed(invocation);
+                    r = await proceed(invocation, proceedInfo);
                     return r;
                 }
 
@@ -208,7 +210,7 @@ namespace Autofac.Aspect
              
                 if (attribute.Item1 == null || !attribute.Item1.Any())
                 {
-                    r = await proceed(invocation);
+                    r = await proceed(invocation, proceedInfo);
                 }
                 else
                 {
@@ -221,7 +223,7 @@ namespace Autofac.Aspect
 
                     builder.Use(next => async ctx =>
                      {
-                         ctx.Result = await proceed(invocation);
+                         ctx.Result = await proceed(invocation, proceedInfo);
                      });
 
                     var aspectfunc = builder.Build();
@@ -239,5 +241,7 @@ namespace Autofac.Aspect
                 throw;
             }
         }
+
+   
     }
 }

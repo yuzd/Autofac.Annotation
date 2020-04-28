@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using Autofac.Annotation.Intercepter;
 using Autofac.Builder;
 using Autofac.Core;
 using Autofac.Features.Scanning;
@@ -50,20 +51,7 @@ namespace Autofac.Annotation
 
         private static readonly ProxyGenerator ProxyGenerator = new ProxyGenerator();
 
-        /// <summary>
-        /// Enable class interception on the target type. Interceptors will be determined
-        /// via Intercept attributes on the class or added with InterceptedBy().
-        /// Only virtual methods can be intercepted this way.
-        /// </summary>
-        /// <typeparam name="TLimit">Registration limit type.</typeparam>
-        /// <typeparam name="TRegistrationStyle">Registration style.</typeparam>
-        /// <param name="registration">Registration to apply interception to.</param>
-        /// <returns>Registration builder allowing the registration to be configured.</returns>
-        public static IRegistrationBuilder<TLimit, ScanningActivatorData, TRegistrationStyle> EnableClassInterceptors<TLimit, TRegistrationStyle>(
-            this IRegistrationBuilder<TLimit, ScanningActivatorData, TRegistrationStyle> registration)
-        {
-            return EnableClassInterceptors(registration, ProxyGenerationOptions.Default);
-        }
+       
 
         /// <summary>
         /// Enable class interception on the target type. Interceptors will be determined
@@ -154,8 +142,8 @@ namespace Autofac.Annotation
 
                 proxyParameters.Add(new PositionalParameter(index++, GetInterceptorServices(e.Component, registration.ActivatorData.ImplementationType)
                     .Select(s => e.Context.ResolveService(s))
-                    .Cast<IInterceptor>()
-                    .ToArray()));
+                    .Cast<IAsyncInterceptor>()
+                    .ToArray().ToInterceptors()));
 
                 if (options.Selector != null)
                 {
@@ -220,9 +208,11 @@ namespace Autofac.Annotation
 
                 var interceptors = GetInterceptorServices(e.Component, e.Instance.GetType())
                     .Select(s => e.Context.ResolveService(s))
-                    .Cast<IInterceptor>()
+                    .Cast<IAsyncInterceptor>()
                     .ToArray();
 
+                //这里需要改一下
+                //https://github.com/JSkimming/Castle.Core.AsyncInterceptor/blob/master/src/Castle.Core.AsyncInterceptor/ProxyGeneratorExtensions.cs
                 e.Instance = options == null
                     ? ProxyGenerator.CreateInterfaceProxyWithTarget(theInterface, interfaces, e.Instance, interceptors)
                     : ProxyGenerator.CreateInterfaceProxyWithTarget(theInterface, interfaces, e.Instance, options, interceptors);
@@ -260,27 +250,7 @@ namespace Autofac.Annotation
             return builder;
         }
 
-        /// <summary>
-        /// Allows a list of interceptor services to be assigned to the registration.
-        /// </summary>
-        /// <typeparam name="TLimit">Registration limit type.</typeparam>
-        /// <typeparam name="TActivatorData">Activator data type.</typeparam>
-        /// <typeparam name="TStyle">Registration style.</typeparam>
-        /// <param name="builder">Registration to apply interception to.</param>
-        /// <param name="interceptorServiceNames">The names of the interceptor services.</param>
-        /// <returns>Registration builder allowing the registration to be configured.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="builder"/> or <paramref name="interceptorServiceNames"/>.</exception>
-        public static IRegistrationBuilder<TLimit, TActivatorData, TStyle> InterceptedBy<TLimit, TActivatorData, TStyle>(
-            this IRegistrationBuilder<TLimit, TActivatorData, TStyle> builder,
-            params string[] interceptorServiceNames)
-        {
-            if (interceptorServiceNames == null || interceptorServiceNames.Any(n => n == null))
-            {
-                throw new ArgumentNullException(nameof(interceptorServiceNames));
-            }
-
-            return InterceptedBy(builder, interceptorServiceNames.Select(n => new KeyedService(n, typeof(IInterceptor))).ToArray());
-        }
+       
 
         /// <summary>
         /// Allows a list of interceptor services to be assigned to the registration.
@@ -365,5 +335,7 @@ namespace Autofac.Annotation
 
             return classAttributeServices.Concat(interfaceAttributeServices);
         }
+
+    
     }
 }

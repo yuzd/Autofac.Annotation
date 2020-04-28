@@ -91,6 +91,7 @@ namespace Autofac.Configuration.Test.test2
     {
         public async Task<string> hello()
         {
+            await Task.Delay(1000);
             return await Task.FromResult(nameof(Model5));
         }
     }
@@ -114,7 +115,7 @@ namespace Autofac.Configuration.Test.test2
         }
     }
 
-    [Component(Interceptor = typeof(IInterceptor), InterceptorType = InterceptorType.Class,InterceptorKey = nameof(Test2Interceptor2))]
+    [Component(Interceptor = typeof(IAsyncInterceptor), InterceptorType = InterceptorType.Class,InterceptorKey = nameof(Test2Interceptor2))]
     public class Model61
     {
         public virtual async Task<string> hello()
@@ -127,6 +128,6 @@ namespace Autofac.Configuration.Test.test2
     public class Model7
     {
         [Autowired]
-        public IList<IInterceptor> Interceptors;
+        public IList<IAsyncInterceptor> Interceptors;
     }
 }

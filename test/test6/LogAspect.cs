@@ -4,6 +4,7 @@ using Autofac.Aspect;
 namespace Autofac.Annotation.Test.test6
 {
     [Pointcut(ClassName = "LogAspectTest?",MethodName = "Test1")]
+    [Pointcut("name1",ClassName = "LogAspectT1est",MethodName = "Test1")]
     public class LogAspect
     {
         [Before]
@@ -16,6 +17,18 @@ namespace Autofac.Annotation.Test.test6
         public void After()
         {
             Console.WriteLine("After");
+        }
+        
+        [Before("name1")]
+        public void Before1()
+        {
+            Console.WriteLine("Before1");
+        }
+        
+        [After("name1")]
+        public void After1()
+        {
+            Console.WriteLine("After1");
         }
     }
 

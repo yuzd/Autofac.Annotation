@@ -63,6 +63,22 @@ namespace Autofac.Aspect
     public class BeforeAttribute : Attribute
     {
         /// <summary>
+        /// 
+        /// </summary>
+        public BeforeAttribute()
+        {
+            
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public BeforeAttribute(string name)
+        {
+            this.Name = name;
+        }
+        
+        /// <summary>
         /// 唯一名称
         /// </summary>
         public string Name { get; set; }
@@ -75,6 +91,22 @@ namespace Autofac.Aspect
     public class AfterAttribute : Attribute
     {
         /// <summary>
+        /// 
+        /// </summary>
+        public AfterAttribute()
+        {
+            
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public AfterAttribute(string name)
+        {
+            this.Name = name;
+        }
+
+        /// <summary>
         /// 唯一名称
         /// </summary>
         public string Name { get; set; }
@@ -86,6 +118,21 @@ namespace Autofac.Aspect
     [AttributeUsage(AttributeTargets.Method)]
     public class AroundAttribute : Attribute
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        public AroundAttribute()
+        {
+            
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public AroundAttribute(string name)
+        {
+            this.Name = name;
+        }
         /// <summary>
         /// 唯一名称
         /// </summary>

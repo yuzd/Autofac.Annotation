@@ -413,6 +413,7 @@ namespace Autofac.Annotation
                         }
                     }
                 }
+                if(result) break;
             }
             
             aspectJ.PointcutTypeInfoList.TryAdd(targetClass, true);

@@ -82,7 +82,7 @@ namespace Autofac.Aspect
         /// 拦截器
         /// </summary>
         /// <param name="invocation"></param>
-        private async Task<Tuple<List<PointcutAttribute>, List<AspectInvokeAttribute>,Exception>> BeforeInterceptAttribute(IInvocation invocation)
+        private async Task<Tuple<List<AspectPointAttribute>, List<AspectInvokeAttribute>,Exception>> BeforeInterceptAttribute(IInvocation invocation)
         {
             if(!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget,out var Attributes) || Attributes==null || !Attributes.Any())
             {
@@ -110,7 +110,7 @@ namespace Autofac.Aspect
             {
                 ex = e;
             }
-            return new Tuple<List<PointcutAttribute>, List<AspectInvokeAttribute>,Exception>(Attributes.OfType<PointcutAttribute>().ToList(), Attributes,ex);
+            return new Tuple<List<AspectPointAttribute>, List<AspectInvokeAttribute>,Exception>(Attributes.OfType<AspectPointAttribute>().ToList(), Attributes,ex);
         }
 
         private async Task AfterInterceptAttribute(List<AspectInvokeAttribute> Attributes, IInvocation invocation, Exception exp)
@@ -169,7 +169,7 @@ namespace Autofac.Aspect
                     builder.Use(next => async ctx => { await proceed(invocation, proceedInfo); });
 
                     var aspectfunc = builder.Build();
-                    await aspectfunc(new AspectContext(_component, invocation));
+                    await aspectfunc(new AspectContext(_component, invocation){InvocationProceedInfo = proceedInfo});
                 }
                 await AfterInterceptAttribute(attribute.Item2, invocation, null);
             }
@@ -227,7 +227,7 @@ namespace Autofac.Aspect
                      });
 
                     var aspectfunc = builder.Build();
-                    var aspectContext = new AspectContext(_component, invocation);
+                    var aspectContext = new AspectContext(_component, invocation){InvocationProceedInfo = proceedInfo};
                     await aspectfunc(aspectContext);
                     r = (TResult)aspectContext.Result;
                 }
@@ -243,5 +243,141 @@ namespace Autofac.Aspect
         }
 
    
+    }
+
+
+    /// <summary>
+    /// AOP拦截器
+    /// </summary>
+    [Component(typeof(AspectJIntercept))]
+    public class AspectJIntercept : AsyncInterceptor
+    {
+        private readonly IComponentContext _component;
+        private readonly PointCutConfigurationList _configuration;
+
+
+        /// <summary>
+        /// 构造方法
+        /// </summary>
+        public AspectJIntercept(IComponentContext context, PointCutConfigurationList configurationList)
+        {
+            _component = context;
+            _configuration = configurationList;
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="invocation"></param>
+        /// <param name="proceedInfo"></param>
+        /// <param name="proceed"></param>
+        /// <returns></returns>
+        protected override async Task InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task> proceed)
+        {
+            if (!_configuration.PointcutTargetInfoList.TryGetValue(invocation.MethodInvocationTarget, out var pointCut))
+            {
+                //该方法不需要拦截
+                await proceed(invocation, proceedInfo);
+                return;
+            }
+
+            //pointcut定义所在对象
+            var instance = _component.Resolve(pointCut.PointClass);
+
+            AspectContext aspectContext = new AspectContext
+            {
+                ComponentContext = _component,
+                InvocationContext = invocation,
+                InvocationProceedInfo = proceedInfo
+            };
+                
+            if (pointCut.AroundMethod != null)
+            {
+                AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AroundMethod, _component,aspectContext);
+                return;
+            }
+            
+            try
+            {
+                if (pointCut.BeforeMethod != null)
+                {
+                    AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.BeforeMethod, _component,aspectContext);
+                }
+                await proceed(invocation, proceedInfo);
+                if (pointCut.AfterMethod != null)
+                {
+                    AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AfterMethod, _component,aspectContext);
+                }
+            }
+            catch (Exception e)
+            {
+                aspectContext.Exception = e;
+                if (pointCut.AfterMethod != null)
+                {
+                    AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AfterMethod, _component,aspectContext);
+                }
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="invocation"></param>
+        /// <param name="proceedInfo"></param>
+        /// <param name="proceed"></param>
+        /// <typeparam name="TResult"></typeparam>
+        /// <returns></returns>
+        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
+        {
+            if (!_configuration.PointcutTargetInfoList.TryGetValue(invocation.MethodInvocationTarget, out var pointCut))
+            {
+                //该方法不需要拦截
+                return await proceed(invocation, proceedInfo);
+            }
+            
+            //pointcut定义所在对象
+            var instance = _component.Resolve(pointCut.PointClass);
+
+            AspectContext aspectContext = new AspectContext
+            {
+                ComponentContext = _component,
+                InvocationContext = invocation,
+                InvocationProceedInfo = proceedInfo
+            };
+                
+            if (pointCut.AroundMethod != null)
+            {
+                return AutoConfigurationHelper.InvokeInstanceMethodReturn<TResult>(instance, pointCut.AroundMethod, _component,aspectContext);
+            }
+            
+            try
+            {
+                if (pointCut.BeforeMethod != null)
+                {
+                    AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.BeforeMethod, _component,aspectContext);
+                }
+                
+                var rt = await proceed(invocation, proceedInfo);
+                
+                
+                if (pointCut.AfterMethod != null)
+                {
+                    AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AfterMethod, _component,aspectContext);
+                }
+
+                return rt;
+            }
+            catch (Exception e)
+            {
+                aspectContext.Exception = e;
+                if (pointCut.AfterMethod != null)
+                {
+                    AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AfterMethod, _component,aspectContext);
+                }
+                throw;
+            }
+            
+        }
     }
 }

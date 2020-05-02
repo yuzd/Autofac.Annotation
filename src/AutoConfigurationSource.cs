@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Autofac.Annotation.Util;
+using Autofac.Aspect;
 using Autofac.Builder;
 using Autofac.Core;
 using Autofac.Core.Activators.ProvidedInstance;
@@ -69,7 +71,7 @@ namespace Autofac.Annotation
 
     internal static class AutoConfigurationHelper
     {
-        public static void InvokeInstanceMethod(object instance, MethodInfo methodInfo,IComponentContext context)
+        public static void InvokeInstanceMethod(object instance, MethodInfo methodInfo,IComponentContext context,AspectContext invocation = null)
         {
             try
             {
@@ -85,6 +87,12 @@ namespace Autofac.Annotation
                 List<object> parameterObj = new List<object>();
                 foreach (var parameter in parameters)
                 {
+                    if (invocation != null && parameter.ParameterType == typeof(AspectContext))
+                    {
+                        parameterObj.Add(invocation);
+                        continue;
+                    }
+                    
                     var autowired = parameter.GetCustomAttribute<Autowired>();
                     if (autowired != null)
                     {
@@ -124,11 +132,95 @@ namespace Autofac.Annotation
                     }
 
 
+
                     parameterObj.Add(context.Resolve(parameter.ParameterType));
 
                 }
                 
                 methodInfo.Invoke(instance, parameterObj.ToArray());
+
+            }
+            catch (Exception e)
+            {
+                throw new InvalidOperationException($"The class `{methodInfo.DeclaringType.FullName}` method `{methodInfo.Name}` invoke fail!", e);
+            }
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <param name="methodInfo"></param>
+        /// <param name="context"></param>
+        /// <param name="invocation"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static T InvokeInstanceMethodReturn<T>(object instance, MethodInfo methodInfo,IComponentContext context,AspectContext invocation = null)
+        {
+            try
+            {
+                var parameters = methodInfo.GetParameters();
+                if (parameters.Length == 0)
+                { 
+                    return (T)methodInfo.Invoke(instance, null);
+                }
+
+                //自动类型注入
+
+                List<object> parameterObj = new List<object>();
+                foreach (var parameter in parameters)
+                {
+                    if (invocation != null && parameter.ParameterType == typeof(AspectContext))
+                    {
+                        parameterObj.Add(invocation);
+                        continue;
+                    }
+                    
+                    var autowired = parameter.GetCustomAttribute<Autowired>();
+                    if (autowired != null)
+                    {
+                        parameterObj.Add(autowired.ResolveParameter(parameter, context));
+                        continue;
+                    }
+
+                    var value = parameter.GetCustomAttribute<Value>();
+                    if (value != null)
+                    {
+                        parameterObj.Add(value.ResolveParameter(parameter, context));
+                        continue;
+                    }
+
+                    if (parameter.HasDefaultValue)
+                    {
+                        parameterObj.Add(parameter.RawDefaultValue);
+                        continue;
+                    }
+
+                    if (parameter.IsOptional)
+                    {
+                        parameterObj.Add(Type.Missing);
+                        continue;
+                    }
+
+                    if (parameter.IsOut)
+                    {
+                        parameterObj.Add(Type.Missing);
+                        continue;
+                    }
+
+                    if (parameter.ParameterType.IsValueType || parameter.ParameterType.IsEnum)
+                    {
+                        parameterObj.Add(parameter.RawDefaultValue);
+                        continue;
+                    }
+
+
+
+                    parameterObj.Add(context.Resolve(parameter.ParameterType));
+
+                }
+                
+                return (T)methodInfo.Invoke(instance, parameterObj.ToArray());
 
             }
             catch (Exception e)
@@ -260,6 +352,29 @@ namespace Autofac.Annotation
         /// AutoConfiguration装配集合数据源
         /// </summary>
         public List<AutoConfigurationDetail> AutoConfigurationDetailList { get; set; }
+
+    }
+    
+    /// <summary>
+    /// PointCut装配集合数据源
+    /// </summary>
+    public class PointCutConfigurationList
+    {
+
+        /// <summary>
+        /// PointCut装配集合数据源
+        /// </summary>
+        public List<PointcutConfigurationInfo> PointcutConfigurationInfoList { get; set; }
+        
+        /// <summary>
+        /// 对应的method目标集合
+        /// </summary>
+        public ConcurrentDictionary<MethodInfo,PointcutConfigurationInfo> PointcutTargetInfoList { get; set; }
+        
+        /// <summary>
+        /// 对应的class目标集合
+        /// </summary>
+        public ConcurrentDictionary<Type,bool> PointcutTypeInfoList { get; set; }
 
     }
 

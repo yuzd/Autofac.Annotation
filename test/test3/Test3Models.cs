@@ -320,7 +320,7 @@ namespace Autofac.Configuration.Test.test3
         }
     }
 
-    public class StopWatchInterceptor : PointcutAttribute
+    public class StopWatchInterceptor : AspectPointAttribute
     {
         public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
         {
@@ -340,7 +340,7 @@ namespace Autofac.Configuration.Test.test3
     }
     
     
-    public class TransactionInterceptor : PointcutAttribute
+    public class TransactionInterceptor : AspectPointAttribute
     {
         public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
         {

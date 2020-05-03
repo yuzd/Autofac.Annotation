@@ -909,7 +909,7 @@ namespace Autofac.Annotation
                     select new
                     {
                         Type = type,
-                        Bean = bean.Where(r=>!string.IsNullOrEmpty(r.ClassName)).ToList()
+                        Bean = bean.Where(r=>!string.IsNullOrEmpty(r.Class)).ToList()
                     }).ToList();
 
                 foreach (var configuration in typeList)

@@ -214,27 +214,27 @@ namespace Autofac.Aspect
         /// <summary>
         /// class的名称
         /// </summary>
-        private string _clasName;
+        private string _clas;
         /// <summary>
         /// class的名称  支持sql的like表达式
         /// </summary>
-        public string ClassName
+        public string Class
         {
-            get => _clasName;
-            set => _clasName = value.Replace("*", "%").Replace("?","_");
+            get => _clas;
+            set => _clas = value.Replace("*", "%").Replace("?","_");
         } 
 
         /// <summary>
         /// class的名称
         /// </summary>
-        private string _methodName = "%";
+        private string _method = "%";
         /// <summary>
         /// 方法名称 支持sql的like表达式
         /// </summary>
-        public string MethodName 
+        public string Method 
         {
-            get => _methodName;
-            set => _methodName = value.Replace("*", "%").Replace("?","_");
+            get => _method;
+            set => _method = value.Replace("*", "%").Replace("?","_");
         }
 
 
@@ -250,7 +250,7 @@ namespace Autofac.Aspect
                 return false;
             }
             
-            if (!SqlLikeStringUtilities.SqlLike(this.ClassName, classType.Name))
+            if (!SqlLikeStringUtilities.SqlLike(this.Class, classType.Name))
             {
                 return false;
             }
@@ -268,7 +268,7 @@ namespace Autofac.Aspect
             var classType = methodInfo.DeclaringType;
             
             //如果没有设定clasname的匹配 就不继续往下了
-            if (string.IsNullOrEmpty(ClassName) || classType == null) return false;
+            if (string.IsNullOrEmpty(Class) || classType == null) return false;
             
             //如果本身带了_的话
             //test_a  
@@ -282,12 +282,12 @@ namespace Autofac.Aspect
                 return false;
             }
             
-            if (!SqlLikeStringUtilities.SqlLike(this.ClassName, classType.Name))
+            if (!SqlLikeStringUtilities.SqlLike(this.Class, classType.Name))
             {
                 return false;
             }
 
-            if (!SqlLikeStringUtilities.SqlLike(this.MethodName, methodInfo.Name))
+            if (!SqlLikeStringUtilities.SqlLike(this.Method, methodInfo.Name))
             {
                 return false;
             }

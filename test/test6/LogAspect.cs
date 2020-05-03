@@ -4,10 +4,10 @@ using Autofac.Aspect;
 
 namespace Autofac.Annotation.Test.test6
 {
-    [Pointcut(ClassName = "LogAspectTest?",MethodName = "Test1")]
-    [Pointcut("name1",ClassName = "LogAspectT1est",MethodName = "Test1")]
-    [Pointcut("name2",ClassName = "LogAspect[ABC]")]
-    [Pointcut("name3",ClassName = "LogAroundTest",MethodName="Hello*")]
+    [Pointcut(Class = "LogAspectTest?",Method = "Test1")]
+    [Pointcut("name1",Class = "LogAspectT1est",Method = "Test1")]
+    [Pointcut("name2",Class = "LogAspect[ABC]")]
+    [Pointcut("name3",Class = "LogAroundTest",Method="Hello*")]
     public class LogAspect
     {
         [Before]
@@ -152,4 +152,71 @@ namespace Autofac.Annotation.Test.test6
         }
     }
 
+    // *Controller 代表匹配 只要是Controller结尾的类都能匹配
+    // Get* 代表上面匹配成功的类下 所以是Get打头的方法都能匹配
+    [Pointcut(Class = "*Controller",Method = "Get*")]
+    public class LoggerPointCut
+    {
+        /// <summary>
+        /// 打上Before标签 代表满足匹配的方法 在执行之前会执行下面的Before()方法
+        /// </summary>
+        [Before]
+        public void Befor()
+        {
+            Console.WriteLine("before");
+        }
+
+        /// <summary>
+        /// 打上After标签 代表满足匹配的方法 在执行之前会执行下面的After()方法
+        /// </summary>
+        [After]
+        public void After()
+        {
+            Console.WriteLine("after");
+        }
+        
+        /// <summary>
+        /// 打上Around标签 承接了 匹配成功的类的方法的执行权
+        /// </summary>
+        /// <param name="context"></param>
+        // [Around]
+        // public void Around(AspectContext context)
+        // {
+        //     //执行原目标方法前
+        //     Console.WriteLine(context.InvocationContext.MethodInvocationTarget.Name + "-->Start");
+        //     //执行原目标方法
+        //     context.InvocationProceedInfo.Invoke();
+        //     //执行原目标方法后
+        //     Console.WriteLine(context.InvocationContext.MethodInvocationTarget.Name + "-->End");
+        // }
+    }
+    
+    
+    [Component]
+    public class ProductController
+    {
+        public virtual string GetProduct(string productId)
+        {
+            return "GetProduct:" + productId;
+        }
+        
+        public virtual string UpdateProduct(string productId)
+        {
+            return "UpdateProduct:" + productId;
+        }
+    }
+    
+    [Component]
+    public class UserController
+    {
+        public virtual string GetUser(string userId)
+        {
+            return "GetUser:" + userId;
+        }
+        
+        public virtual string DeleteUser(string userId)
+        {
+            return "DeleteUser:" + userId;
+        }
+    }
 }

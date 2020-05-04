@@ -64,6 +64,17 @@ namespace Autofac.Annotation
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public override bool CanResolveParameter(ParameterInfo parameter, IComponentContext context)
+        {
+            return true;
+        }
+
+        /// <summary>
         /// 装配字段
         /// </summary>
         /// <param name="property"></param>

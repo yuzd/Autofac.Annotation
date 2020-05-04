@@ -814,7 +814,8 @@ namespace Autofac.Annotation
             {
                 builder.RegisterInstance(list).SingleInstance();
             }
-           
+            
+            AutoConfigurationSource.Register(builder,list);
         }
         
         private PointCutConfigurationList GetPointCutConfiguration(ContainerBuilder builder)

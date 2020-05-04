@@ -516,7 +516,7 @@ namespace Autofac.Annotation.Test
                 container.Resolve<A31>();
             });
             
-            Assert.Contains("property name:A311",exception.Message);
+            Assert.Contains("property name:A311",exception.ToString());
         }
         
         [Fact]

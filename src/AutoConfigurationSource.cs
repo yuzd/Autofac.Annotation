@@ -19,53 +19,138 @@ namespace Autofac.Annotation
     /// <summary>
     /// 自启动注册Configuration
     /// </summary>
-    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, InitMethod = nameof(AutoConfigurationSource.Start))]
+    //[Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, InitMethod = nameof(AutoConfigurationSource.Start))]
     public class AutoConfigurationSource
     {
         /// <summary>
-        /// 执行自动注册
+        /// 注册AutoConfiguration
         /// </summary>
-        /// <param name="context"></param>
-        public void Start(IComponentContext context)
+        /// <param name="builder"></param>
+        /// <param name="list"></param>
+        public static void Register(ContainerBuilder builder,AutoConfigurationList list)
         {
-            lock (this)
+
+            //注册Configuration
+            foreach (var configuration in list.AutoConfigurationDetailList)
             {
-                context.TryResolve<AutoConfigurationList>(out var autoConfigurationList);
-                if (autoConfigurationList == null || autoConfigurationList.AutoConfigurationDetailList == null || !autoConfigurationList.AutoConfigurationDetailList.Any()) return;
-                foreach (var autoConfigurationDetail in autoConfigurationList.AutoConfigurationDetailList)
+                RegisterConfiguration(builder, configuration);
+            }
+            
+        }
+
+        private static void RegisterConfiguration(ContainerBuilder builder,AutoConfigurationDetail autoConfigurationDetail)
+        {
+            //注册为工厂
+            foreach (var beanMethod in autoConfigurationDetail.BeanMethodInfoList)
+            {
+                if (beanMethod.Item2.IsVirtual)
                 {
-                    context.TryResolve(autoConfigurationDetail.AutoConfigurationClassType, out var autoConfigurationInstance);
-                    if (autoConfigurationInstance == null) continue;
-
-
-                    foreach (var beanMethod in autoConfigurationDetail.BeanMethodInfoList)
-                    {
-                        if (beanMethod.Item2.IsVirtual)
-                        {
-                            throw new InvalidOperationException(
-                                $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` can not be virtual!");
-                        }
-
-                        if (!ProxyUtil.IsAccessible(beanMethod.Item2.ReturnType))
-                        {
-                            throw new InvalidOperationException(
-                                $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` returnType is not accessible!");
-                        }
-                        if (beanMethod.Item2.ReturnType.IsValueType || beanMethod.Item2.ReturnType.IsEnum)
-                        {
-                            throw new InvalidOperationException(
-                                $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` returnType is invalid!");
-                        }
-
-                        var result = AutoConfigurationHelper.InvokeInstanceMethod(context, autoConfigurationDetail, autoConfigurationInstance, beanMethod.Item2);
-                        if (result == null) continue;
-                        AutoConfigurationHelper.RegisterInstance(context.ComponentRegistry, beanMethod.Item2.ReturnType,
-                            result, beanMethod.Item1.Key).CreateRegistration();
-                    }
-
+                    throw new InvalidOperationException(
+                        $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` can not be virtual!");
                 }
+                
+                if (!ProxyUtil.IsAccessible(beanMethod.Item2.ReturnType))
+                {
+                    throw new InvalidOperationException(
+                        $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` returnType is not accessible!");
+                }
+                
+                if (beanMethod.Item2.ReturnType.IsValueType || beanMethod.Item2.ReturnType.IsEnum)
+                {
+                    throw new InvalidOperationException(
+                        $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` returnType is invalid!");
+                }
+                
+                //包装这个方法成功工厂
+                //先拿到AutoConfiguration class的实例
+                //注册一个方法到容器 拿到并传入IComponentContext 
+                
+                builder.RegisterCallback(cr =>
+                {
+                    var instanceType = beanMethod.Item2.ReturnType;
+                    var rb = RegistrationBuilder.ForDelegate(instanceType, ((context, parameters) =>
+                    {
+                        var autoConfigurationInstance = context.Resolve(autoConfigurationDetail.AutoConfigurationClassType);
+                        var instance = AutoConfigurationHelper.InvokeInstanceMethod(context, autoConfigurationDetail, autoConfigurationInstance, beanMethod.Item2);
+                        return instance;
+                    }));
+                    
+                    if (beanMethod.Item2.ReturnType != instanceType)
+                    {
+                        if (!string.IsNullOrEmpty(beanMethod.Item1.Key))
+                        {
+                            rb.Keyed(beanMethod.Item1.Key, beanMethod.Item2.ReturnType).Named("`1System.Collections.Generic.IEnumerable`1" + beanMethod.Item2.ReturnType.FullName, beanMethod.Item2.ReturnType); 
+                        }
+                        else
+                        {
+                            rb.As(beanMethod.Item2.ReturnType).Named("`1System.Collections.Generic.IEnumerable`1" + beanMethod.Item2.ReturnType.FullName, beanMethod.Item2.ReturnType);
+                        }
+                    }
+                    else
+                    {
+                        if (!string.IsNullOrEmpty(beanMethod.Item1.Key))
+                        {
+                            rb.Keyed(beanMethod.Item1.Key, instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
+                        }
+                        else
+                        {
+                            rb.As(instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
+                        }
+                    }
+                    
+                    rb.SingleInstance();
+                    RegistrationBuilder.RegisterSingleComponent(cr, rb);
+                });
+               
             }
         }
+        
+        
+        
+        // /// <summary>
+        // /// 执行自动注册
+        // /// </summary>
+        // /// <param name="context"></param>
+        // internal void Start(IComponentContext context)
+        // {
+        //     lock (this)
+        //     {
+        //         context.TryResolve<AutoConfigurationList>(out var autoConfigurationList);
+        //         if (autoConfigurationList == null || autoConfigurationList.AutoConfigurationDetailList == null || !autoConfigurationList.AutoConfigurationDetailList.Any()) return;
+        //         foreach (var autoConfigurationDetail in autoConfigurationList.AutoConfigurationDetailList)
+        //         {
+        //             context.TryResolve(autoConfigurationDetail.AutoConfigurationClassType, out var autoConfigurationInstance);
+        //             if (autoConfigurationInstance == null) continue;
+        //
+        //
+        //             foreach (var beanMethod in autoConfigurationDetail.BeanMethodInfoList)
+        //             {
+        //                 if (beanMethod.Item2.IsVirtual)
+        //                 {
+        //                     throw new InvalidOperationException(
+        //                         $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` can not be virtual!");
+        //                 }
+        //
+        //                 if (!ProxyUtil.IsAccessible(beanMethod.Item2.ReturnType))
+        //                 {
+        //                     throw new InvalidOperationException(
+        //                         $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` returnType is not accessible!");
+        //                 }
+        //                 if (beanMethod.Item2.ReturnType.IsValueType || beanMethod.Item2.ReturnType.IsEnum)
+        //                 {
+        //                     throw new InvalidOperationException(
+        //                         $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` returnType is invalid!");
+        //                 }
+        //
+        //                 var result = AutoConfigurationHelper.InvokeInstanceMethod(context, autoConfigurationDetail, autoConfigurationInstance, beanMethod.Item2);
+        //                 if (result == null) continue;
+        //                 AutoConfigurationHelper.RegisterInstance(context.ComponentRegistry, beanMethod.Item2.ReturnType,
+        //                     result, beanMethod.Item1.Key).CreateRegistration();
+        //             }
+        //
+        //         }
+        //     }
+        // }
     }
 
 
@@ -297,55 +382,55 @@ namespace Autofac.Annotation
 
         }
 
-        public static IRegistrationBuilder<object, SimpleActivatorData, SingleRegistrationStyle> RegisterInstance(IComponentRegistry cr, Type returnType, object instance, string key)
-        {
-            if (instance == null) throw new ArgumentNullException(nameof(instance));
-
-            var activator = new ProvidedInstanceActivator(instance);
-            var instanceType = instance.GetType();
-            var rb = RegistrationBuilder.ForDelegate(instanceType, ((context, parameters) => instance));
-            if (returnType != instanceType)
-            {
-                if (!string.IsNullOrEmpty(key))
-                {
-                    rb.Keyed(key, returnType).Named("`1System.Collections.Generic.IEnumerable`1" + returnType.FullName, returnType); 
-                }
-                else
-                {
-                    rb.As(returnType).Named("`1System.Collections.Generic.IEnumerable`1" + returnType.FullName, returnType);
-                }
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(key))
-                {
-                    rb.Keyed(key, instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
-                }
-                else
-                {
-                    rb.As(instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
-                }
-            }
-
-            rb.SingleInstance();
-            if (!(rb.RegistrationData.Lifetime is RootScopeLifetime) ||
-                rb.RegistrationData.Sharing != InstanceSharing.Shared)
-            {
-                throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, "The instance  registration `{0}` can support SingleInstance() sharing only", instance));
-            }
-
-            activator.DisposeInstance = rb.RegistrationData.Ownership == InstanceOwnership.OwnedByLifetimeScope;
-
-            RegistrationBuilder.RegisterSingleComponent(cr, rb);
-
-            return rb;
-        }
+        // public static IRegistrationBuilder<object, SimpleActivatorData, SingleRegistrationStyle> RegisterInstance(IComponentRegistry cr, Type returnType, object instance, string key)
+        // {
+        //     if (instance == null) throw new ArgumentNullException(nameof(instance));
+        //
+        //     var activator = new ProvidedInstanceActivator(instance);
+        //     var instanceType = instance.GetType();
+        //     var rb = RegistrationBuilder.ForDelegate(instanceType, ((context, parameters) => instance));
+        //     if (returnType != instanceType)
+        //     {
+        //         if (!string.IsNullOrEmpty(key))
+        //         {
+        //             rb.Keyed(key, returnType).Named("`1System.Collections.Generic.IEnumerable`1" + returnType.FullName, returnType); 
+        //         }
+        //         else
+        //         {
+        //             rb.As(returnType).Named("`1System.Collections.Generic.IEnumerable`1" + returnType.FullName, returnType);
+        //         }
+        //     }
+        //     else
+        //     {
+        //         if (!string.IsNullOrEmpty(key))
+        //         {
+        //             rb.Keyed(key, instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
+        //         }
+        //         else
+        //         {
+        //             rb.As(instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
+        //         }
+        //     }
+        //
+        //     rb.SingleInstance();
+        //     if (!(rb.RegistrationData.Lifetime is RootScopeLifetime) ||
+        //         rb.RegistrationData.Sharing != InstanceSharing.Shared)
+        //     {
+        //         throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, "The instance  registration `{0}` can support SingleInstance() sharing only", instance));
+        //     }
+        //
+        //     activator.DisposeInstance = rb.RegistrationData.Ownership == InstanceOwnership.OwnedByLifetimeScope;
+        //
+        //     RegistrationBuilder.RegisterSingleComponent(cr, rb);
+        //
+        //     return rb;
+        // }
     }
 
     /// <summary>
     /// AutoConfiguration装配集合数据源
     /// </summary>
-    internal class AutoConfigurationList
+    public class AutoConfigurationList
     {
 
         /// <summary>
@@ -381,7 +466,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// AutoConfiguration装配集合数据源
     /// </summary>
-    internal class AutoConfigurationDetail
+    public class AutoConfigurationDetail
     {
         /// <summary>
         /// Configuration 所在的类的类型

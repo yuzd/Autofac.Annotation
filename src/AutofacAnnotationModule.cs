@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Autofac.Aspect;
 using Autofac.Features.AttributeFilters;
 
@@ -794,17 +795,59 @@ namespace Autofac.Annotation
                     var bean = new AutoConfigurationDetail
                     {
                         AutoConfigurationClassType = configuration.Type,
-                        BeanMethodInfoList = new List<Tuple<Bean, MethodInfo>>(),
+                        BeanMethodInfoList = new List<Tuple<Bean, MethodInfo,Type>>(),
                         MetaSourceDataList =  new List<MetaSourceData>()
                     };
                     foreach (var beanTypeMethod in beanTypeMethodList)
                     {
                         var beanAttribute = beanTypeMethod.GetCustomAttribute<Bean>();
                         if (beanAttribute == null) continue;
-                        bean.BeanMethodInfoList.Add(new Tuple<Bean, MethodInfo>(beanAttribute,beanTypeMethod));
+                        var returnType = beanTypeMethod.ReturnType;
+                        if (!beanTypeMethod.IsVirtual)//因为需要被代理 所以必须要求可重写
+                        {
+                            throw new InvalidOperationException(
+                                $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` must be virtual!");
+                        }
+                        
+                        if (returnType == typeof(void) )
+                        {
+                            throw new InvalidOperationException(
+                                $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType must not be void!");
+                        }
+                        
+                        //查看是否是Task
+                        if (typeof(Task).IsAssignableFrom(returnType))
+                        {
+                            if (!returnType.GetTypeInfo().IsGenericType)
+                            {
+                                throw new InvalidOperationException(
+                                    $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType can not be Task!");
+                            }
+                            if (returnType.GetTypeInfo().GenericTypeArguments.Length>1)
+                            {
+                                throw new InvalidOperationException(
+                                    $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType can not be Task<?,?>!");
+                            }
+                            returnType = returnType.GetTypeInfo().GenericTypeArguments.First();
+                        }
+                        
+                        if (returnType.IsValueType || returnType.IsEnum)
+                        {
+                            throw new InvalidOperationException(
+                                $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType is invalid!");
+                        }
+                        
+                        if (!ProxyUtil.IsAccessible(returnType))
+                        {
+                            throw new InvalidOperationException(
+                                $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType is not accessible!");
+                        }
+                      
+                        bean.BeanMethodInfoList.Add(new Tuple<Bean, MethodInfo,Type>(beanAttribute,beanTypeMethod,returnType));
                     }
 
-                    builder.RegisterType(configuration.Type).AsSelf().SingleInstance();//注册为单例模式
+                    //注册为代理类
+                    builder.RegisterType(configuration.Type).EnableClassInterceptors().InterceptedBy(typeof(AutoConfigurationIntercept)).SingleInstance();//注册为单例模式
                     list.AutoConfigurationDetailList.Add(bean);
 
                     EnumerateMetaSourceAttributes(bean.AutoConfigurationClassType,bean.MetaSourceDataList);

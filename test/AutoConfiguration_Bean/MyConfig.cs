@@ -9,7 +9,7 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
     public class MyConfig
     {
         [Bean]
-        public MyModel GetMyModel()
+        public virtual MyModel GetMyModel()
         {
             return new MyModel
             {
@@ -17,7 +17,7 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
             };
         }
         [Bean]
-        public MyModel2 GetMyModel2()
+        public virtual MyModel2 GetMyModel2()
         {
             return new MyModel2
             {
@@ -30,7 +30,7 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
     public class MyConfig2
     {
         [Bean]
-        public MyModel GetMyModel()
+        public virtual MyModel GetMyModel()
         {
             return new MyModel
             {
@@ -38,7 +38,7 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
             };
         }
         [Bean]
-        public MyModel2 GetMyModel2()
+        public virtual MyModel2 GetMyModel2()
         {
             return new MyModel2
             {

@@ -12,6 +12,23 @@ using Castle.DynamicProxy;
 
 namespace Autofac.Configuration.Test.test3
 {
+    public class TestModel1000
+    {
+        public string Name { get; set; } = "1000"; 
+    }
+
+    public class TestModel1001
+    {
+        public string Name { get; set; } = "1001";
+
+        public TestModel1000 TestModel1000 { get; set; }
+    }
+    public class TestModel1002
+    {
+        public string Name { get; set; } = "1002";
+
+    }
+    
     public class TestModel3
     {
         public string Name { get; set; } = "test3";

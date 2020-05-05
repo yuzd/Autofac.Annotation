@@ -43,10 +43,10 @@ namespace Autofac.Annotation
             //注册为工厂
             foreach (var beanMethod in autoConfigurationDetail.BeanMethodInfoList)
             {
-                if (beanMethod.Item2.IsVirtual)
+                if (!beanMethod.Item2.IsVirtual)
                 {
                     throw new InvalidOperationException(
-                        $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` can not be virtual!");
+                        $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` must be virtual!");
                 }
                 
                 if (!ProxyUtil.IsAccessible(beanMethod.Item2.ReturnType))
@@ -67,35 +67,26 @@ namespace Autofac.Annotation
                 
                 builder.RegisterCallback(cr =>
                 {
-                    var instanceType = beanMethod.Item2.ReturnType;
+                    var instanceType = beanMethod.Item3;//返回类型
+                    
                     var rb = RegistrationBuilder.ForDelegate(instanceType, ((context, parameters) =>
                     {
                         var autoConfigurationInstance = context.Resolve(autoConfigurationDetail.AutoConfigurationClassType);
                         var instance = AutoConfigurationHelper.InvokeInstanceMethod(context, autoConfigurationDetail, autoConfigurationInstance, beanMethod.Item2);
+                        if (typeof(Task).IsAssignableFrom(instance.GetType()))
+                        {
+                             return typeof(Task<>).MakeGenericType(instanceType).GetProperty("Result").GetValue(instance);
+                        }
                         return instance;
                     }));
                     
-                    if (beanMethod.Item2.ReturnType != instanceType)
+                    if (!string.IsNullOrEmpty(beanMethod.Item1.Key))
                     {
-                        if (!string.IsNullOrEmpty(beanMethod.Item1.Key))
-                        {
-                            rb.Keyed(beanMethod.Item1.Key, beanMethod.Item2.ReturnType).Named("`1System.Collections.Generic.IEnumerable`1" + beanMethod.Item2.ReturnType.FullName, beanMethod.Item2.ReturnType); 
-                        }
-                        else
-                        {
-                            rb.As(beanMethod.Item2.ReturnType).Named("`1System.Collections.Generic.IEnumerable`1" + beanMethod.Item2.ReturnType.FullName, beanMethod.Item2.ReturnType);
-                        }
+                        rb.Keyed(beanMethod.Item1.Key, instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
                     }
                     else
                     {
-                        if (!string.IsNullOrEmpty(beanMethod.Item1.Key))
-                        {
-                            rb.Keyed(beanMethod.Item1.Key, instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
-                        }
-                        else
-                        {
-                            rb.As(instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
-                        }
+                        rb.As(instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
                     }
                     
                     rb.SingleInstance();
@@ -428,6 +419,52 @@ namespace Autofac.Annotation
     }
 
     /// <summary>
+    /// AutoConfiguration的类代理
+    /// </summary>
+    [Component(typeof(AutoConfigurationIntercept))]
+    public class AutoConfigurationIntercept: AsyncInterceptor
+    {
+        /// <summary>
+        /// 单例对象缓存
+        /// </summary>
+        private ConcurrentDictionary<MethodInfo,object> _instanceCache = new ConcurrentDictionary<MethodInfo, object>();
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="invocation"></param>
+        /// <param name="proceedInfo"></param>
+        /// <param name="proceed"></param>
+        /// <returns></returns>
+        protected override async Task InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task> proceed)
+        {
+            await proceed(invocation,proceedInfo);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="invocation"></param>
+        /// <param name="proceedInfo"></param>
+        /// <param name="proceed"></param>
+        /// <typeparam name="TResult"></typeparam>
+        /// <returns></returns>
+        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
+        {
+            //单例的
+            if (_instanceCache.TryGetValue(invocation.MethodInvocationTarget, out var instance))
+            {
+                invocation.ReturnValue = instance;
+                return (TResult)instance;
+            }
+
+            var result = await proceed(invocation, proceedInfo);
+
+            _instanceCache.TryAdd(invocation.MethodInvocationTarget, result);
+            return result;
+        }
+        
+    }
+    /// <summary>
     /// AutoConfiguration装配集合数据源
     /// </summary>
     public class AutoConfigurationList
@@ -476,7 +513,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// Configuration 所在的类的里面有Bean标签的所有方法
         /// </summary>
-        public List<Tuple<Bean, MethodInfo>> BeanMethodInfoList { get; set; }
+        public List<Tuple<Bean, MethodInfo,Type>> BeanMethodInfoList { get; set; }
 
 
         /// <summary>

@@ -73,8 +73,10 @@ namespace Autofac.Configuration.Test.test3
 
             var a1 = container.ResolveKeyed<ITestModel5>("getTest61");
             var a12 = container.ResolveKeyed<ITestModel5>("getTest62");
+            var a13 = container.ResolveKeyed<ITestModel5>("getTest63");
             Assert.Equal("getTest61", a1.Name);
             Assert.Equal("getTest62", a12.Name);
+            Assert.Equal("getTest63", a13.Name);
 
         }
 
@@ -274,6 +276,26 @@ namespace Autofac.Configuration.Test.test3
             var a12 = container.Resolve<AopModel2>();
 
             a12.AopModel1.SayHello();
+        }
+        
+        [Fact]
+        public void Test_Type_16()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest3).Assembly));
+
+            var container = builder.Build();
+
+            var a12 = container.Resolve<TestModel1000>();
+            
+            var a13 = container.Resolve<TestModel1001>();
+            Assert.Equal(a12,a13.TestModel1000);
+            
+            var a132 = container.Resolve<TestModel1002>();
+            Assert.Equal(a132.Name,"1002");
+            
         }
     }
 }

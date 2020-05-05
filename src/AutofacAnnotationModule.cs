@@ -976,19 +976,32 @@ namespace Autofac.Annotation
                         {
                             //检查方法的参数是否对了
                             var parameters = beanTypeMethod.GetParameters();
-                            if (parameters.All(r => r.ParameterType != typeof(AspectContext)))
+                            if (parameters.All(r => r.ParameterType != typeof(PointcutContext)))
                             {
-                                throw new InvalidOperationException($"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register without parameter of `AspectContext`!");
+                                throw new InvalidOperationException($"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register without parameter of `PointcutContext`!");
+                            }
+                            
+                            //必须是异步的 返回类型是Task才行
+                            if (beanTypeMethod.ReturnType != typeof(Task))
+                            {
+                                throw new InvalidOperationException($"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` must returnType of `Task`!");
                             }
 
                             var key = aroundAttribute.Name ?? "";
                             if (aroundMethodInfos.ContainsKey(key))
                             {
-                                throw new InvalidOperationException($"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi!");
+                                throw new InvalidOperationException($"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register multi!");
                             }
                             aroundMethodInfos.Add(key,beanTypeMethod);
                         }
 
+                        //返回类型只能是void和Task
+                        if (beanTypeMethod.ReturnType != typeof(void)  && beanTypeMethod.ReturnType != typeof(Task))
+                        {
+                            throw new InvalidOperationException(
+                                $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType invaild");
+                        }
+                        
                         if (beforeAttribute != null)
                         {
                             var key = beforeAttribute.Name ?? "";

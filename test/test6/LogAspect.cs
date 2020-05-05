@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using System.Threading.Tasks;
 using Autofac.Aspect;
 
 namespace Autofac.Annotation.Test.test6
@@ -8,6 +9,7 @@ namespace Autofac.Annotation.Test.test6
     [Pointcut("name1",Class = "LogAspectT1est",Method = "Test1")]
     [Pointcut("name2",Class = "LogAspect[ABC]")]
     [Pointcut("name3",Class = "LogAroundTest",Method="Hello*")]
+    [Pointcut("name4",Class = "LogTaskTest",Method="Hello*")]
     public class LogAspect
     {
         [Before]
@@ -48,12 +50,26 @@ namespace Autofac.Annotation.Test.test6
         }
 
         [Around("name3")]
-        public void Around(AspectContext context)
+        public async Task Around(PointcutContext context)
         {
-            Console.WriteLine(context.InvocationContext.MethodInvocationTarget.Name + "-->Start");
-            context.InvocationProceedInfo.Invoke();
-            context.InvocationContext.ReturnValue = "around";
-            Console.WriteLine(context.InvocationContext.MethodInvocationTarget.Name + "-->End");
+            Console.WriteLine(context.InvocationMethod.Name + "-->Start");
+            await context.Proceed();
+            Console.WriteLine(context.InvocationMethod.Name + "-->End");
+        }
+        
+        
+        [Before("name4")]
+        public async Task Before4()
+        {
+            await Task.Delay(1000);
+            Console.WriteLine("Before4");
+        }
+        
+        [After("name4")]
+        public async Task After4()
+        {
+            await Task.Delay(1000);
+            Console.WriteLine("After4");
         }
     }
 
@@ -140,6 +156,20 @@ namespace Autofac.Annotation.Test.test6
     
     [Component]
     public class LogAroundTest
+    {
+        public virtual void Hello(string msg)
+        {
+            Console.WriteLine(msg);
+        }
+        
+        public virtual string Hello2(string msg)
+        {
+            return msg;
+        }
+    }
+    
+    [Component]
+    public class LogTaskTest
     {
         public virtual void Hello(string msg)
         {

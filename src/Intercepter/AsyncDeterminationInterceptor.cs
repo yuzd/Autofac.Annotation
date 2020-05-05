@@ -30,9 +30,9 @@ namespace Castle.DynamicProxy
             Interceptor = asyncInterceptor;
         }
 
-        private delegate void GenericAsyncHandler(IInvocation invocation, IAsyncInterceptor asyncInterceptor);
+        public delegate void GenericAsyncHandler(IInvocation invocation, IAsyncInterceptor asyncInterceptor);
 
-        private enum MethodType
+        internal enum MethodType
         {
             Synchronous,
             AsyncAction,
@@ -67,10 +67,12 @@ namespace Castle.DynamicProxy
             }
         }
 
+        
+        
         /// <summary>
         /// Gets the <see cref="MethodType"/> based upon the <paramref name="returnType"/> of the method invocation.
         /// </summary>
-        private static MethodType GetMethodType(Type returnType)
+        public static MethodType GetMethodType(Type returnType)
         {
             // If there's no return type, or it's not a task, then assume it's a synchronous method.
             if (returnType == typeof(void) || !typeof(Task).IsAssignableFrom(returnType))
@@ -83,7 +85,7 @@ namespace Castle.DynamicProxy
         /// <summary>
         /// Gets the <see cref="GenericAsyncHandler"/> for the method invocation <paramref name="returnType"/>.
         /// </summary>
-        private static GenericAsyncHandler GetHandler(Type returnType)
+        public static GenericAsyncHandler GetHandler(Type returnType)
         {
             GenericAsyncHandler handler = GenericAsyncHandlers.GetOrAdd(returnType, CreateHandler);
             return handler;

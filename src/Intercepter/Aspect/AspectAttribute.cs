@@ -413,11 +413,7 @@ namespace Autofac.Aspect
         /// </summary>
 
         public IInvocation InvocationContext { get; set; }
-        
-        /// <summary>
-        /// 防止异步出问题
-        /// </summary>
-        public IInvocationProceedInfo InvocationProceedInfo { get; set; }
+       
         
         /// <summary>
         /// 错误
@@ -432,11 +428,43 @@ namespace Autofac.Aspect
         
     }
 
+    
+    /// <summary>
+    /// 拦截器上下文
+    /// </summary>
+    public class PointcutContext
+    {
+       
+        /// <summary>
+        /// autofac容器
+        /// </summary>
+        public IComponentContext ComponentContext { get; set; }
+        
+        /// <summary>
+        /// 被代理的原执行方法
+        /// </summary>
+
+        public MethodInfo InvocationMethod { get; set; }
+        
+        
+        /// <summary>
+        /// 错误
+        /// </summary>
+        public Exception Exception { get; set; }
+        
+        /// <summary>
+        /// 回调 只有Arround的时候才有值
+        /// </summary>
+        public Func<Task> Proceed { get; set; }
+        
+    }
+
     /// <summary>
     /// 拦截器
     /// </summary>
     /// <param name="context"></param>
     public delegate System.Threading.Tasks.Task AspectDelegate(AspectContext context);
+    
     
     /// <summary>
     /// 拦截node组装

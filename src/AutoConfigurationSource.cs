@@ -147,15 +147,14 @@ namespace Autofac.Annotation
 
     internal static class AutoConfigurationHelper
     {
-        public static void InvokeInstanceMethod(object instance, MethodInfo methodInfo,IComponentContext context,AspectContext invocation = null)
+        public static object InvokeInstanceMethod(object instance, MethodInfo methodInfo,IComponentContext context,PointcutContext invocation = null)
         {
             try
             {
                 var parameters = methodInfo.GetParameters();
                 if (parameters.Length == 0)
                 { 
-                    methodInfo.Invoke(instance, null);
-                    return;
+                    return methodInfo.Invoke(instance, null);
                 }
 
                 //自动类型注入
@@ -163,7 +162,7 @@ namespace Autofac.Annotation
                 List<object> parameterObj = new List<object>();
                 foreach (var parameter in parameters)
                 {
-                    if (invocation != null && parameter.ParameterType == typeof(AspectContext))
+                    if (invocation != null && parameter.ParameterType == typeof(PointcutContext))
                     {
                         parameterObj.Add(invocation);
                         continue;
@@ -213,7 +212,7 @@ namespace Autofac.Annotation
 
                 }
                 
-                methodInfo.Invoke(instance, parameterObj.ToArray());
+                return methodInfo.Invoke(instance, parameterObj.ToArray());
 
             }
             catch (Exception e)
@@ -221,90 +220,7 @@ namespace Autofac.Annotation
                 throw new InvalidOperationException($"The class `{methodInfo.DeclaringType.FullName}` method `{methodInfo.Name}` invoke fail!", e);
             }
         }
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="methodInfo"></param>
-        /// <param name="context"></param>
-        /// <param name="invocation"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static T InvokeInstanceMethodReturn<T>(object instance, MethodInfo methodInfo,IComponentContext context,AspectContext invocation = null)
-        {
-            try
-            {
-                var parameters = methodInfo.GetParameters();
-                if (parameters.Length == 0)
-                { 
-                    return (T)methodInfo.Invoke(instance, null);
-                }
-
-                //自动类型注入
-
-                List<object> parameterObj = new List<object>();
-                foreach (var parameter in parameters)
-                {
-                    if (invocation != null && parameter.ParameterType == typeof(AspectContext))
-                    {
-                        parameterObj.Add(invocation);
-                        continue;
-                    }
-                    
-                    var autowired = parameter.GetCustomAttribute<Autowired>();
-                    if (autowired != null)
-                    {
-                        parameterObj.Add(autowired.ResolveParameter(parameter, context));
-                        continue;
-                    }
-
-                    var value = parameter.GetCustomAttribute<Value>();
-                    if (value != null)
-                    {
-                        parameterObj.Add(value.ResolveParameter(parameter, context));
-                        continue;
-                    }
-
-                    if (parameter.HasDefaultValue)
-                    {
-                        parameterObj.Add(parameter.RawDefaultValue);
-                        continue;
-                    }
-
-                    if (parameter.IsOptional)
-                    {
-                        parameterObj.Add(Type.Missing);
-                        continue;
-                    }
-
-                    if (parameter.IsOut)
-                    {
-                        parameterObj.Add(Type.Missing);
-                        continue;
-                    }
-
-                    if (parameter.ParameterType.IsValueType || parameter.ParameterType.IsEnum)
-                    {
-                        parameterObj.Add(parameter.RawDefaultValue);
-                        continue;
-                    }
-
-
-
-                    parameterObj.Add(context.Resolve(parameter.ParameterType));
-
-                }
-                
-                return (T)methodInfo.Invoke(instance, parameterObj.ToArray());
-
-            }
-            catch (Exception e)
-            {
-                throw new InvalidOperationException($"The class `{methodInfo.DeclaringType.FullName}` method `{methodInfo.Name}` invoke fail!", e);
-            }
-        }
-        
+    
         public static object InvokeInstanceMethod(IComponentContext context, AutoConfigurationDetail autoConfigurationDetail, object autoConfigurationInstance, MethodInfo methodInfo)
         {
             try

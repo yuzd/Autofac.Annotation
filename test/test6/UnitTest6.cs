@@ -73,5 +73,23 @@ namespace Autofac.Annotation.Test.test6
             
 
         }
+        
+        [Fact]
+        public void Test_Type_04()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly));
+
+            var container = builder.Build();
+                
+            var a1 = container.Resolve<LogTaskTest>();
+           
+            a1.Hello("ddd");
+            var a111 = a1.Hello2("ssss");
+            
+
+        }
     }
 }

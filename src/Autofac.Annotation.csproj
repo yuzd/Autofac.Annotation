@@ -10,7 +10,7 @@
     <PackageId>Autofac.Annotation</PackageId>
     <PackageTags>autofac spring aspect</PackageTags>
     <PackageReleaseNotes>autofac spring 
-【AutoConfiguration】【Bean】【Component】【Value[支持SpEL表达式]】【PropertySource】【Aspect】</PackageReleaseNotes>
+【AutoConfiguration】【Bean】【Component】【Value[支持SpEL表达式]】【PropertySource】【Aspect】【Pointcut切面】</PackageReleaseNotes>
     <PackageIconUrl></PackageIconUrl>
     <PackageProjectUrl>https://github.com/yuzd/Autofac.Annotation</PackageProjectUrl>
     <PackageLicenseUrl></PackageLicenseUrl>

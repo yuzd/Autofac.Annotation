@@ -20,7 +20,7 @@ namespace Autofac.Annotation
     /// 自启动注册Configuration
     /// </summary>
     //[Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, InitMethod = nameof(AutoConfigurationSource.Start))]
-    public class AutoConfigurationSource
+    internal class AutoConfigurationSource
     {
         /// <summary>
         /// 注册AutoConfiguration

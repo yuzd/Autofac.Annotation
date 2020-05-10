@@ -2,6 +2,10 @@
 
 支持netcore2.0 + framework4.6+
 
+# NUGET
+
+Install-Package Autofac.Annotation
+
 ## 如何使用 https://github.com/yuzd/Autofac.Annotation/wiki
 ### NUGET Install-Package Autofac.Annotation
 ```csharp
@@ -447,3 +451,4 @@ Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cor
 
 ## 利用Benchmark进行autofac原生方式和打标签模式进行性能测试 不但没有损耗，对于属性注入性能还提高了
 
+## 欢迎任何建议和反馈

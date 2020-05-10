@@ -73,4 +73,19 @@ namespace Autofac.Configuration.Test.test4
         [Value("${parent:name}")]
         public string ParentName { get; set; }
     }
+    
+    [Component]
+    public class ValueModel6
+    {
+        [Value("${parent:name}")]
+        public IValue<string> ParentName { get; set; }
+
+        [Value("${a9}")]
+        private IValue<string> Test;
+
+        public string GetTest()
+        {
+            return Test.Value;
+        }
+    }
 }

@@ -87,60 +87,7 @@ namespace Autofac.Annotation
         {
             if (property == null) throw new ArgumentNullException(nameof(property));
             if (!allowCircle) return Resolve(property.DeclaringType, property.FieldType, context, "field");
-            if (context == null)
-            {
-                throw new ArgumentNullException(nameof(context));
-            }
-            if (instance == null)
-            {
-                throw new ArgumentNullException(nameof(instance));
-            }
-
-
-            Service propertyService = null;
-            if (!string.IsNullOrEmpty(this.Name))
-            {
-                propertyService = new KeyedService(this.Name, property.FieldType);
-            }
-            else
-            {
-                propertyService = new TypedService(property.FieldType);
-            }
-
-            // ReSharper disable once PossibleMultipleEnumeration
-            if (Parameters != null && Parameters.Count() == 1)
-            {
-                // ReSharper disable once PossibleMultipleEnumeration
-                if (!(Parameters.First() is AutowiredParmeter AutowiredParmeter))
-                {
-                    return null;
-                }
-                // ReSharper disable once AssignNullToNotNullAttribute
-                if (AutowiredParmeter.TryGet(getAutowiredParmeterKey(property.FieldType), out var objectInstance))
-                {
-                    return objectInstance;
-                }
-                else
-                {
-                    // ReSharper disable once PossibleNullReferenceException
-                    AutowiredParmeter.TryAdd(getAutowiredParmeterKey(property.DeclaringType), instance);
-                    if (context.TryResolveService(propertyService, new Parameter[] { AutowiredParmeter }, out var propertyValue))
-                    {
-                        return propertyValue;
-                    }
-                }
-            }
-            else
-            {
-                var instanceTypeParameter = new AutowiredParmeter();
-                // ReSharper disable once PossibleNullReferenceException
-                instanceTypeParameter.TryAdd(getAutowiredParmeterKey(property.DeclaringType), instance);
-                if (context.TryResolveService(propertyService, new Parameter[] { instanceTypeParameter }, out var propertyValue))
-                {
-                    return propertyValue;
-                }
-            }
-            return null;
+            return Resolve(context, instance, property.DeclaringType, property.FieldType, Parameters);
         }
 
         /// <summary>
@@ -156,42 +103,45 @@ namespace Autofac.Annotation
         {
             if (property == null) throw new ArgumentNullException(nameof(property));
             if (!alowCircle) return Resolve(property.DeclaringType, property.PropertyType, context, "property");
+            return Resolve(context, instance, property.DeclaringType, property.PropertyType, Parameters);
+        }
 
-            if (context == null)
+        internal object Resolve(IComponentContext context, object instance, Type classType, Type memberType, IEnumerable<Parameter> Parameters)
+        {
+            if ((typeof(IObjectFactory).IsAssignableFrom(memberType)))
             {
-                throw new ArgumentNullException(nameof(context));
-            }
-            if (instance == null)
-            {
-                throw new ArgumentNullException(nameof(instance));
+                return context.Resolve<ObjectBeanFactory>().CreateAutowiredFactory(this, memberType, classType, instance, Parameters);
             }
 
             Service propertyService = null;
             if (!string.IsNullOrEmpty(this.Name))
             {
-                propertyService = new KeyedService(this.Name, property.PropertyType);
+                propertyService = new KeyedService(this.Name, memberType);
             }
             else
             {
-                propertyService = new TypedService(property.PropertyType);
+                propertyService = new TypedService(memberType);
             }
 
+            // ReSharper disable once PossibleMultipleEnumeration
             if (Parameters != null && Parameters.Count() == 1)
             {
+                // ReSharper disable once PossibleMultipleEnumeration
                 if (!(Parameters.First() is AutowiredParmeter AutowiredParmeter))
                 {
                     return null;
                 }
+
                 // ReSharper disable once AssignNullToNotNullAttribute
-                if (AutowiredParmeter.TryGet(getAutowiredParmeterKey(property.PropertyType), out var objectInstance))
+                if (AutowiredParmeter.TryGet(getAutowiredParmeterKey(memberType), out var objectInstance))
                 {
                     return objectInstance;
                 }
                 else
                 {
                     // ReSharper disable once PossibleNullReferenceException
-                    AutowiredParmeter.TryAdd(getAutowiredParmeterKey(property.DeclaringType), instance);
-                    if (context.TryResolveService(propertyService, new Parameter[] { AutowiredParmeter }, out var propertyValue))
+                    AutowiredParmeter.TryAdd(getAutowiredParmeterKey(classType), instance);
+                    if (context.TryResolveService(propertyService, new Parameter[] {AutowiredParmeter}, out var propertyValue))
                     {
                         return propertyValue;
                     }
@@ -201,12 +151,13 @@ namespace Autofac.Annotation
             {
                 var instanceTypeParameter = new AutowiredParmeter();
                 // ReSharper disable once PossibleNullReferenceException
-                instanceTypeParameter.TryAdd(getAutowiredParmeterKey(property.DeclaringType), instance);
-                if (context.TryResolveService(propertyService, new Parameter[] { instanceTypeParameter }, out var propertyValue))
+                instanceTypeParameter.TryAdd(getAutowiredParmeterKey(classType), instance);
+                if (context.TryResolveService(propertyService, new Parameter[] {instanceTypeParameter}, out var propertyValue))
                 {
                     return propertyValue;
                 }
             }
+
             return null;
         }
 
@@ -219,8 +170,13 @@ namespace Autofac.Annotation
         /// <param name="typeDescription"></param>
         /// <returns></returns>
         /// <exception cref="DependencyResolutionException"></exception>
-        private object Resolve(Type classType, Type type, IComponentContext context, string typeDescription)
+        internal object Resolve(Type classType, Type type, IComponentContext context, string typeDescription)
         {
+            if ((typeof(IObjectFactory).IsAssignableFrom(type)))
+            {
+                return context.Resolve<ObjectBeanFactory>().CreateAutowiredFactory(this, type, classType, typeDescription);
+            }
+
             object obj = null;
             if (!string.IsNullOrEmpty(this.Name))
             {
@@ -251,12 +207,11 @@ namespace Autofac.Annotation
             }
 
             return obj;
-
         }
 
         private static string getAutowiredParmeterKey(Type type)
         {
-            return "`1CircularDependencies`1" +  type.FullName;
+            return "`1CircularDependencies`1" + type.FullName;
         }
     }
 }

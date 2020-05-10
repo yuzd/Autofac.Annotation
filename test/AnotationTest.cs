@@ -690,5 +690,27 @@ namespace Autofac.Annotation.Test
             Assert.Equal(b.GetType(),a1.GetType());
 
         }
+        
+        [Fact]
+        public void Test_Type_36()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetAllowCircularDependencies(true));
+
+
+            var container = builder.Build();
+
+            //A39是单例的 但是 里面的 A38 希望是每次获取都是新的实例 因为A38是定义的是非单例
+            var a39 = container.Resolve<A39>();
+            var a391 = container.Resolve<A39>();
+            Assert.Equal(a39,a391);
+            
+            A38 ss = a39.A38.GetObject();
+            A38 ss2 = a39.A38.GetObject();
+            Assert.True(ss2.Now>ss.Now);
+
+        }
     }
 }

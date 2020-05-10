@@ -608,5 +608,16 @@ namespace Autofac.Annotation.Test
         
         [Autowired]
         public A37 A37 { get; set; }
+
+        public DateTime Now = DateTime.Now;
+    }
+
+    [Component(AutofacScope = AutofacScope.SingleInstance)]
+    public class A39
+    {
+        public DateTime Now  = DateTime.Now;
+        
+        [Autowired]
+        public ObjectFactory<A38> A38 { get; set; }
     }
 }

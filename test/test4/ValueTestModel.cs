@@ -67,9 +67,9 @@ namespace Autofac.Configuration.Test.test4
     }
 
     [Component]
+    [PropertySource("appsettings.json",ReloadOnChange = false)]
     public class ValueModel5
     {
-
         [Value("${parent:name}")]
         public string ParentName { get; set; }
     }

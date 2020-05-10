@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Autofac.Aspect;
 using Autofac.Features.AttributeFilters;
+using Microsoft.Extensions.Configuration;
 
 namespace Autofac.Annotation
 {
@@ -21,8 +22,6 @@ namespace Autofac.Annotation
     /// </summary>
     public class AutofacAnnotationModule : Module
     {
-        
-
         private readonly List<Assembly> _assemblyList;
 
         /// <summary>
@@ -44,7 +43,12 @@ namespace Autofac.Annotation
         /// 是否开启EventBus
         /// </summary>
         public bool EnableAutofacEventBus { get; private set; } = true;
-        
+
+        /// <summary>
+        /// 是否开启文件监听
+        /// </summary>
+        public bool EnableValueResourceReloadOnchange { get; private set; } = true;
+
         /// <summary>
         /// 默认的DataSource 只保存1个实例
         /// </summary>
@@ -78,6 +82,22 @@ namespace Autofac.Annotation
 
             _assemblyList = GetAssemblies().Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).ToList();
         }
+
+
+        /// <summary>
+        /// 是否开启文件监听 默认true
+        /// </summary>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        public AutofacAnnotationModule SetValueResourceReloadOnChange(bool flag)
+        {
+            EnableValueResourceReloadOnchange = flag;
+            this.DefaultMeaSourceData.Value.Reload = flag;
+            var metaSource = this.DefaultMeaSourceData.Value;
+            this.DefaultMeaSourceData.Value.ConfigurationLazy = new Lazy<IConfiguration>(()=>EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded,flag));
+            return this;
+        }
+
 
         /// <summary>
         /// 容器注册完开始找AutofacConfiguration标签的class 有多个的时候指定Key
@@ -139,7 +159,7 @@ namespace Autofac.Annotation
             this.AllowCircularDependencies = flag;
             return this;
         }
-        
+
         /// <summary>
         /// 设置是否启动eventBus
         /// </summary>
@@ -150,7 +170,7 @@ namespace Autofac.Annotation
             this.EnableAutofacEventBus = flag;
             return this;
         }
-        
+
         /// <summary>
         /// autofac加载
         /// </summary>
@@ -161,7 +181,7 @@ namespace Autofac.Annotation
             {
                 throw new ArgumentNullException(nameof(builder));
             }
-            
+
             if (EnableAutofacEventBus)
             {
                 builder.RegisterSource(new Autofac.Features.Variance.ContravariantRegistrationSource());
@@ -202,15 +222,13 @@ namespace Autofac.Annotation
                 SetAutoActivate(component, registrar);
 
                 //拦截器
-                SetIntercept(component, registrar,aspectJ);
+                SetIntercept(component, registrar, aspectJ);
 
                 //方法注册
                 RegisterMethods(component, registrar);
             }
 
             DoAutofacConfiguration(builder);
-                       
-
         }
 
         /// <summary>
@@ -265,7 +283,7 @@ namespace Autofac.Annotation
             if (!string.IsNullOrEmpty(component.InitMethod))
             {
                 var method = AssertMethod(component.CurrentType, component.InitMethod);
-                registrar.OnActivated(e => { AutoConfigurationHelper.InvokeInstanceMethod(e.Instance,method, e.Context); });
+                registrar.OnActivated(e => { AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, method, e.Context); });
             }
 
             if (!string.IsNullOrEmpty(component.DestroyMethod))
@@ -273,8 +291,10 @@ namespace Autofac.Annotation
                 var method = AssertMethod(component.CurrentType, component.DestroyMethod);
                 if (method.GetParameters().Any())
                 {
-                    throw new DependencyResolutionException($"class `{component.CurrentType.FullName}` DestroyMethod `{component.DestroyMethod}` must be no parameters");
+                    throw new DependencyResolutionException(
+                        $"class `{component.CurrentType.FullName}` DestroyMethod `{component.DestroyMethod}` must be no parameters");
                 }
+
                 registrar.OnRelease(e => { method.Invoke(e, null); });
             }
         }
@@ -289,7 +309,7 @@ namespace Autofac.Annotation
         /// <param name="registrar"></param>
         /// <param name="aspecJ"></param>
         protected virtual void SetIntercept<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle>(ComponentModel component,
-            IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> registrar,PointCutConfigurationList aspecJ)
+            IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> registrar, PointCutConfigurationList aspecJ)
             where TConcreteReflectionActivatorData : ConcreteReflectionActivatorData
         {
             if (registrar == null)
@@ -300,7 +320,8 @@ namespace Autofac.Annotation
             var aspAttribute = component.CurrentType.GetCustomAttribute<AspectAttribute>();
             if (aspAttribute != null && component.Interceptor != null)
             {
-                throw new InvalidOperationException($"'{component.CurrentType.FullName}' can not interceptor by both AspectAttribute:'{aspAttribute.GetType().FullName}' and Interceptor:'{component.Interceptor.FullName}' ");
+                throw new InvalidOperationException(
+                    $"'{component.CurrentType.FullName}' can not interceptor by both AspectAttribute:'{aspAttribute.GetType().FullName}' and Interceptor:'{component.Interceptor.FullName}' ");
             }
             else if (component.Interceptor != null)
             {
@@ -327,7 +348,7 @@ namespace Autofac.Annotation
                         return;
                 }
             }
-            else if (aspAttribute!=null)
+            else if (aspAttribute != null)
             {
                 if (aspAttribute.AspectType == InterceptorType.Class)
                 {
@@ -359,7 +380,7 @@ namespace Autofac.Annotation
                 if (!needWarpForPointcut(component.CurrentType, aspecJ))
                 {
                     registrar.As(component.CurrentType);
-                    return; 
+                    return;
                 }
 
                 if (component.CurrentType.GetCustomAttribute<ClassInterceptorAttribute>() != null)
@@ -367,23 +388,25 @@ namespace Autofac.Annotation
                     registrar.EnableClassInterceptors().InterceptedBy(typeof(AspectJIntercept));
                     return;
                 }
+
                 if (component.CurrentType.GetCustomAttribute<InterfaceInterceptorAttribute>() != null)
                 {
                     registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AspectJIntercept));
                     return;
                 }
-                
+
                 //如果注册的类型有接口就认为需要接口拦截器 
                 if (component.ComponentServiceList.Any(r => r.Type.IsInterface))
                 {
                     registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AspectJIntercept));
                     return;
                 }
+
                 registrar.EnableClassInterceptors().InterceptedBy(typeof(AspectJIntercept));
             }
         }
 
-        
+
         /// <summary>
         /// 查看是否存在需要拦截的
         /// </summary>
@@ -404,7 +427,7 @@ namespace Autofac.Annotation
                     {
                         instanceMethodList = targetClass.GetAllInstanceMethod(false).ToList();
                     }
-                    
+
                     foreach (var method in instanceMethodList)
                     {
                         if (aspectClass.Pointcut.IsVaild(method))
@@ -414,14 +437,15 @@ namespace Autofac.Annotation
                         }
                     }
                 }
-                if(result) break;
+
+                if (result) break;
             }
-            
+
             aspectJ.PointcutTypeInfoList.TryAdd(targetClass, true);
             return result;
         }
-        
-        
+
+
         /// <summary>
         /// Sets the auto activation mode for the component.
         /// </summary>
@@ -444,7 +468,7 @@ namespace Autofac.Annotation
                 return;
             }
 
-            if (component.AutoActivate && component.AutofacScope == AutofacScope.SingleInstance) 
+            if (component.AutoActivate && component.AutofacScope == AutofacScope.SingleInstance)
             {
                 //默认单例注册完成后自动装载
                 registrar.AutoActivate();
@@ -479,28 +503,28 @@ namespace Autofac.Annotation
                 }
 
                 component.AutowiredPropertyInfoList = (from p in component.CurrentType.GetAllProperties()
-                                                       let propertyType = p.GetType()
-                                                       let typeInfo = p.GetType().GetTypeInfo()
-                                                       let va = p.GetCustomAttribute<Autowired>()
-                                                       where va != null && !typeInfo.IsValueType
-                                                             && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
-                                                             && (!propertyType.IsGenericEnumerableInterfaceType()
-                                                                 || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
-                                                       select new Tuple<PropertyInfo, Autowired>(p, va))
-                                                          .ToList();
+                        let propertyType = p.GetType()
+                        let typeInfo = p.GetType().GetTypeInfo()
+                        let va = p.GetCustomAttribute<Autowired>()
+                        where va != null && !typeInfo.IsValueType
+                                         && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
+                                         && (!propertyType.IsGenericEnumerableInterfaceType()
+                                             || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
+                        select new Tuple<PropertyInfo, Autowired>(p, va))
+                    .ToList();
 
 
                 component.AutowiredFieldInfoList = (from p in component.CurrentType.GetAllFields()
-                                                    let propertyType = p.GetType()
-                                                    let typeInfo = p.GetType().GetTypeInfo()
-                                                    let va = p.GetCustomAttribute<Autowired>()
-                                                    where va != null && !typeInfo.IsValueType
-                                                                     && (!propertyType.IsArray
-                                                                         || !propertyType.GetElementType().GetTypeInfo().IsValueType)
-                                                                     && (!propertyType.IsGenericEnumerableInterfaceType()
-                                                                         || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
-                                                    select new Tuple<FieldInfo, Autowired>(p, va))
-                                                    .ToList();
+                        let propertyType = p.GetType()
+                        let typeInfo = p.GetType().GetTypeInfo()
+                        let va = p.GetCustomAttribute<Autowired>()
+                        where va != null && !typeInfo.IsValueType
+                                         && (!propertyType.IsArray
+                                             || !propertyType.GetElementType().GetTypeInfo().IsValueType)
+                                         && (!propertyType.IsGenericEnumerableInterfaceType()
+                                             || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
+                        select new Tuple<FieldInfo, Autowired>(p, va))
+                    .ToList();
 
                 if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any())
                 {
@@ -510,18 +534,12 @@ namespace Autofac.Annotation
                 if (!AllowCircularDependencies)
                 {
                     //不支持循环
-                    registrar.OnActivating((e) =>
-                    {
-                        DoAutoWired(e.Context, e.Parameters, e.Instance, false);
-                    });
+                    registrar.OnActivating((e) => { DoAutoWired(e.Context, e.Parameters, e.Instance, false); });
                 }
                 else
                 {
                     //支持循环
-                    registrar.RegistrationData.ActivatedHandlers.Add((s, e) =>
-                    {
-                        DoAutoWired(e.Context, e.Parameters, e.Instance, true);
-                    });
+                    registrar.RegistrationData.ActivatedHandlers.Add((s, e) => { DoAutoWired(e.Context, e.Parameters, e.Instance, true); });
                 }
             }
         }
@@ -616,14 +634,14 @@ namespace Autofac.Annotation
             }
 
             component.ValuePropertyInfoList = (from p in component.CurrentType.GetAllProperties()
-                                               let va = p.GetCustomAttribute<Value>()
-                                               where va != null
-                                               select new Tuple<PropertyInfo, Value>(p, va)).ToList();
+                let va = p.GetCustomAttribute<Value>()
+                where va != null
+                select new Tuple<PropertyInfo, Value>(p, va)).ToList();
 
             component.ValueFieldInfoList = (from p in component.CurrentType.GetAllFields()
-                                            let va = p.GetCustomAttribute<Value>()
-                                            where va != null
-                                            select new Tuple<FieldInfo, Value>(p, va)).ToList();
+                let va = p.GetCustomAttribute<Value>()
+                where va != null
+                select new Tuple<FieldInfo, Value>(p, va)).ToList();
 
             if (!component.ValueFieldInfoList.Any() && !component.ValuePropertyInfoList.Any())
             {
@@ -710,12 +728,14 @@ namespace Autofac.Annotation
                     if (!string.IsNullOrEmpty(componentServiceModel.Key))
                     {
                         registrar.Keyed(componentServiceModel.Key, componentServiceModel.Type)
-                            .Named("`1System.Collections.Generic.IEnumerable`1" + componentServiceModel.Type.FullName, componentServiceModel.Type);//通过集合注入Autowired拿到所有
+                            .Named("`1System.Collections.Generic.IEnumerable`1" + componentServiceModel.Type.FullName,
+                                componentServiceModel.Type); //通过集合注入Autowired拿到所有
                     }
                     else
                     {
                         registrar.As(componentServiceModel.Type)
-                            .Named("`1System.Collections.Generic.IEnumerable`1" + componentServiceModel.Type.FullName, componentServiceModel.Type);//通过集合注入Autowired拿到所有
+                            .Named("`1System.Collections.Generic.IEnumerable`1" + componentServiceModel.Type.FullName,
+                                componentServiceModel.Type); //通过集合注入Autowired拿到所有
                     }
                 }
             }
@@ -733,6 +753,7 @@ namespace Autofac.Annotation
             {
                 throw new ArgumentNullException(nameof(_assemblyList));
             }
+
             ComponentModelCacheSingleton singleton = new ComponentModelCacheSingleton
             {
                 ComponentModelCache = new ConcurrentDictionary<Type, ComponentModel>()
@@ -795,26 +816,26 @@ namespace Autofac.Annotation
                     var bean = new AutoConfigurationDetail
                     {
                         AutoConfigurationClassType = configuration.Type,
-                        BeanMethodInfoList = new List<Tuple<Bean, MethodInfo,Type>>(),
-                        MetaSourceDataList =  new List<MetaSourceData>()
+                        BeanMethodInfoList = new List<Tuple<Bean, MethodInfo, Type>>(),
+                        MetaSourceDataList = new List<MetaSourceData>()
                     };
                     foreach (var beanTypeMethod in beanTypeMethodList)
                     {
                         var beanAttribute = beanTypeMethod.GetCustomAttribute<Bean>();
                         if (beanAttribute == null) continue;
                         var returnType = beanTypeMethod.ReturnType;
-                        if (!beanTypeMethod.IsVirtual)//因为需要被代理 所以必须要求可重写
+                        if (!beanTypeMethod.IsVirtual) //因为需要被代理 所以必须要求可重写
                         {
                             throw new InvalidOperationException(
                                 $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` must be virtual!");
                         }
-                        
-                        if (returnType == typeof(void) )
+
+                        if (returnType == typeof(void))
                         {
                             throw new InvalidOperationException(
                                 $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType must not be void!");
                         }
-                        
+
                         //查看是否是Task
                         if (typeof(Task).IsAssignableFrom(returnType))
                         {
@@ -823,44 +844,47 @@ namespace Autofac.Annotation
                                 throw new InvalidOperationException(
                                     $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType can not be Task!");
                             }
-                            if (returnType.GetTypeInfo().GenericTypeArguments.Length>1)
+
+                            if (returnType.GetTypeInfo().GenericTypeArguments.Length > 1)
                             {
                                 throw new InvalidOperationException(
                                     $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType can not be Task<?,?>!");
                             }
+
                             returnType = returnType.GetTypeInfo().GenericTypeArguments.First();
                         }
-                        
+
                         if (returnType.IsValueType || returnType.IsEnum)
                         {
                             throw new InvalidOperationException(
                                 $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType is invalid!");
                         }
-                        
+
                         if (!ProxyUtil.IsAccessible(returnType))
                         {
                             throw new InvalidOperationException(
                                 $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType is not accessible!");
                         }
-                      
-                        bean.BeanMethodInfoList.Add(new Tuple<Bean, MethodInfo,Type>(beanAttribute,beanTypeMethod,returnType));
+
+                        bean.BeanMethodInfoList.Add(new Tuple<Bean, MethodInfo, Type>(beanAttribute, beanTypeMethod, returnType));
                     }
 
                     //注册为代理类
-                    builder.RegisterType(configuration.Type).EnableClassInterceptors().InterceptedBy(typeof(AutoConfigurationIntercept)).SingleInstance();//注册为单例模式
+                    builder.RegisterType(configuration.Type).EnableClassInterceptors().InterceptedBy(typeof(AutoConfigurationIntercept))
+                        .SingleInstance(); //注册为单例模式
                     list.AutoConfigurationDetailList.Add(bean);
 
-                    EnumerateMetaSourceAttributes(bean.AutoConfigurationClassType,bean.MetaSourceDataList);
+                    EnumerateMetaSourceAttributes(bean.AutoConfigurationClassType, bean.MetaSourceDataList);
                 }
             }
             finally
             {
                 builder.RegisterInstance(list).SingleInstance();
             }
-            
-            AutoConfigurationSource.Register(builder,list);
+
+            AutoConfigurationSource.Register(builder, list);
         }
-        
+
         private PointCutConfigurationList GetPointCutConfiguration(ContainerBuilder builder)
         {
             PointCutConfigurationList list = new PointCutConfigurationList
@@ -874,10 +898,11 @@ namespace Autofac.Annotation
                 var allConfiguration = GetAllPointcutConfiguration();
                 if (!allConfiguration.Any()) return list;
 
-                foreach (var configuration in allConfiguration.Select(r=>r.PointClass).Distinct())
+                foreach (var configuration in allConfiguration.Select(r => r.PointClass).Distinct())
                 {
-                    builder.RegisterType(configuration).AsSelf().SingleInstance();//注册为单例模式
+                    builder.RegisterType(configuration).AsSelf().SingleInstance(); //注册为单例模式
                 }
+
                 list.PointcutConfigurationInfoList = allConfiguration;
             }
             finally
@@ -927,7 +952,7 @@ namespace Autofac.Annotation
                 }
             }
 
-            return result.OrderByDescending(r=>r.OrderIndex).ToList();
+            return result.OrderByDescending(r => r.OrderIndex).ToList();
         }
 
         /// <summary>
@@ -953,7 +978,7 @@ namespace Autofac.Annotation
                     select new
                     {
                         Type = type,
-                        Bean = bean.Where(r=>!string.IsNullOrEmpty(r.Class)).ToList()
+                        Bean = bean.Where(r => !string.IsNullOrEmpty(r.Class)).ToList()
                     }).ToList();
 
                 foreach (var configuration in typeList)
@@ -962,54 +987,60 @@ namespace Autofac.Annotation
                     var beanTypeMethodList = configuration.Type.GetAllInstanceMethod(false);
 
                     //一个class里面会有多个before或者多个after或者多个around
-                    Dictionary<string,MethodInfo> beforeMethodInfos = new Dictionary<string,MethodInfo>();
-                    Dictionary<string,MethodInfo> afterMethodInfos = new Dictionary<string,MethodInfo>();
-                    Dictionary<string,MethodInfo> aroundMethodInfos = new Dictionary<string,MethodInfo>();
+                    Dictionary<string, MethodInfo> beforeMethodInfos = new Dictionary<string, MethodInfo>();
+                    Dictionary<string, MethodInfo> afterMethodInfos = new Dictionary<string, MethodInfo>();
+                    Dictionary<string, MethodInfo> aroundMethodInfos = new Dictionary<string, MethodInfo>();
                     foreach (var beanTypeMethod in beanTypeMethodList)
                     {
                         var beforeAttribute = beanTypeMethod.GetCustomAttribute<BeforeAttribute>();
                         var afterAttribute = beanTypeMethod.GetCustomAttribute<AfterAttribute>();
                         var aroundAttribute = beanTypeMethod.GetCustomAttribute<AroundAttribute>();
-                        if(beforeAttribute == null && afterAttribute == null && aroundAttribute == null) continue;
+                        if (beforeAttribute == null && afterAttribute == null && aroundAttribute == null) continue;
 
-                        if (aroundAttribute!=null)
+                        if (aroundAttribute != null)
                         {
                             //检查方法的参数是否对了
                             var parameters = beanTypeMethod.GetParameters();
                             if (parameters.All(r => r.ParameterType != typeof(PointcutContext)))
                             {
-                                throw new InvalidOperationException($"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register without parameter of `PointcutContext`!");
+                                throw new InvalidOperationException(
+                                    $"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register without parameter of `PointcutContext`!");
                             }
-                            
+
                             //必须是异步的 返回类型是Task才行
                             if (beanTypeMethod.ReturnType != typeof(Task))
                             {
-                                throw new InvalidOperationException($"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` must returnType of `Task`!");
+                                throw new InvalidOperationException(
+                                    $"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` must returnType of `Task`!");
                             }
 
                             var key = aroundAttribute.Name ?? "";
                             if (aroundMethodInfos.ContainsKey(key))
                             {
-                                throw new InvalidOperationException($"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register multi!");
+                                throw new InvalidOperationException(
+                                    $"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register multi!");
                             }
-                            aroundMethodInfos.Add(key,beanTypeMethod);
+
+                            aroundMethodInfos.Add(key, beanTypeMethod);
                         }
 
                         //返回类型只能是void和Task
-                        if (beanTypeMethod.ReturnType != typeof(void)  && beanTypeMethod.ReturnType != typeof(Task))
+                        if (beanTypeMethod.ReturnType != typeof(void) && beanTypeMethod.ReturnType != typeof(Task))
                         {
                             throw new InvalidOperationException(
                                 $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType invaild");
                         }
-                        
+
                         if (beforeAttribute != null)
                         {
                             var key = beforeAttribute.Name ?? "";
                             if (beforeMethodInfos.ContainsKey(key))
                             {
-                                throw new InvalidOperationException($"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi!");
+                                throw new InvalidOperationException(
+                                    $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi!");
                             }
-                            beforeMethodInfos.Add(key,beanTypeMethod);
+
+                            beforeMethodInfos.Add(key, beanTypeMethod);
                         }
 
                         if (afterAttribute != null)
@@ -1017,12 +1048,14 @@ namespace Autofac.Annotation
                             var key = afterAttribute.Name ?? "";
                             if (afterMethodInfos.ContainsKey(key))
                             {
-                                throw new InvalidOperationException($"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi!");
+                                throw new InvalidOperationException(
+                                    $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi!");
                             }
-                            afterMethodInfos.Add(key,beanTypeMethod);
+
+                            afterMethodInfos.Add(key, beanTypeMethod);
                         }
                     }
-                    
+
                     // PointCut 看下是否有配置name 如果有配置name就要check有没有该name对应的methodinfo
                     foreach (var pc in configuration.Bean)
                     {
@@ -1031,7 +1064,7 @@ namespace Autofac.Annotation
                             && !aroundMethodInfos.ContainsKey(pc.Name)
                         )
                         {
-                               continue;
+                            continue;
                         }
 
                         var rr = new PointcutConfigurationInfo
@@ -1043,19 +1076,22 @@ namespace Autofac.Annotation
                         {
                             rr.BeforeMethod = be;
                         }
+
                         if (afterMethodInfos.TryGetValue(pc.Name, out var af))
                         {
                             rr.AfterMethod = af;
                         }
+
                         if (aroundMethodInfos.TryGetValue(pc.Name, out var ar))
                         {
                             rr.AroundMethod = ar;
                         }
-                        
+
                         result.Add(rr);
                     }
                 }
             }
+
             return result;
         }
 
@@ -1108,13 +1144,14 @@ namespace Autofac.Annotation
                 var typeInterfaces = currentType.GetParentTypes();
                 foreach (var iInterface in typeInterfaces)
                 {
-                    if (iInterface.IsValueType || iInterface.IsEnum || iInterface == typeof(object) || iInterface.IsGenericEnumerableInterfaceType() || !ProxyUtil.IsAccessible(iInterface)) continue;
+                    if (iInterface.IsValueType || iInterface.IsEnum || iInterface == typeof(object) || iInterface.IsGenericEnumerableInterfaceType() ||
+                        !ProxyUtil.IsAccessible(iInterface)) continue;
                     if (bean.Services == null || !bean.Services.Contains(iInterface))
                     {
-                        if (bean.Interceptor!=null)
+                        if (bean.Interceptor != null)
                         {
                             //有配置接口拦截器 但是当前不是注册成接口
-                            if(bean.InterceptorType == InterceptorType.Interface && !iInterface.IsInterface) continue;
+                            if (bean.InterceptorType == InterceptorType.Interface && !iInterface.IsInterface) continue;
                             //有配置class拦截器 但是当前不是注册成class
                             if (bean.InterceptorType == InterceptorType.Class && !iInterface.IsClass) continue;
                         }
@@ -1155,8 +1192,10 @@ namespace Autofac.Annotation
                 {
                     if (bean.Keys.Length > bean.Services.Length)
                     {
-                        throw new ArgumentOutOfRangeException(currentType.FullName + ":" + nameof(bean.Keys) + "`length is not eq to " + nameof(bean.Services)  + "`length");
+                        throw new ArgumentOutOfRangeException(currentType.FullName + ":" + nameof(bean.Keys) + "`length is not eq to " + nameof(bean.Services) +
+                                                              "`length");
                     }
+
                     //Keys和Services是按照一对一的  如果长度不对
                     for (int i = 0; i < bean.Keys.Length; i++)
                     {
@@ -1188,19 +1227,20 @@ namespace Autofac.Annotation
         /// <returns></returns>
         private static MetaSourceData GetDefaultMetaSource()
         {
-            MetaSourceData  metaSource = new MetaSourceData();
+            MetaSourceData metaSource = new MetaSourceData();
             metaSource.Origin = "appsettings.json";
             metaSource.Embedded = false;
             metaSource.MetaSourceType = MetaSourceType.JSON;
             metaSource.Path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, metaSource.Origin);
-            metaSource.Configuration = EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded);
+            metaSource.ConfigurationLazy = new Lazy<IConfiguration>(()=>EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded));
+            metaSource.Reload = true; //默认
             return metaSource;
         }
 
         /// <summary>
         /// 设置source源
         /// </summary>
-        private void EnumerateMetaSourceAttributes(Type classType,List<MetaSourceData> MetaSourceList)
+        private void EnumerateMetaSourceAttributes(Type classType, List<MetaSourceData> MetaSourceList)
         {
             #region PropertySource
 
@@ -1215,7 +1255,8 @@ namespace Autofac.Annotation
                         Origin = metaSourceAttribute.Path,
                         Embedded = metaSourceAttribute.Embedded,
                         MetaSourceType = metaSourceAttribute.MetaSourceType,
-                        Order = metaSourceAttribute.OrderIndex
+                        Order = metaSourceAttribute.OrderIndex,
+                        Reload = metaSourceAttribute._reload ?? EnableValueResourceReloadOnchange
                     };
 
                     if (string.IsNullOrEmpty(metaSourceAttribute.Path))
@@ -1236,8 +1277,8 @@ namespace Autofac.Annotation
                             : metaSource.Origin;
                     }
 
-                    metaSource.Configuration = EmbeddedConfiguration.Load(classType, metaSource.Path, metaSource.MetaSourceType,
-                        metaSourceAttribute.Embedded);
+                    metaSource.ConfigurationLazy = new Lazy<IConfiguration>(()=>EmbeddedConfiguration.Load(classType, metaSource.Path, metaSource.MetaSourceType,
+                        metaSourceAttribute.Embedded,metaSource.Reload));
 
                     MetaSourceList.Add(metaSource);
                 }
@@ -1316,7 +1357,6 @@ namespace Autofac.Annotation
             //字段注入
             foreach (var field in model.AutowiredFieldInfoList)
             {
-                
                 // ReSharper disable once PossibleMultipleEnumeration
                 var obj = field.Item2.ResolveField(field.Item1, context, Parameters, RealInstance, allowCircle);
                 if (obj == null)
@@ -1327,8 +1367,10 @@ namespace Autofac.Annotation
                             $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
                             + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""));
                     }
+
                     continue;
                 }
+
                 try
                 {
                     field.Item1.GetReflector().SetValue(RealInstance, obj);
@@ -1340,6 +1382,7 @@ namespace Autofac.Annotation
                         + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""), ex);
                 }
             }
+
             //属性注入
             foreach (var property in model.AutowiredPropertyInfoList)
             {
@@ -1353,8 +1396,10 @@ namespace Autofac.Annotation
                             $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
                             + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""));
                     }
+
                     continue;
                 }
+
                 try
                 {
                     property.Item1.GetReflector().SetValue(RealInstance, obj);
@@ -1371,6 +1416,6 @@ namespace Autofac.Annotation
 
     internal class ComponentModelCacheSingleton
     {
-        public ConcurrentDictionary<Type, ComponentModel> ComponentModelCache  { get; set; }
+        public ConcurrentDictionary<Type, ComponentModel> ComponentModelCache { get; set; }
     }
 }

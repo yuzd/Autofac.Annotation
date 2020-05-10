@@ -175,7 +175,7 @@ namespace Autofac.Aspect
             }
             catch (Exception e)
             {
-                await AfterInterceptAttribute(attribute.Item2, invocation, e);
+                if(attribute!=null) await AfterInterceptAttribute(attribute.Item2, invocation, e);
                 throw;
             }
         }
@@ -237,7 +237,7 @@ namespace Autofac.Aspect
             }
             catch (Exception e)
             {
-                await AfterInterceptAttribute(attribute.Item2, invocation, e);
+                if(attribute!=null) await AfterInterceptAttribute(attribute.Item2, invocation, e);
                 throw;
             }
         }

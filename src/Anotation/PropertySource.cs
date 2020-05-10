@@ -44,6 +44,18 @@ namespace Autofac.Annotation
         public bool Embedded { get; set; }
 
         /// <summary>
+        /// 
+        /// </summary>
+        internal bool? _reload;
+        
+        /// <summary>
+        /// 是否重新加载 只针对文件配置有效 对于Embedded=true的不生效
+        /// </summary>
+        public bool ReloadOnChange  { get=>_reload??false;
+            set => _reload = value;
+        }
+
+        /// <summary>
         /// 资源格式类型
         /// </summary>
         public MetaSourceType MetaSourceType { get; set; } = MetaSourceType.Auto;

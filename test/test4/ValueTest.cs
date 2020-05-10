@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using Autofac.Annotation;
 using Autofac.Configuration.Test.test3;
 using Xunit;
@@ -54,8 +55,11 @@ namespace Autofac.Configuration.Test.test4
 
             var a1 = ioc.Resolve<ValueModel5>();
 
+            var ss = a1.ParentName;
+            Thread.Sleep(10000);
+            
             Assert.Equal("yuzd", a1.ParentName);
-
+            
         }
     }
 }

@@ -17,7 +17,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 缓存 key为path
         /// </summary>
-        private static ConcurrentDictionary<string,IConfiguration> Configurations = new ConcurrentDictionary<string, IConfiguration>();
+        private static ConcurrentDictionary<string, IConfiguration> Configurations = new ConcurrentDictionary<string, IConfiguration>();
 
 
         /// <summary>
@@ -27,14 +27,15 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public static IConfiguration LoadJson(string configFile)
         {
-            if(Configurations.TryGetValue(configFile,out var con))
+            if (Configurations.TryGetValue(configFile, out var con))
             {
                 return con;
             }
+
             using (var stream = File.OpenRead(configFile))
             {
                 var provider = new EmbeddedConfigurationProvider<JsonConfigurationSource>(stream);
-                var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
+                var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
                 Configurations.TryAdd(configFile, config);
                 return config;
             }
@@ -47,14 +48,15 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public static IConfiguration LoadXml(string configFile)
         {
-            if(Configurations.TryGetValue(configFile,out var con))
+            if (Configurations.TryGetValue(configFile, out var con))
             {
                 return con;
             }
+
             using (var stream = File.OpenRead(configFile))
             {
                 var provider = new EmbeddedConfigurationProvider<XmlConfigurationSource>(stream);
-                var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
+                var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
                 Configurations.TryAdd(configFile, config);
                 return config;
             }
@@ -67,10 +69,11 @@ namespace Autofac.Annotation
         /// <param name="configFile"></param>
         /// <param name="sourceType"></param>
         /// <param name="isEmbedded"></param>
+        /// <param name="isReload"></param>
         /// <returns></returns>
-        public static IConfiguration Load(Type type, string configFile, MetaSourceType sourceType,bool isEmbedded = false)
+        public static IConfiguration Load(Type type, string configFile, MetaSourceType sourceType, bool isEmbedded = false,bool isReload = true)
         {
-            if(Configurations.TryGetValue(configFile,out var con))
+            if (Configurations.TryGetValue(configFile, out var con))
             {
                 return con;
             }
@@ -81,40 +84,85 @@ namespace Autofac.Annotation
             }
 
 
-            using (var stream = isEmbedded?GetEmbeddedFileStream(type, configFile):File.OpenRead(configFile))
+            if (isEmbedded || !isReload)
             {
-                if (sourceType.Equals(MetaSourceType.Auto))
+                using (var stream = isEmbedded? GetEmbeddedFileStream(type, configFile):File.OpenRead(configFile))
                 {
-                    if (configFile.ToLower().EndsWith(".json"))
+                    if (sourceType.Equals(MetaSourceType.Auto))
                     {
-
+                        if (configFile.ToLower().EndsWith(".json"))
+                        {
+                            //采用Json
+                            var provider = new EmbeddedConfigurationProvider<JsonConfigurationSource>(stream);
+                            var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                            Configurations.TryAdd(configFile, config);
+                            return config;
+                        }
+                        else if (configFile.ToLower().EndsWith(".xml"))
+                        {
+                            var provider = new EmbeddedConfigurationProvider<XmlConfigurationSource>(stream);
+                            var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                            Configurations.TryAdd(configFile, config);
+                            return config;
+                        }
+                        else
+                        {
+                            throw new NotSupportedException($"source file can not parse $`{configFile}`");
+                        }
+                    }
+                    else if (sourceType.Equals(MetaSourceType.JSON))
+                    {
                         var provider = new EmbeddedConfigurationProvider<JsonConfigurationSource>(stream);
-                        var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
+                        var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
                         Configurations.TryAdd(configFile, config);
                         return config;
                     }
                     else
                     {
                         var provider = new EmbeddedConfigurationProvider<XmlConfigurationSource>(stream);
-                        var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
+                        var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
                         Configurations.TryAdd(configFile, config);
                         return config;
                     }
                 }
-                else if (sourceType.Equals(MetaSourceType.JSON))
+            }
+
+            
+            if (sourceType.Equals(MetaSourceType.Auto))
+            {
+                if (configFile.ToLower().EndsWith(".json"))
                 {
-                    var provider = new EmbeddedConfigurationProvider<JsonConfigurationSource>(stream);
-                    var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
+                    //采用Json
+                    var provider = new EmbeddedConfigurationProvider<JsonConfigurationSource>(configFile);
+                    var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                    Configurations.TryAdd(configFile, config);
+                    return config;
+                }
+                else if (configFile.ToLower().EndsWith(".xml"))
+                {
+                    var provider = new EmbeddedConfigurationProvider<XmlConfigurationSource>(configFile);
+                    var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
                     Configurations.TryAdd(configFile, config);
                     return config;
                 }
                 else
                 {
-                    var provider = new EmbeddedConfigurationProvider<XmlConfigurationSource>(stream);
-                    var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
-                    Configurations.TryAdd(configFile, config);
-                    return config;
+                    throw new NotSupportedException($"source file can not parse $`{configFile}`");
                 }
+            }
+            else if (sourceType.Equals(MetaSourceType.JSON))
+            {
+                var provider = new EmbeddedConfigurationProvider<JsonConfigurationSource>(configFile);
+                var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                Configurations.TryAdd(configFile, config);
+                return config;
+            }
+            else
+            {
+                var provider = new EmbeddedConfigurationProvider<XmlConfigurationSource>(configFile);
+                var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                Configurations.TryAdd(configFile, config);
+                return config;
             }
         }
 

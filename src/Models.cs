@@ -149,14 +149,25 @@ namespace Autofac.Annotation
         public int Order { get; set; }
 
         /// <summary>
+        /// 是否开启监听重新加载
+        /// </summary>
+        public bool Reload { get; set; }
+
+        /// <summary>
         /// 资源格式类型
         /// </summary>
         public MetaSourceType MetaSourceType { get; set; }
 
+
         /// <summary>
         /// Configuration
         /// </summary>
-        public IConfiguration Configuration { get; set; }
+        public Lazy<IConfiguration> ConfigurationLazy;
+        
+        /// <summary>
+        /// Configuration
+        /// </summary>
+        public IConfiguration Configuration => ConfigurationLazy?.Value;
     }
 
     /// <summary>

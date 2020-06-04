@@ -362,24 +362,22 @@ namespace Autofac.Annotation
             }
             else
             {
+                registrar.As(component.CurrentType);
                 //找到是否存在需要Pointcut的如果有的话就配置一个代理拦截器
                 if (!aspecJ.PointcutConfigurationInfoList.Any())
                 {
                     //配置了拦截器就不能注册自己
-                    registrar.As(component.CurrentType);
                     return;
                 }
 
                 if (aspecJ.PointcutTypeInfoList.ContainsKey(component.CurrentType))
                 {
                     //配置了拦截器就不能注册自己
-                    registrar.As(component.CurrentType);
                     return;
                 }
 
                 if (!needWarpForPointcut(component.CurrentType, aspecJ))
                 {
-                    registrar.As(component.CurrentType);
                     return;
                 }
 

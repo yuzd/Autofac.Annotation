@@ -71,6 +71,21 @@ namespace Autofac.Annotation
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="TLimit"></typeparam>
+        /// <typeparam name="TConcreteReflectionActivatorData"></typeparam>
+        /// <typeparam name="TRegistrationStyle"></typeparam>
+        /// <param name="registration"></param>
+        /// <param name="additionalInterfaces"></param>
+        /// <returns></returns>
+        public static IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> EnableClassInterceptors<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle>(
+            this IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> registration,params Type[] additionalInterfaces)
+            where TConcreteReflectionActivatorData : ConcreteReflectionActivatorData
+        {
+            return EnableClassInterceptors(registration, ProxyGenerationOptions.Default, additionalInterfaces);
+        }
+        /// <summary>
         /// Enable class interception on the target type. Interceptors will be determined
         /// via Intercept attributes on the class or added with InterceptedBy().
         /// Only virtual methods can be intercepted this way.

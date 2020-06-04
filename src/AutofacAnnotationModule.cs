@@ -393,8 +393,9 @@ namespace Autofac.Annotation
                     return;
                 }
 
-                //如果注册的类型有接口就认为需要接口拦截器 
-                if (component.ComponentServiceList.Any(r => r.Type.IsInterface))
+                //找寻它的继承的接口列表下是否存在相同的namespace下的接口
+                if (component.CurrentType.GetTypeInfo().ImplementedInterfaces
+                    .Any(r => r.Assembly.Equals(component.CurrentType.Assembly)))
                 {
                     registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AspectJIntercept));
                     return;

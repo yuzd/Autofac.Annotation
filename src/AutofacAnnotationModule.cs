@@ -75,14 +75,23 @@ namespace Autofac.Annotation
         /// <param name="assemblyNameList"></param>
         public AutofacAnnotationModule(params string[] assemblyNameList)
         {
-            if (assemblyNameList.Length < 1)
+            if (assemblyNameList != null && assemblyNameList.Length > 0)
             {
-                throw new ArgumentException(nameof(assemblyNameList));
+                _assemblyList = getCurrentDomainAssemblies().Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).ToList();
+                return;
             }
 
-            _assemblyList = GetAssemblies().Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).ToList();
+            _assemblyList = getCurrentDomainAssemblies().ToList();
         }
 
+
+        /// <summary>
+        ///  加载当前domain所有用到的dll
+        /// </summary>
+        public AutofacAnnotationModule() 
+        {
+            _assemblyList = getCurrentDomainAssemblies();
+        }
 
         /// <summary>
         /// 是否开启文件监听 默认true
@@ -94,7 +103,8 @@ namespace Autofac.Annotation
             EnableValueResourceReloadOnchange = flag;
             this.DefaultMeaSourceData.Value.Reload = flag;
             var metaSource = this.DefaultMeaSourceData.Value;
-            this.DefaultMeaSourceData.Value.ConfigurationLazy = new Lazy<IConfiguration>(()=>EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded,flag));
+            this.DefaultMeaSourceData.Value.ConfigurationLazy = new Lazy<IConfiguration>(() =>
+                EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded, flag));
             return this;
         }
 
@@ -1231,7 +1241,8 @@ namespace Autofac.Annotation
             metaSource.Embedded = false;
             metaSource.MetaSourceType = MetaSourceType.JSON;
             metaSource.Path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, metaSource.Origin);
-            metaSource.ConfigurationLazy = new Lazy<IConfiguration>(()=>EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded));
+            metaSource.ConfigurationLazy =
+                new Lazy<IConfiguration>(() => EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded));
             metaSource.Reload = true; //默认
             return metaSource;
         }
@@ -1276,8 +1287,9 @@ namespace Autofac.Annotation
                             : metaSource.Origin;
                     }
 
-                    metaSource.ConfigurationLazy = new Lazy<IConfiguration>(()=>EmbeddedConfiguration.Load(classType, metaSource.Path, metaSource.MetaSourceType,
-                        metaSourceAttribute.Embedded,metaSource.Reload));
+                    metaSource.ConfigurationLazy = new Lazy<IConfiguration>(() => EmbeddedConfiguration.Load(classType, metaSource.Path,
+                        metaSource.MetaSourceType,
+                        metaSourceAttribute.Embedded, metaSource.Reload));
 
                     MetaSourceList.Add(metaSource);
                 }
@@ -1311,7 +1323,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         private IEnumerable<Assembly> GetAssemblies()
         {
-            var list = new List<string>();
+            var list = new Dictionary<string, bool>();
             var stack = new Stack<Assembly>();
 
             stack.Push(Assembly.GetEntryAssembly());
@@ -1323,14 +1335,71 @@ namespace Autofac.Annotation
                 yield return asm;
 
                 foreach (var reference in asm.GetReferencedAssemblies())
-                    if (!list.Contains(reference.FullName))
+                {
+                    if (!list.ContainsKey(reference.FullName))
                     {
-                        stack.Push(Assembly.Load(reference));
-                        list.Add(reference.FullName);
+                        try
+                        {
+                            var ass = Assembly.Load(reference);
+                            if (ass.IsDynamic) continue;
+                            stack.Push(ass);
+                            list.Add(reference.FullName, true);
+                        }
+                        catch (Exception)
+                        {
+                            //ignore
+                        }
+                       
                     }
+                }
             } while (stack.Count > 0);
+            
+            
         }
 
+        /// <summary>
+        /// 获取当前工程下所有要用到的dll
+        /// </summary>
+        /// <returns></returns>
+        private List<Assembly> getCurrentDomainAssemblies()
+        {
+            List<Assembly> loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
+            var loadedPaths = loadedAssemblies.Select(
+                a =>
+                {
+                    // prevent exception accessing Location
+                    try
+                    {
+                        return a.Location;
+                    }
+                    catch (Exception)
+                    {
+                        return null;
+                    }
+                }
+            ).ToArray();
+            var referencedPaths = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll");
+            var toLoad = referencedPaths.Where(r => !loadedPaths.Contains(r, StringComparer.InvariantCultureIgnoreCase)).ToList();
+            toLoad.ForEach(
+                path =>
+                {
+                    // prevent exception loading some assembly
+                    try
+                    {
+                        loadedAssemblies.Add(AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(path)));
+                    }
+                    catch (Exception)
+                    {
+                        ; // DO NOTHING
+                    }
+                }
+            );
+
+            // prevent loading of dynamic assembly, autofac doesn't support dynamic assembly
+            loadedAssemblies.RemoveAll(i => i.IsDynamic);
+
+            return loadedAssemblies;
+        }
 
         /// <summary>
         /// 属性注入

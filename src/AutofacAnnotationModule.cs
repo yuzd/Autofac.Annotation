@@ -57,7 +57,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 自动注册父类
         /// </summary>
-        public bool AutoRegisterParentClass { get; private set; } = false;
+        public bool AutoRegisterParentClass { get; private set; } = true;
         /// <summary>
         /// 自动注册的时候如果父类是抽象class是否忽略
         /// </summary>
@@ -65,7 +65,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 自动按实现的接口注册，默认为false
         /// </summary>
-        public bool AutoRegisterInterface { get; private set; } = false;
+        public bool AutoRegisterInterface { get; private set; } = true;
         
         /// <summary>
         /// 根据程序集来实例化

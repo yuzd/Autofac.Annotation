@@ -55,6 +55,19 @@ namespace Autofac.Annotation
         private readonly Lazy<MetaSourceData> DefaultMeaSourceData = new Lazy<MetaSourceData>(GetDefaultMetaSource);
 
         /// <summary>
+        /// 自动注册父类
+        /// </summary>
+        public bool AutoRegisterParentClass { get; private set; } = false;
+        /// <summary>
+        /// 自动注册的时候如果父类是抽象class是否忽略
+        /// </summary>
+        public bool IgnoreAutoRegisterAbstractClass { get; private set; } = false;
+        /// <summary>
+        /// 自动按实现的接口注册，默认为false
+        /// </summary>
+        public bool AutoRegisterInterface { get; private set; } = false;
+        
+        /// <summary>
         /// 根据程序集来实例化
         /// </summary>
         /// <param name="assemblyList"></param>
@@ -119,7 +132,38 @@ namespace Autofac.Annotation
             return this;
         }
 
-
+        /// <summary>
+        /// 设置是否自动注册父类
+        /// </summary>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        public AutofacAnnotationModule SetAutoRegisterParentClass(bool flag)
+        {
+            this.AutoRegisterParentClass = flag;
+            return this;
+        }
+        
+        /// <summary>
+        /// 设置是否自动注册接口
+        /// </summary>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        public AutofacAnnotationModule SetAutoRegisterInterface(bool flag)
+        {
+            this.AutoRegisterInterface = flag;
+            return this;
+        }
+        
+        /// <summary>
+        /// 设置自动注册的时候如果父类是抽象class是否忽略
+        /// </summary>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        public AutofacAnnotationModule SetIgnoreAutoRegisterAbstractClass(bool flag)
+        {
+            this.IgnoreAutoRegisterAbstractClass = flag;
+            return this;
+        }
         /// <summary>
         /// 设置瞬时
         /// </summary>
@@ -1153,8 +1197,16 @@ namespace Autofac.Annotation
                 var typeInterfaces = currentType.GetParentTypes();
                 foreach (var iInterface in typeInterfaces)
                 {
+                    //自动注册的时候如果父类是抽象class是否忽略
+                    if (iInterface.IsAbstract && this.IgnoreAutoRegisterAbstractClass) continue;
+                    //自动按实现的接口注册
+                    if (iInterface.IsInterface && !AutoRegisterInterface) continue;
+                    //自动注册父类
+                    if (iInterface.IsClass && !AutoRegisterParentClass) continue;
+                    
                     if (iInterface.IsValueType || iInterface.IsEnum || iInterface == typeof(object) || iInterface.IsGenericEnumerableInterfaceType() ||
                         !ProxyUtil.IsAccessible(iInterface)) continue;
+                    
                     if (bean.Services == null || !bean.Services.Contains(iInterface))
                     {
                         if (bean.Interceptor != null)

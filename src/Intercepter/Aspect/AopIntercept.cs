@@ -217,14 +217,23 @@ namespace Autofac.Aspect
                     AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
                     foreach (var pointAspect in attribute.Item1)
                     {
-                        builder.Use(next => async ctx => { await pointAspect.OnInvocation(ctx, next); });
+                        builder.Use(next => async ctx =>
+                        {
+                            await pointAspect.OnInvocation(ctx, next);
+                            //如果有拦截器设置 ReturnValue 那么就直接拿这个作为整个拦截器的方法返回值
+                            if (ctx.InvocationContext.ReturnValue != null)
+                            {
+                                ctx.Result = ctx.InvocationContext.ReturnValue;
+                            }
+                        });
                     }
 
 
-                    builder.Use(next => async ctx =>
-                     {
+                    builder.Use(next => async ctx => 
+                    {
                          ctx.Result = await proceed(invocation, proceedInfo);
-                     });
+                         invocation.ReturnValue = ctx.Result;//原方法的执行返回值
+                    });
 
                     var aspectfunc = builder.Build();
                     var aspectContext = new AspectContext(_component, invocation);

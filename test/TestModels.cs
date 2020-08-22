@@ -620,4 +620,59 @@ namespace Autofac.Annotation.Test
         [Autowired]
         public ObjectFactory<A38> A38 { get; set; }
     }
+
+    [Component]
+    public class Model1
+    {
+        
+        public override string ToString()
+        {
+            return nameof(Model1);
+        }
+    }
+    
+    //泛型接口
+    public interface IMongodbHelp<T> where T : new()
+    {
+        string GetName();
+    }
+    
+    //泛型方法实现 https://github.com/yuzd/Autofac.Annotation/issues/13
+    [Component(typeof(IMongodbHelp<>),InitMethod = "InitMethod")]
+    public class MongodbHelp<T> : IMongodbHelp<T> where T : new()
+    {
+        [Autowired("A3612")]
+        public A36 A36 { get; set; }
+        
+        [Value("aaaaa")]
+        public string Test { get; set; }
+
+        public string Now { get; set; } = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        
+        public string GetName()
+        {
+            return (new T()).ToString();
+        }
+
+        public void InitMethod()
+        {
+            var aa = 1;
+            
+        }
+        
+    }
+    [Component(typeof(TestMongodb2<,>))]
+    public class TestMongodb2<T1, T2> 
+    {
+        [Autowired("A3612")]
+        public A36 A36 { get; set; }
+        
+        [Value("aaaaa")]
+        public string Test { get; set; }
+
+        public string Now { get; set; } = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        
+    }
+    
+    
 }

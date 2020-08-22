@@ -65,7 +65,7 @@ namespace Autofac.Annotation
         /// <returns>Registration builder allowing the registration to be configured.</returns>
         public static IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> EnableClassInterceptors<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle>(
             this IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> registration)
-            where TConcreteReflectionActivatorData : ConcreteReflectionActivatorData
+            where TConcreteReflectionActivatorData : ReflectionActivatorData
         {
             return EnableClassInterceptors(registration, ProxyGenerationOptions.Default);
         }
@@ -81,7 +81,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public static IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> EnableClassInterceptors<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle>(
             this IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> registration,params Type[] additionalInterfaces)
-            where TConcreteReflectionActivatorData : ConcreteReflectionActivatorData
+            where TConcreteReflectionActivatorData : ReflectionActivatorData
         {
             return EnableClassInterceptors(registration, ProxyGenerationOptions.Default, additionalInterfaces);
         }
@@ -126,7 +126,7 @@ namespace Autofac.Annotation
             this IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> registration,
             ProxyGenerationOptions options,
             params Type[] additionalInterfaces)
-            where TConcreteReflectionActivatorData : ConcreteReflectionActivatorData
+            where TConcreteReflectionActivatorData : ReflectionActivatorData
         {
             if (registration == null)
             {

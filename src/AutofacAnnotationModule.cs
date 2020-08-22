@@ -249,7 +249,17 @@ namespace Autofac.Annotation
             foreach (var component in componetList)
             {
                 //注册本身
-                var registrar = builder.RegisterType(component.CurrentType).WithAttributeFiltering();
+                IRegistrationBuilder<object, ReflectionActivatorData, object> registrar = null;
+                if (component.isDynamicGeneric)
+                {
+                    registrar = builder.RegisterGeneric(component.CurrentType).WithAttributeFiltering();
+                }
+                else
+                {
+                    registrar =builder.RegisterType(component.CurrentType).WithAttributeFiltering();
+                }
+                
+               
                 //如果没有指定的话就是注册本身类型 否则就是as注册
                 //指定一个规则 像spring一样
                 // 1. 如果指定了类型 那么不仅要as 也要注册本身类型
@@ -289,16 +299,42 @@ namespace Autofac.Annotation
         /// init方法和Release方法
         /// </summary>
         /// <typeparam name="TReflectionActivatorData"></typeparam>
-        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void RegisterMethods<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component,
-            IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+        protected virtual void RegisterMethods<TReflectionActivatorData>(ComponentModel component,
+            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
-            where TSingleRegistrationStyle : SingleRegistrationStyle
         {
             MethodInfo AssertMethod(Type type, string methodName)
             {
+                var emethodName = methodName.Contains(".") ? methodName.Split('.').LastOrDefault() : methodName;
+                MethodInfo method = null;
+                try
+                {
+                    BindingFlags flags = BindingFlags.Public |
+                                         BindingFlags.NonPublic |
+                                         BindingFlags.Static |
+                                         BindingFlags.Instance |
+                                         BindingFlags.DeclaredOnly;
+                    method = type.GetMethod(emethodName, flags);
+                }
+                catch (Exception)
+                {
+                    //如果有多个就抛出异常
+                    throw new DependencyResolutionException($"find method: {methodName} in type:{type.FullName} have more then one");
+                }
+
+                if (method == null)
+                {
+                    throw new DependencyResolutionException($"find method: {methodName} in type:{type.FullName} error");
+                }
+
+                return method;
+            }
+            
+            MethodInfo AssertMethodDynamic(object instance, string methodName)
+            {
+                var type = instance.GetType();
                 var emethodName = methodName.Contains(".") ? methodName.Split('.').LastOrDefault() : methodName;
                 MethodInfo method = null;
                 try
@@ -336,20 +372,54 @@ namespace Autofac.Annotation
 
             if (!string.IsNullOrEmpty(component.InitMethod))
             {
-                var method = AssertMethod(component.CurrentType, component.InitMethod);
-                registrar.OnActivated(e => { AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, method, e.Context); });
+                if (component.isDynamicGeneric)
+                {
+                    registrar.OnActivated(e =>
+                    {
+                        var method = AssertMethodDynamic(e.Instance, component.InitMethod);
+                        AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
+                    });
+                }
+                else
+                {
+                    var method = AssertMethod(component.CurrentType, component.InitMethod);
+                    registrar.OnActivated(e =>
+                    {
+                    
+                        AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
+                    });
+                }
+               
             }
 
             if (!string.IsNullOrEmpty(component.DestroyMethod))
             {
-                var method = AssertMethod(component.CurrentType, component.DestroyMethod);
-                if (method.GetParameters().Any())
+                if (component.isDynamicGeneric)
                 {
-                    throw new DependencyResolutionException(
-                        $"class `{component.CurrentType.FullName}` DestroyMethod `{component.DestroyMethod}` must be no parameters");
+                    registrar.OnRelease(e =>
+                    {
+                        var method = AssertMethodDynamic(e, component.DestroyMethod);
+                        if (method.GetParameters().Any())
+                        {
+                            throw new DependencyResolutionException(
+                                $"class `{component.CurrentType.FullName}` DestroyMethod `{component.DestroyMethod}` must be no parameters");
+                        }
+                        method.Invoke(e, null);
+                    });
                 }
+                else
+                {
+                    var method = AssertMethod(component.CurrentType, component.DestroyMethod);
+                    if (method.GetParameters().Any())
+                    {
+                        throw new DependencyResolutionException(
+                            $"class `{component.CurrentType.FullName}` DestroyMethod `{component.DestroyMethod}` must be no parameters");
+                    }
+                    registrar.OnRelease(e => { method.Invoke(e, null); });
+                }
+               
 
-                registrar.OnRelease(e => { method.Invoke(e, null); });
+               
             }
         }
 
@@ -358,13 +428,12 @@ namespace Autofac.Annotation
         /// </summary>
         /// <typeparam name="TLimit"></typeparam>
         /// <typeparam name="TConcreteReflectionActivatorData"></typeparam>
-        /// <typeparam name="TRegistrationStyle"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
         /// <param name="aspecJ"></param>
-        protected virtual void SetIntercept<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle>(ComponentModel component,
-            IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> registrar, PointCutConfigurationList aspecJ)
-            where TConcreteReflectionActivatorData : ConcreteReflectionActivatorData
+        protected virtual void SetIntercept<TLimit, TConcreteReflectionActivatorData>(ComponentModel component,
+            IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, object> registrar, PointCutConfigurationList aspecJ)
+            where TConcreteReflectionActivatorData : ReflectionActivatorData
         {
             if (registrar == null)
             {
@@ -503,13 +572,11 @@ namespace Autofac.Annotation
         /// Sets the auto activation mode for the component.
         /// </summary>
         /// <typeparam name="TReflectionActivatorData"></typeparam>
-        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void SetAutoActivate<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component,
-            IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+        protected virtual void SetAutoActivate<TReflectionActivatorData>(ComponentModel component,
+            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
-            where TSingleRegistrationStyle : SingleRegistrationStyle
         {
             if (registrar == null)
             {
@@ -533,13 +600,11 @@ namespace Autofac.Annotation
         /// 设置属性自动注入
         /// </summary>
         /// <typeparam name="TReflectionActivatorData"></typeparam>
-        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void SetInjectProperties<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component,
-            IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+        protected virtual void SetInjectProperties<TReflectionActivatorData>(ComponentModel component,
+            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
-            where TSingleRegistrationStyle : SingleRegistrationStyle
         {
             if (registrar == null)
             {
@@ -563,7 +628,7 @@ namespace Autofac.Annotation
                                          && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
                                          && (!propertyType.IsGenericEnumerableInterfaceType()
                                              || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
-                        select new Tuple<PropertyInfo, Autowired>(p, va))
+                        select new Tuple<PropertyInfo, Autowired,PropertyReflector>(p, va,p.GetReflector()))
                     .ToList();
 
 
@@ -576,7 +641,7 @@ namespace Autofac.Annotation
                                              || !propertyType.GetElementType().GetTypeInfo().IsValueType)
                                          && (!propertyType.IsGenericEnumerableInterfaceType()
                                              || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
-                        select new Tuple<FieldInfo, Autowired>(p, va))
+                        select new Tuple<FieldInfo, Autowired,FieldReflector>(p, va,p.GetReflector()))
                     .ToList();
 
                 if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any())
@@ -602,13 +667,11 @@ namespace Autofac.Annotation
         /// 设置Ownership
         /// </summary>
         /// <typeparam name="TReflectionActivatorData"></typeparam>
-        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void SetComponentOwnership<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component,
-            IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+        protected virtual void SetComponentOwnership<TReflectionActivatorData>(ComponentModel component,
+            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
-            where TSingleRegistrationStyle : SingleRegistrationStyle
         {
             if (registrar == null)
             {
@@ -630,13 +693,11 @@ namespace Autofac.Annotation
         /// 设置scope
         /// </summary>
         /// <typeparam name="TReflectionActivatorData"></typeparam>
-        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void SetLifetimeScope<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component,
-            IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+        protected virtual void SetLifetimeScope<TReflectionActivatorData>(ComponentModel component,
+            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
-            where TSingleRegistrationStyle : SingleRegistrationStyle
         {
             if (registrar == null)
             {
@@ -668,13 +729,11 @@ namespace Autofac.Annotation
         /// 动态注入打了value标签的值
         /// </summary>
         /// <typeparam name="TReflectionActivatorData"></typeparam>
-        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void RegisterComponentValues<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component,
-            IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+        protected virtual void RegisterComponentValues<TReflectionActivatorData>(ComponentModel component,
+            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
-            where TSingleRegistrationStyle : SingleRegistrationStyle
         {
             if (component == null)
             {
@@ -689,12 +748,12 @@ namespace Autofac.Annotation
             component.ValuePropertyInfoList = (from p in component.CurrentType.GetAllProperties()
                 let va = p.GetCustomAttribute<Value>()
                 where va != null
-                select new Tuple<PropertyInfo, Value>(p, va)).ToList();
+                select new Tuple<PropertyInfo, Value,PropertyReflector>(p, va,p.GetReflector())).ToList();
 
             component.ValueFieldInfoList = (from p in component.CurrentType.GetAllFields()
                 let va = p.GetCustomAttribute<Value>()
                 where va != null
-                select new Tuple<FieldInfo, Value>(p, va)).ToList();
+                select new Tuple<FieldInfo, Value,FieldReflector>(p, va,p.GetReflector())).ToList();
 
             if (!component.ValueFieldInfoList.Any() && !component.ValuePropertyInfoList.Any())
             {
@@ -716,14 +775,26 @@ namespace Autofac.Annotation
 
                 if (RealInstance == null) return;
                 var componentModelCacheSingleton = e.Context.Resolve<ComponentModelCacheSingleton>();
-                if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
+                if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(instanceType, out ComponentModel model))
+                {
+                    if (!componentModelCacheSingleton.DynamicComponentModelCache.TryGetValue(instanceType.Namespace+instanceType.Name, out ComponentModel mode1))
+                    {
+                        return;
+                    }
+                    model = mode1;
+                }
                 foreach (var field in model.ValueFieldInfoList)
                 {
                     var value = field.Item2.ResolveFiled(field.Item1, e.Context);
                     if (value == null) continue;
                     try
                     {
-                        field.Item1.GetReflector().SetValue(RealInstance, value);
+                        if (model.isDynamicGeneric)//如果是动态泛型的话
+                        {
+                             instanceType.GetTypeInfo().GetField(field.Item1.Name).GetReflector().SetValue(RealInstance,value);
+                             continue;
+                        }
+                        field.Item3.SetValue(RealInstance, value);
                     }
                     catch (Exception ex)
                     {
@@ -739,7 +810,12 @@ namespace Autofac.Annotation
                     if (value == null) continue;
                     try
                     {
-                        property.Item1.GetReflector().SetValue(RealInstance, value);
+                        if (model.isDynamicGeneric)//如果是动态泛型的话
+                        {
+                            instanceType.GetTypeInfo().GetProperty(property.Item1.Name).GetReflector().SetValue(RealInstance,value);
+                            continue;
+                        }
+                        property.Item3.SetValue(RealInstance, value);
                     }
                     catch (Exception ex)
                     {
@@ -756,13 +832,11 @@ namespace Autofac.Annotation
         /// 注册Component
         /// </summary>
         /// <typeparam name="TReflectionActivatorData"></typeparam>
-        /// <typeparam name="TSingleRegistrationStyle"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void RegisterComponentServices<TReflectionActivatorData, TSingleRegistrationStyle>(ComponentModel component,
-            IRegistrationBuilder<object, TReflectionActivatorData, TSingleRegistrationStyle> registrar)
+        protected virtual void RegisterComponentServices<TReflectionActivatorData>(ComponentModel component,
+            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
-            where TSingleRegistrationStyle : SingleRegistrationStyle
         {
             if (component == null)
             {
@@ -786,6 +860,11 @@ namespace Autofac.Annotation
                     }
                     else
                     {
+                        if (component.isDynamicGeneric && !componentServiceModel.Type.IsGenericTypeDefinition)
+                        {
+                            throw new InvalidOperationException(
+                                $"The class `{component.CurrentType.FullName}` must register as genericTypeDefinition, please use `[Component(typeOf(xxx<>))]` ");
+                        }
                         registrar.As(componentServiceModel.Type)
                             .Named("`1System.Collections.Generic.IEnumerable`1" + componentServiceModel.Type.FullName,
                                 componentServiceModel.Type); //通过集合注入Autowired拿到所有
@@ -809,7 +888,8 @@ namespace Autofac.Annotation
 
             ComponentModelCacheSingleton singleton = new ComponentModelCacheSingleton
             {
-                ComponentModelCache = new ConcurrentDictionary<Type, ComponentModel>()
+                ComponentModelCache = new ConcurrentDictionary<Type, ComponentModel>(),
+                DynamicComponentModelCache = new ConcurrentDictionary<string, ComponentModel>()
             };
             try
             {
@@ -836,6 +916,15 @@ namespace Autofac.Annotation
                         component.AspectAttribute = bean.Type.GetCustomAttribute<AspectAttribute>();
                         EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
                         result.Add(component);
+                        if (component.isDynamicGeneric)
+                        {
+                            if (component.AutoActivate)//动态泛型注册类 没法容器完成就实例化
+                            {
+                                throw new InvalidOperationException(
+                                    $"The class `{component.CurrentType.FullName}` register as genericTypeDefinition, can not set AutoActivate:true ");
+                            }
+                            singleton.DynamicComponentModelCache[bean.Type.Namespace+bean.Type.Name] = component;
+                        }
                         singleton.ComponentModelCache[bean.Type] = component;
                     }
                 }
@@ -1473,7 +1562,14 @@ namespace Autofac.Annotation
 
             if (RealInstance == null) return;
             var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
-            if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(instanceType, out ComponentModel model)) return;
+            if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(instanceType, out ComponentModel model))
+            {
+                if (!componentModelCacheSingleton.DynamicComponentModelCache.TryGetValue(instanceType.Namespace+instanceType.Name, out ComponentModel mode1))
+                {
+                    return;
+                }
+                model = mode1;
+            }
             //字段注入
             foreach (var field in model.AutowiredFieldInfoList)
             {
@@ -1493,7 +1589,13 @@ namespace Autofac.Annotation
 
                 try
                 {
-                    field.Item1.GetReflector().SetValue(RealInstance, obj);
+                    if (model.isDynamicGeneric)//如果是动态泛型的话
+                    {
+                        instanceType.GetTypeInfo().GetField(field.Item1.Name).GetReflector().SetValue(RealInstance,obj);
+                        continue;
+                    }
+                    
+                    field.Item3.SetValue(RealInstance, obj);
                 }
                 catch (Exception ex)
                 {
@@ -1522,7 +1624,12 @@ namespace Autofac.Annotation
 
                 try
                 {
-                    property.Item1.GetReflector().SetValue(RealInstance, obj);
+                    if (model.isDynamicGeneric)//如果是动态泛型的话
+                    {
+                        instanceType.GetTypeInfo().GetProperty(property.Item1.Name).GetReflector().SetValue(RealInstance,obj);
+                        continue;
+                    }
+                    property.Item3.SetValue(RealInstance, obj);
                 }
                 catch (Exception ex)
                 {
@@ -1537,5 +1644,10 @@ namespace Autofac.Annotation
     internal class ComponentModelCacheSingleton
     {
         public ConcurrentDictionary<Type, ComponentModel> ComponentModelCache { get; set; }
+        
+        /// <summary>
+        /// 存储动态泛型类
+        /// </summary>
+        public ConcurrentDictionary<string, ComponentModel> DynamicComponentModelCache { get; set; }
     }
 }

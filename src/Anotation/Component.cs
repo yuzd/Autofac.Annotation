@@ -128,6 +128,7 @@ namespace Autofac.Annotation
         /// 被Release时执行的方法
         /// </summary>
         public string DestroyMethod { get; set; }
+       
 
     }
 

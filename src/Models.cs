@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using AspectCore.Extensions.Reflection;
 using Autofac.Aspect;
 
 namespace Autofac.Annotation
@@ -18,10 +20,10 @@ namespace Autofac.Annotation
         {
             MetaSourceList = new List<MetaSourceData>();
             ComponentServiceList = new List<ComponentServiceModel>();
-            AutowiredFieldInfoList = new List<Tuple<FieldInfo, Autowired>>();
-            AutowiredPropertyInfoList = new List<Tuple<PropertyInfo, Autowired>>();
-            ValueFieldInfoList = new List<Tuple<FieldInfo, Value>>();
-            ValuePropertyInfoList = new List<Tuple<PropertyInfo, Value>>();
+            AutowiredFieldInfoList = new List<Tuple<FieldInfo, Autowired,FieldReflector>>();
+            AutowiredPropertyInfoList = new List<Tuple<PropertyInfo, Autowired,PropertyReflector>>();
+            ValueFieldInfoList = new List<Tuple<FieldInfo, Value,FieldReflector>>();
+            ValuePropertyInfoList = new List<Tuple<PropertyInfo, Value,PropertyReflector>>();
         }
         /// <summary>
         /// 当前类所在类型
@@ -36,23 +38,23 @@ namespace Autofac.Annotation
         /// <summary>
         /// 需要装配的Autowired的字段集合
         /// </summary>
-        public List<Tuple<FieldInfo,Autowired>> AutowiredFieldInfoList { get; set; }
+        public List<Tuple<FieldInfo,Autowired,FieldReflector>> AutowiredFieldInfoList { get; set; }
         
         /// <summary>
         /// 需要装配的Autowired的属性集合
         /// </summary>
-        public List<Tuple<PropertyInfo,Autowired>> AutowiredPropertyInfoList { get; set; }
+        public List<Tuple<PropertyInfo,Autowired,PropertyReflector>> AutowiredPropertyInfoList { get; set; }
         
         
         /// <summary>
         /// 需要装配的Value的字段集合
         /// </summary>
-        public List<Tuple<FieldInfo,Value>> ValueFieldInfoList { get; set; }
+        public List<Tuple<FieldInfo,Value,FieldReflector>> ValueFieldInfoList { get; set; }
         
         /// <summary>
         /// 需要装配的Value的属性集合
         /// </summary>
-        public List<Tuple<PropertyInfo,Value>> ValuePropertyInfoList { get; set; }
+        public List<Tuple<PropertyInfo,Value,PropertyReflector>> ValuePropertyInfoList { get; set; }
 
         /// <summary>
         /// PropertySource
@@ -120,6 +122,22 @@ namespace Autofac.Annotation
         /// 自定义注册顺序
         /// </summary>
         public int OrderIndex { get; set; }
+        
+         
+        /// <summary>
+        /// 当前注册的类型是否是动态泛型 https://github.com/yuzd/Autofac.Annotation/issues/13
+        /// </summary>
+        internal bool isDynamicGeneric {
+            get
+            {
+                var currentTypeInfo = this.CurrentType.GetTypeInfo();
+                if (currentTypeInfo.IsGenericTypeDefinition)
+                {
+                    return true;
+                }
+                return false;
+            } 
+        }
     }
 
     /// <summary>

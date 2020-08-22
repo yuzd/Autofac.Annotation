@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Autofac.Core;
 using Autofac.Features.AttributeFilters;
 using Autofac.Features.Metadata;
@@ -711,6 +712,39 @@ namespace Autofac.Annotation.Test
             A38 ss2 = a39.A38.GetObject();
             Assert.True(ss2.Now>ss.Now);
 
+        }
+        
+        
+           
+        [Fact]
+        public void Test_Type_37()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+
+            var a39 = container.Resolve<IMongodbHelp<Model1>>();
+            var a391 = container.Resolve<IMongodbHelp<Model1>>();
+            var a39name = a39.GetName();
+            Assert.Equal("Model1",a39name);
+        }
+        
+        [Fact]
+        public void Test_Type_38()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+
+            var a39 = container.Resolve<TestMongodb2<Model1,Model1>>();
+            
+            Assert.NotNull(a39.A36);
         }
     }
 }

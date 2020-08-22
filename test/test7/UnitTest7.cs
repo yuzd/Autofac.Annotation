@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Autofac.Annotation;
+using Autofac.Annotation.Test;
 using Autofac.Annotation.Test.test6;
 using Xunit;
 
@@ -21,9 +22,10 @@ namespace Autofac.Configuration.Test.test7
             var container = builder.Build();
 
             var a1 = container.Resolve<TestCacheAop>();
-
             var result = await a1.TestInterceptor2();
             var result2 = await a1.TestInterceptor2();
+            
+          
             Assert.Equal(result2,result);
         }
     }

@@ -10,11 +10,14 @@ using AspectCore.Extensions.Reflection;
 using Autofac.Annotation;
 using Autofac.Aspect;
 using Castle.DynamicProxy;
+using  Autofac.Annotation.Util;
 
 namespace Autofac.Aspect
 {
     /// <summary>
     /// AOP拦截器方法Attribute的缓存
+    /// 在DI容器build的时候会触发这个实例new
+    /// 然后解析所有打了Aspect标签的class进行解析打了有继承AspectInvokeAttribute的所有方法并且缓存起来
     /// </summary>
     [Component(AutofacScope = AutofacScope.SingleInstance,AutoActivate = true)]
     public class AopMethodInvokeCache
@@ -26,6 +29,7 @@ namespace Autofac.Aspect
         public AopMethodInvokeCache(IComponentContext context)
         {
             CacheList = new ConcurrentDictionary<MethodInfo, List<AspectInvokeAttribute>>();
+            DynamicCacheList = new ConcurrentDictionary<string, List<AspectInvokeAttribute>>();
             var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
             var aspectClassList = componentModelCacheSingleton.ComponentModelCache.Values
                 .Where(r => r.AspectAttribute != null).ToList();
@@ -48,6 +52,11 @@ namespace Autofac.Aspect
                         .GroupBy(r => r.Attribute.GetType().FullName)
                         .Select(r => r.First().Attribute).ToList();
 
+                    if (aspectClass.isDynamicGeneric)
+                    {
+                        DynamicCacheList.TryAdd(method.GetMethodInfoUniqueName(), attributes);
+                        continue;
+                    }
                     CacheList.TryAdd(method, attributes);
                 }
             }
@@ -56,11 +65,18 @@ namespace Autofac.Aspect
         /// 缓存
         /// </summary>
         public ConcurrentDictionary<MethodInfo,List<AspectInvokeAttribute>> CacheList { get; set; }
+        
+        /// <summary>
+        /// 由于动态泛型的method是跟着泛型T变化的  所以需要单独缓存
+        /// </summary>
+        public ConcurrentDictionary<string,List<AspectInvokeAttribute>> DynamicCacheList { get; set; }
+        
+     
     }
 
 
     /// <summary>
-    /// AOP拦截器
+    /// AOP拦截器 配合打了 Aspect标签的class 和 里面打了 继承AspectInvokeAttribute 标签的 方法
     /// </summary>
     [Component(typeof(AopIntercept))]
     public class AopIntercept : AsyncInterceptor
@@ -79,14 +95,21 @@ namespace Autofac.Aspect
         }
 
         /// <summary>
-        /// 拦截器
+        /// 执行前置拦截器
         /// </summary>
         /// <param name="invocation"></param>
         private async Task<Tuple<List<AspectPointAttribute>, List<AspectInvokeAttribute>,Exception>> BeforeInterceptAttribute(IInvocation invocation)
         {
+            //先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
             if(!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget,out var Attributes) || Attributes==null || !Attributes.Any())
             {
-                return null;
+                //动态泛型类
+                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType || (!_cache.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var AttributesDynamic) || AttributesDynamic==null || !AttributesDynamic.Any()))
+                {
+                    return null;
+                }
+
+                Attributes = AttributesDynamic;
             }
            
             var aspectContext = new AspectContext(_component, invocation);
@@ -95,6 +118,7 @@ namespace Autofac.Aspect
             {
                 foreach (var attribute in Attributes)
                 {
+                    //如果一个方法上面既有AspectAroundAttribute 又有 AspectBeforeAttribute 的话 按照下面的优先级 抛弃 AspectBeforeAttribute
                     switch (attribute)
                     {
                         case AspectAroundAttribute aspectAroundAttribute:
@@ -256,7 +280,7 @@ namespace Autofac.Aspect
 
 
     /// <summary>
-    /// AOP拦截器
+    /// AOP Pointcut拦截器
     /// </summary>
     [Component(typeof(AspectJIntercept))]
     public class AspectJIntercept : AsyncInterceptor
@@ -275,7 +299,7 @@ namespace Autofac.Aspect
         }
         
         /// <summary>
-        /// 
+        /// 一个目标方法只会适 Before After Arround 其中的一个切面
         /// </summary>
         /// <param name="invocation"></param>
         /// <param name="proceedInfo"></param>
@@ -285,9 +309,14 @@ namespace Autofac.Aspect
         {
             if (!_configuration.PointcutTargetInfoList.TryGetValue(invocation.MethodInvocationTarget, out var pointCut))
             {
-                //该方法不需要拦截
-                await proceed(invocation, proceedInfo);
-                return;
+                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType || !_configuration.DynamicPointcutTargetInfoList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var pointCutDynamic))
+                {
+                    //该方法不需要拦截
+                    await proceed(invocation, proceedInfo);
+                    return;
+                }
+
+                pointCut = pointCutDynamic;
             }
 
             //pointcut定义所在对象
@@ -361,8 +390,13 @@ namespace Autofac.Aspect
         {
             if (!_configuration.PointcutTargetInfoList.TryGetValue(invocation.MethodInvocationTarget, out var pointCut))
             {
-                //该方法不需要拦截
-                return await proceed(invocation, proceedInfo);
+                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType || !_configuration.DynamicPointcutTargetInfoList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var pointCutDynamic))
+                {
+                    //该方法不需要拦截
+                    return await proceed(invocation, proceedInfo);
+                }
+             
+                pointCut = pointCutDynamic;
             }
             
             //pointcut定义所在对象

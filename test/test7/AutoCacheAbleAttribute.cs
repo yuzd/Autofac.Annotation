@@ -48,4 +48,47 @@ namespace Autofac.Configuration.Test.test7
             return Name;
         }
     }
+
+
+    public interface ICacheAop2<T>
+    {
+        Task<string> TestInterceptor2();
+    }
+    
+   
+    // [Component]
+    [Aspect]
+    [Component(typeof(ICacheAop2<>))]
+    public class TestCacheAop2<T>:ICacheAop2<T>
+    {
+        public string Name { get; set; } = "TestCacheAop";
+
+        [AutoCacheAble]
+        public async Task<string> TestInterceptor2()
+        {
+            await Task.Delay(1000);
+            Console.WriteLine("TestCacheAop");
+            return Name;
+        }
+    }
+    
+    
+    public interface ICacheAop23<T>
+    {
+        Task<string> TestInterceptor2();
+    }
+
+    
+    [Component(typeof(ICacheAop23<>))]
+    public class TestCacheAop3<T>:ICacheAop23<T>
+    {
+        public string Name { get; set; } = "TestCacheAop";
+
+        public async Task<string> TestInterceptor2()
+        {
+            await Task.Delay(1000);
+            Console.WriteLine("TestCacheAop");
+            return Name;
+        }
+    }
 }

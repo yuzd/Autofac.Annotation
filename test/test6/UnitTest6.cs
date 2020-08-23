@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+using Autofac.Configuration.Test.test7;
 using Xunit;
 
 namespace Autofac.Annotation.Test.test6
@@ -80,7 +82,7 @@ namespace Autofac.Annotation.Test.test6
             var builder = new ContainerBuilder();
 
             // autofac打标签模式
-            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly));
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly).SetAllowCircularDependencies(true));
 
             var container = builder.Build();
                 
@@ -88,6 +90,25 @@ namespace Autofac.Annotation.Test.test6
            
             a1.Hello("ddd");
             var a111 = a1.Hello2("ssss");
+            
+
+        }
+        
+        [Fact]
+        public async Task Test_Type_05()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+                
+            var a1 = container.Resolve<ICacheAop23<Model1>>();
+           
+            await a1.TestInterceptor2();
+            
+            
             
 
         }

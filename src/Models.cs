@@ -226,4 +226,14 @@ namespace Autofac.Annotation
         public string Key { get; set; }
     }
 
+
+    /// <summary>
+    /// 注册信息
+    /// </summary>
+    internal class BeanDefination
+    {
+        public Type Type { get; set; }
+        public Component Bean { get; set; }
+        public int OrderIndex { get; set; }
+    }
 }

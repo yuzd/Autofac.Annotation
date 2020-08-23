@@ -27,6 +27,14 @@ namespace Autofac.Configuration.Test.test7
             
           
             Assert.Equal(result2,result);
+            
+            
+            var a11 = container.Resolve<ICacheAop2<Model1>>();
+            var result1 = await a11.TestInterceptor2();
+            var result21 = await a11.TestInterceptor2();
+            
+          
+            Assert.Equal(result21,result1);
         }
     }
 }

@@ -185,6 +185,14 @@ namespace Autofac.Aspect
         /// 唯一的名称
         /// </summary>
         public string Name { get; set; } = "";
+        /// <summary>
+        /// 被创建后执行的方法
+        /// </summary>
+        public string InitMethod { get; set; }
+        /// <summary>
+        /// 被Release时执行的方法
+        /// </summary>
+        public string DestroyMethod { get; set; }
 
         /// <summary>
         /// 用于匹配返回类型

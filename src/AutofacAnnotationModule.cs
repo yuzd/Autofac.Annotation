@@ -241,10 +241,11 @@ namespace Autofac.Annotation
                 builder.RegisterSource(new Autofac.Features.Variance.ContravariantRegistrationSource());
                 builder.RegisterEventing();
             }
-
-            var componetList = GetAllComponent(builder);
-
+            
             var aspectJ = GetPointCutConfiguration(builder);
+
+            var componetList = GetAllComponent(builder,aspectJ);
+
 
             foreach (var component in componetList)
             {
@@ -473,14 +474,25 @@ namespace Autofac.Annotation
             }
             else if (aspAttribute != null)
             {
-                if (aspAttribute.AspectType == InterceptorType.Class)
+                if (component.isDynamicGeneric)
                 {
-                    //有配置方法的拦截器
-                    registrar.EnableClassInterceptors().InterceptedBy(typeof(AopIntercept));
+                    //动态泛型类的话 只能用 interface拦截器 
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AopIntercept));
+                }
+                else if (component.CurrentType.GetCustomAttribute<InterfaceInterceptorAttribute>() != null)
+                {
+                    //打了[InterfaceInterceptor]标签
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AopIntercept));
+                }
+                else if (aspAttribute.AspectType == InterceptorType.Interface)
+                {
+                    //指定了 interface 拦截器 或
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AopIntercept));
                 }
                 else
                 {
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AopIntercept));
+                    //默认是class + virtual 拦截器
+                    registrar.EnableClassInterceptors().InterceptedBy(typeof(AopIntercept));
                 }
             }
             else
@@ -499,7 +511,7 @@ namespace Autofac.Annotation
                     return;
                 }
 
-                if (!needWarpForPointcut(component.CurrentType, aspecJ))
+                if (!needWarpForPointcut(component, aspecJ))
                 {
                     return;
                 }
@@ -532,11 +544,12 @@ namespace Autofac.Annotation
         /// <summary>
         /// 查看是否存在需要拦截的
         /// </summary>
-        /// <param name="targetClass"></param>
+        /// <param name="component"></param>
         /// <param name="aspectJ"></param>
         /// <returns></returns>
-        private bool needWarpForPointcut(Type targetClass, PointCutConfigurationList aspectJ)
+        private bool needWarpForPointcut(ComponentModel component, PointCutConfigurationList aspectJ)
         {
+            Type targetClass = component.CurrentType;
             var result = false;
             List<MethodInfo> instanceMethodList = null;
             foreach (var aspectClass in aspectJ.PointcutConfigurationInfoList)
@@ -550,11 +563,18 @@ namespace Autofac.Annotation
                         instanceMethodList = targetClass.GetAllInstanceMethod(false).ToList();
                     }
 
-                    foreach (var method in instanceMethodList)
+                    foreach (var method in instanceMethodList.Where(m => !m.IsSpecialName))
                     {
                         if (aspectClass.Pointcut.IsVaild(method))
                         {
-                            aspectJ.PointcutTargetInfoList.TryAdd(method, aspectClass);
+                            if (component.isDynamicGeneric)
+                            {
+                                aspectJ.DynamicPointcutTargetInfoList.TryAdd(method.GetMethodInfoUniqueName(), aspectClass);
+                            }
+                            else
+                            {
+                                aspectJ.PointcutTargetInfoList.TryAdd(method, aspectClass);
+                            }
                             result = true;
                         }
                     }
@@ -878,8 +898,7 @@ namespace Autofac.Annotation
         /// 解析程序集
         /// </summary>
         /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        private List<ComponentModel> GetAllComponent(ContainerBuilder builder)
+        private List<ComponentModel> GetAllComponent(ContainerBuilder builder,PointCutConfigurationList pointCutConfigurationList)
         {
             if (_assemblyList == null || _assemblyList.Count < 1)
             {
@@ -902,12 +921,30 @@ namespace Autofac.Annotation
                     var beanTypeList = (from type in types
                         let bean = type.GetCustomAttribute<Component>()
                         where type.IsClass && !type.IsAbstract && bean != null
-                        select new
+                        select new BeanDefination
                         {
                             Type = type,
                             Bean = bean,
                             OrderIndex = bean.OrderIndex
                         }).ToList();
+
+                    foreach (var pointcutConfig in pointCutConfigurationList.PointcutConfigurationInfoList
+                        .GroupBy(r=>r.PointClass)
+                        .ToDictionary(r=>r.Key,y=>y.ToList()))
+                    {
+                        var pointCutAtt = pointcutConfig.Value.First();
+                        beanTypeList.Add(new BeanDefination
+                        {
+                            Type = pointcutConfig.Key,
+                            Bean = new Component (pointcutConfig.Key)
+                            {
+                                AutofacScope = AutofacScope.SingleInstance,
+                                InitMethod = pointCutAtt.Pointcut.InitMethod,
+                                DestroyMethod = pointCutAtt.Pointcut.DestroyMethod
+                            },
+                            OrderIndex = int.MinValue,
+                        });
+                    }
 
                     foreach (var bean in beanTypeList.OrderByDescending(r => r.OrderIndex))
                     {
@@ -1027,23 +1064,24 @@ namespace Autofac.Annotation
             AutoConfigurationSource.Register(builder, list);
         }
 
+        /// <summary>
+        /// 解析程序集PointCut标签类和方法
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <returns></returns>
         private PointCutConfigurationList GetPointCutConfiguration(ContainerBuilder builder)
         {
             PointCutConfigurationList list = new PointCutConfigurationList
             {
                 PointcutConfigurationInfoList = new List<PointcutConfigurationInfo>(),
                 PointcutTargetInfoList = new ConcurrentDictionary<MethodInfo, PointcutConfigurationInfo>(),
+                DynamicPointcutTargetInfoList = new ConcurrentDictionary<string, PointcutConfigurationInfo>(),
                 PointcutTypeInfoList = new ConcurrentDictionary<Type, bool>()
             };
             try
             {
                 var allConfiguration = GetAllPointcutConfiguration();
                 if (!allConfiguration.Any()) return list;
-
-                foreach (var configuration in allConfiguration.Select(r => r.PointClass).Distinct())
-                {
-                    builder.RegisterType(configuration).AsSelf().SingleInstance(); //注册为单例模式
-                }
 
                 list.PointcutConfigurationInfoList = allConfiguration;
             }

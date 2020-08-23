@@ -10,8 +10,16 @@ namespace Autofac.Annotation.Test.test6
     [Pointcut("name2",Class = "LogAspect[ABC]")]
     [Pointcut("name3",Class = "LogAroundTest",Method="Hello*")]
     [Pointcut("name4",Class = "LogTaskTest",Method="Hello*")]
+    [Pointcut("name5",Class = "TestCacheAop3*",Method="TestInterceptor2")]
     public class LogAspect
     {
+        [Autowired("A3612")]
+        public A36 A36 { get; set; }
+        
+        [Value("aaaaa")]
+        public string Test { get; set; }
+        
+        
         [Before]
         public void Before()
         {
@@ -70,6 +78,20 @@ namespace Autofac.Annotation.Test.test6
         {
             await Task.Delay(1000);
             Console.WriteLine("After4");
+        }
+        
+        [Before("name5")]
+        public async Task Before5()
+        {
+            await Task.Delay(1000);
+            Console.WriteLine("Before5");
+        }
+        
+        [After("name5")]
+        public async Task After5()
+        {
+            await Task.Delay(1000);
+            Console.WriteLine("After5");
         }
     }
 

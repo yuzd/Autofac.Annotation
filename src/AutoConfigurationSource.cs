@@ -410,6 +410,11 @@ namespace Autofac.Annotation
         public ConcurrentDictionary<MethodInfo,PointcutConfigurationInfo> PointcutTargetInfoList { get; set; }
         
         /// <summary>
+        /// 针对动态泛型类的method目标集合
+        /// </summary>
+        public ConcurrentDictionary<string,PointcutConfigurationInfo> DynamicPointcutTargetInfoList { get; set; }
+        
+        /// <summary>
         /// 对应的class目标集合
         /// </summary>
         public ConcurrentDictionary<Type,bool> PointcutTypeInfoList { get; set; }

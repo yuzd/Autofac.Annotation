@@ -8,9 +8,11 @@
 //-----------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using AspectCore.Extensions.Reflection;
 using Autofac.Core;
 
 namespace Autofac.Annotation
@@ -55,6 +57,29 @@ namespace Autofac.Annotation
         public T GetObject()
         {
             return (T) function();
+        }
+    }
+
+    internal class LazyAutowiredFactory<T>
+    {
+        /// <summary>
+        /// 获取value的包装
+        /// </summary>
+        /// <returns></returns>
+        internal Func<object> function;
+
+        /// <summary>
+        /// 构造方法
+        /// </summary>
+        /// <param name="function"></param>
+        public LazyAutowiredFactory(Func<object> function)
+        {
+            this.function = function;
+        }
+
+        public Lazy<T> CreateLazy()
+        {
+            return new Lazy<T>(()=> (T) function());
         }
     }
 
@@ -113,6 +138,11 @@ namespace Autofac.Annotation
         private readonly IComponentContext _context;
 
         /// <summary>
+        /// 存储lazy的 CreateLazy 的方法缓存
+        /// </summary>
+        private readonly ConcurrentDictionary<Type, MethodReflector> _lazyMethodCache = new ConcurrentDictionary<Type, MethodReflector>();
+        
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="context"></param>
@@ -140,39 +170,66 @@ namespace Autofac.Annotation
         }
 
 
-        /// <summary>
-        ///  创建Autowired的包装器
-        /// </summary>
-        /// <param name="autowired"></param>
-        /// <param name="type"></param>
-        /// <param name="classType"></param>
-        /// <param name="typeDescription"></param>
-        /// <returns></returns>
-        public object CreateAutowiredFactory(Autowired autowired, Type type, Type classType, string typeDescription)
-        {
-            var targetType = type.GenericTypeArguments[0];
-            var valueType = typeof(AutowiredObjectFactory<>);
-            var valueFactoryType = valueType.MakeGenericType(targetType);
-            Func<object> function = () => autowired.Resolve(classType, targetType, _context, typeDescription);
-            return Activator.CreateInstance(valueFactoryType, new object[] {function});
-        }
+        // /// <summary>
+        // ///  创建Autowired的包装器
+        // /// </summary>
+        // /// <param name="autowired"></param>
+        // /// <param name="type"></param>
+        // /// <param name="classType"></param>
+        // /// <param name="fieldOrPropertyName"></param>
+        // /// <param name="typeDescription"></param>
+        // /// <returns></returns>
+        // public object CreateAutowiredFactory(Autowired autowired, Type type, Type classType,string fieldOrPropertyName, string typeDescription)
+        // {
+        //     var targetType = type.GenericTypeArguments[0];
+        //     var valueType = typeof(AutowiredObjectFactory<>);
+        //     var valueFactoryType = valueType.MakeGenericType(targetType);
+        //     Func<object> function = () => autowired.Resolve(classType, targetType,fieldOrPropertyName, _context, typeDescription);
+        //     return Activator.CreateInstance(valueFactoryType, new object[] {function});
+        // }
 
         /// <summary>
-        /// 
+        /// 创建Autowired的包装器
         /// </summary>
         /// <param name="autowired"></param>
         /// <param name="type"></param>
         /// <param name="classType"></param>
+        /// <param name="fieldOrPropertyName"></param>
         /// <param name="instance"></param>
         /// <param name="Parameters"></param>
         /// <returns></returns>
-        public object CreateAutowiredFactory(Autowired autowired, Type type, Type classType, object instance, IEnumerable<Parameter> Parameters)
+        public object CreateAutowiredFactory(Autowired autowired, Type type, Type classType,string fieldOrPropertyName, object instance, IEnumerable<Parameter> Parameters)
         {
             var targetType = type.GenericTypeArguments[0];
             var valueType = typeof(AutowiredObjectFactory<>);
             var valueFactoryType = valueType.MakeGenericType(targetType);
-            Func<object> function = () => autowired.Resolve(_context, instance, classType, targetType, Parameters);
+            Func<object> function = () => autowired.Resolve(_context, instance, classType,targetType,fieldOrPropertyName,  Parameters);
             return Activator.CreateInstance(valueFactoryType, new object[] {function});
+        }
+        
+        /// <summary>
+        /// 创建Lazy的包装器
+        /// </summary>
+        /// <param name="autowired"></param>
+        /// <param name="type"></param>
+        /// <param name="classType"></param>
+        /// <param name="fieldOrPropertyName"></param>
+        /// <param name="instance"></param>
+        /// <param name="Parameters"></param>
+        /// <returns></returns>
+        public object CreateLazyFactory(Autowired autowired, Type type, Type classType,string fieldOrPropertyName, object instance, IEnumerable<Parameter> Parameters)
+        {
+            var targetType = type.GenericTypeArguments[0];
+            var valueType = typeof(LazyAutowiredFactory<>);
+            var valueFactoryType = valueType.MakeGenericType(targetType);
+            Func<object> function = () => autowired.Resolve(_context, instance, classType,targetType,fieldOrPropertyName,  Parameters);
+            var lazyFactory = Activator.CreateInstance(valueFactoryType, new object[] {function});
+            if (!this._lazyMethodCache.TryGetValue(valueFactoryType, out var _cache))
+            {
+                _cache = lazyFactory.GetType().GetTypeInfo().GetMethod("CreateLazy").GetReflector();
+                this._lazyMethodCache.TryAdd(valueFactoryType, _cache);
+            }
+            return _cache.Invoke(lazyFactory);
         }
     }
 }

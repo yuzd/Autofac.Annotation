@@ -517,7 +517,7 @@ namespace Autofac.Annotation.Test
                 container.Resolve<A31>();
             });
             
-            Assert.Contains("property name:A311",exception.ToString());
+            Assert.Contains("A31.A311",exception.ToString());
         }
         
         [Fact]
@@ -605,12 +605,18 @@ namespace Autofac.Annotation.Test
 ////            builder.RegisterType(typeof(A322)).As(new TypedService(typeof(A3122)));
 //            builder.RegisterType(typeof(A323)).As(new KeyedService("A3213",typeof(A3122)));
 ////            builder.RegisterType(typeof(A323)).As(new TypedService(typeof(A3122)));
-//            
+
+            builder.RegisterType<A26>();
+            
+
             var container = builder.Build();
+
+            var lazyObj = container.Resolve<Lazy<A26>>();
+            
             
             var warrior = container.Resolve<IEnumerable<A3122>>();
 
-
+            Assert.Equal(3,warrior.Count());
         }
         
         [Fact]
@@ -648,6 +654,17 @@ namespace Autofac.Annotation.Test
             var a = container.Resolve<A37>();
             Assert.NotNull(a);
             Assert.NotNull(a.A36);
+            
+            
+            var builder1 = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder1.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            
+            var container2 = builder1.Build();
+           
+            Assert.Throws<DependencyResolutionException>(() => container2.Resolve<A37>());
 
         }
 
@@ -745,6 +762,105 @@ namespace Autofac.Annotation.Test
             var a39 = container.Resolve<TestMongodb2<Model1,Model1>>();
             
             Assert.NotNull(a39.A36);
+        }
+        
+        
+        [Fact]
+        public void Test_Type_39()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+
+            var a39 = container.Resolve<TestAutowiredModal3>();
+            
+            Assert.NotNull(a39.abc);
+            Assert.NotNull(a39.def);
+        }
+        
+         
+        [Fact]
+        public void Test_Type_40()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+
+            var a39 = container.Resolve<TestAutowiredModal4>();
+
+            var aa = a39.abc.GetObject();
+            Assert.NotNull(a39.abc.GetObject());
+            Assert.NotNull(a39.def.GetObject());
+        }
+        
+        [Fact]
+        public void Test_Type_41()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+
+            var a39 = container.Resolve<TestLazyModel1>();
+
+            var ab = a39.TestAutowiredModal3;
+            
+            Assert.NotNull(ab);
+
+            var aa = a39.TestAutowiredModal4.Value;
+            Assert.NotNull(aa);
+        }
+        
+        [Fact]
+        public void Test_Type_42()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+            var aa = container.Resolve<TestCircular1>();
+            Assert.NotNull(aa.TestCircular2.TestCircular1);
+        }
+        
+        [Fact]
+        public void Test_Type_43()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+            
+            Assert.Throws<DependencyResolutionException>(() => container.Resolve<TestCircular3>());
+        }
+        
+        [Fact]
+        public void Test_Type_44()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
+
+            var container = builder.Build();
+
+            var aa = container.Resolve<LazyModel1>();
+            Assert.NotNull(aa);
+            
+            var dd = aa.LazyModel2.Value;
+            Assert.NotNull(dd);
         }
     }
 }

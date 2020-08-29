@@ -183,7 +183,9 @@ namespace Autofac.Annotation.Util
         public static bool IsGenericEnumerableInterfaceType(this Type type)
         {
             return type.IsGenericTypeDefinedBy(typeof(IEnumerable<>))
-                   || type.IsGenericListOrCollectionInterfaceType();
+                   || type.IsGenericListOrCollectionInterfaceType() || type.IsTypeDefinitionEnumerable() ||
+                   type.GetInterfaces()
+                       .Any(t => t.IsSelfEnumerable() || t.IsTypeDefinitionEnumerable());
         }
 
         public static bool IsGenericListOrCollectionInterfaceType(this Type t)
@@ -199,6 +201,19 @@ namespace Autofac.Annotation.Util
             return !@this.GetTypeInfo().ContainsGenericParameters
                    && @this.GetTypeInfo().IsGenericType
                    && @this.GetGenericTypeDefinition() == openGeneric;
+        }
+        
+        private static bool IsSelfEnumerable(this Type type)
+        {
+            bool isDirectly = type == typeof(IEnumerable<>);
+            return isDirectly;
+        }
+
+        private static bool IsTypeDefinitionEnumerable(this Type type)
+        {
+            bool isViaInterfaces = type.IsGenericType && 
+                                   type.GetGenericTypeDefinition().IsSelfEnumerable();
+            return isViaInterfaces;
         }
 
 

@@ -289,49 +289,6 @@ namespace Autofac.Annotation
 
         }
 
-        // public static IRegistrationBuilder<object, SimpleActivatorData, SingleRegistrationStyle> RegisterInstance(IComponentRegistry cr, Type returnType, object instance, string key)
-        // {
-        //     if (instance == null) throw new ArgumentNullException(nameof(instance));
-        //
-        //     var activator = new ProvidedInstanceActivator(instance);
-        //     var instanceType = instance.GetType();
-        //     var rb = RegistrationBuilder.ForDelegate(instanceType, ((context, parameters) => instance));
-        //     if (returnType != instanceType)
-        //     {
-        //         if (!string.IsNullOrEmpty(key))
-        //         {
-        //             rb.Keyed(key, returnType).Named("`1System.Collections.Generic.IEnumerable`1" + returnType.FullName, returnType); 
-        //         }
-        //         else
-        //         {
-        //             rb.As(returnType).Named("`1System.Collections.Generic.IEnumerable`1" + returnType.FullName, returnType);
-        //         }
-        //     }
-        //     else
-        //     {
-        //         if (!string.IsNullOrEmpty(key))
-        //         {
-        //             rb.Keyed(key, instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
-        //         }
-        //         else
-        //         {
-        //             rb.As(instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
-        //         }
-        //     }
-        //
-        //     rb.SingleInstance();
-        //     if (!(rb.RegistrationData.Lifetime is RootScopeLifetime) ||
-        //         rb.RegistrationData.Sharing != InstanceSharing.Shared)
-        //     {
-        //         throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, "The instance  registration `{0}` can support SingleInstance() sharing only", instance));
-        //     }
-        //
-        //     activator.DisposeInstance = rb.RegistrationData.Ownership == InstanceOwnership.OwnedByLifetimeScope;
-        //
-        //     RegistrationBuilder.RegisterSingleComponent(cr, rb);
-        //
-        //     return rb;
-        // }
     }
 
     /// <summary>

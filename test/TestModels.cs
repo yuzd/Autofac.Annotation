@@ -673,6 +673,102 @@ namespace Autofac.Annotation.Test
         public string Now { get; set; } = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         
     }
+
+    public interface ITestAutowiredModal
+    {
+        
+    }
+    
+    [Component("abc")]
+    public class TestAutowiredModal1:ITestAutowiredModal
+    {
+        [Autowired("A3612")]
+        public A36 A36 { get; set; }
+        
+        [Value("aaaaa")]
+        public string Test { get; set; }
+
+    }
+    [Component("def")]
+    public class TestAutowiredModal2:ITestAutowiredModal
+    {
+        [Autowired("A3612")]
+        public A36 A36 { get; set; }
+        
+        [Value("aaaaa")]
+        public string Test { get; set; }
+       
+    }
+
+    [Component]
+    public class TestAutowiredModal3
+    {
+        [Autowired]
+        public ITestAutowiredModal abc { get; set; }
+        
+        [Autowired]
+        public ITestAutowiredModal def { get; set; }
+    }
+    
+    [Component(AutofacScope = AutofacScope.SingleInstance)]
+    public class TestAutowiredModal4
+    {
+        [Autowired]
+        public ObjectFactory<ITestAutowiredModal> abc { get; set; }
+        
+        [Autowired]
+        public ObjectFactory<ITestAutowiredModal> def { get; set; }
+    }
+
+    [Component]
+    public class TestLazyModel1
+    {
+        [Autowired]
+        public Lazy<TestAutowiredModal4> TestAutowiredModal4 { get; set; }
+        
+        [Autowired]
+        public TestAutowiredModal3 TestAutowiredModal3 { get; set; }
+    }
+    
+    [Component]
+    public class TestCircular1
+    {
+        [Autowired]
+        public TestCircular2 TestCircular2 { get; set; }
+    }
+    
+    [Component]
+    public class TestCircular2
+    {
+        [Autowired(CircularDependencies = true)]
+        public TestCircular1 TestCircular1 { get; set; }
+    }
     
     
+    [Component]
+    public class TestCircular3
+    {
+        [Autowired]
+        public TestCircular4 TestCircular4 { get; set; }
+    }
+    
+    [Component]
+    public class TestCircular4
+    {
+        [Autowired(CircularDependencies = false)]
+        public TestCircular3 TestCircular3 { get; set; }
+    }
+
+    [Component]
+    public class LazyModel1
+    {
+        [Autowired]
+        public Lazy<LazyModel2> LazyModel2 { get; set; }
+    }
+    
+    [Component]
+    public class LazyModel2
+    {
+        public string Name { get; set; } = "LazyModel2";
+    }
 }

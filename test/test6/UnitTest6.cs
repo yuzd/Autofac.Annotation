@@ -12,7 +12,7 @@ namespace Autofac.Annotation.Test.test6
             var builder = new ContainerBuilder();
 
             // autofac打标签模式
-            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly));
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly).SetAllowCircularDependencies(true));
 
             var container = builder.Build();
                 
@@ -43,7 +43,7 @@ namespace Autofac.Annotation.Test.test6
             var builder = new ContainerBuilder();
 
             // autofac打标签模式
-            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly));
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly).SetAllowCircularDependencies(true));
 
             var container = builder.Build();
                 
@@ -64,7 +64,7 @@ namespace Autofac.Annotation.Test.test6
             var builder = new ContainerBuilder();
 
             // autofac打标签模式
-            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly));
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly).SetAllowCircularDependencies(true));
 
             var container = builder.Build();
                 

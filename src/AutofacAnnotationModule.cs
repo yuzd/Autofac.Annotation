@@ -644,10 +644,9 @@ namespace Autofac.Annotation
                         let propertyType = p.GetType()
                         let typeInfo = p.GetType().GetTypeInfo()
                         let va = p.GetCustomAttribute<Autowired>()
-                        where va != null && !typeInfo.IsValueType
+                        where va != null && !typeInfo.IsValueType && !typeInfo.IsEnum 
                                          && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
-                                         && (!propertyType.IsGenericEnumerableInterfaceType()
-                                             || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
+                                         && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
                         select new Tuple<PropertyInfo, Autowired,PropertyReflector>(p, va,p.GetReflector()))
                     .ToList();
 
@@ -656,11 +655,9 @@ namespace Autofac.Annotation
                         let propertyType = p.GetType()
                         let typeInfo = p.GetType().GetTypeInfo()
                         let va = p.GetCustomAttribute<Autowired>()
-                        where va != null && !typeInfo.IsValueType
-                                         && (!propertyType.IsArray
-                                             || !propertyType.GetElementType().GetTypeInfo().IsValueType)
-                                         && (!propertyType.IsGenericEnumerableInterfaceType()
-                                             || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
+                        where va != null && !typeInfo.IsValueType && !typeInfo.IsEnum 
+                                         && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
+                                         && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
                         select new Tuple<FieldInfo, Autowired,FieldReflector>(p, va,p.GetReflector()))
                     .ToList();
 
@@ -669,16 +666,25 @@ namespace Autofac.Annotation
                     return;
                 }
 
-                if (!AllowCircularDependencies)
+                //初始化 AllowCircularDependencies 参数
+                component.AutowiredPropertyInfoList.ForEach(r =>
                 {
-                    //不支持循环
-                    registrar.OnActivating((e) => { DoAutoWired(e.Context, e.Parameters, e.Instance, false); });
-                }
-                else
+                    if (r.Item2.AllowCircularDependencies == null) //如果自己指定了的话 就不管了
+                    {
+                        r.Item2.AllowCircularDependencies = this.AllowCircularDependencies;
+                    }
+                });
+                
+                component.AutowiredFieldInfoList.ForEach(r =>
                 {
-                    //支持循环
-                    registrar.RegistrationData.ActivatedHandlers.Add((s, e) => { DoAutoWired(e.Context, e.Parameters, e.Instance, true); });
-                }
+                    if (r.Item2.AllowCircularDependencies == null)//如果自己指定了的话 就不管了
+                    {
+                        r.Item2.AllowCircularDependencies = this.AllowCircularDependencies;
+                    }
+                });
+                
+                //支持循环
+                registrar.RegistrationData.ActivatedHandlers.Add((s, e) => { DoAutoWired(e.Context, e.Parameters, e.Instance); });
             }
         }
 
@@ -1586,8 +1592,7 @@ namespace Autofac.Annotation
         /// <param name="context">容器</param>
         /// <param name="Parameters">参数</param>
         /// <param name="instance">实例</param>
-        /// <param name="allowCircle">是否可以循环</param>
-        private void DoAutoWired(IComponentContext context, IEnumerable<Parameter> Parameters, object instance, bool allowCircle)
+        private void DoAutoWired(IComponentContext context, IEnumerable<Parameter> Parameters, object instance)
         {
             if (instance == null) return;
             Type instanceType = instance.GetType();
@@ -1612,7 +1617,7 @@ namespace Autofac.Annotation
             foreach (var field in model.AutowiredFieldInfoList)
             {
                 // ReSharper disable once PossibleMultipleEnumeration
-                var obj = field.Item2.ResolveField(field.Item1, context, Parameters, RealInstance, allowCircle);
+                var obj = field.Item2.ResolveField(field.Item1, context, Parameters, RealInstance);
                 if (obj == null)
                 {
                     if (field.Item2.Required)
@@ -1647,7 +1652,7 @@ namespace Autofac.Annotation
             foreach (var property in model.AutowiredPropertyInfoList)
             {
                 // ReSharper disable once PossibleMultipleEnumeration
-                var obj = property.Item2.ResolveProperty(property.Item1, context, Parameters, RealInstance, allowCircle);
+                var obj = property.Item2.ResolveProperty(property.Item1, context, Parameters, RealInstance);
                 if (obj == null)
                 {
                     if (property.Item2.Required)

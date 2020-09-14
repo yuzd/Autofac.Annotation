@@ -66,7 +66,12 @@ namespace Autofac.Annotation
         /// 自动按实现的接口注册，默认为false
         /// </summary>
         public bool AutoRegisterInterface { get; private set; } = true;
-        
+
+        /// <summary>
+        /// 自动 Component 探测，作为 Component 特性的补充。
+        /// </summary>
+        internal IComponentDetector ComponentDetector { get; private set; } = null;
+
         /// <summary>
         /// 根据程序集来实例化
         /// </summary>
@@ -222,6 +227,17 @@ namespace Autofac.Annotation
         public AutofacAnnotationModule SetEnableAutofacEventBug(bool flag)
         {
             this.EnableAutofacEventBus = flag;
+            return this;
+        }
+
+        /// <summary>
+        /// 设置 <see cref="IComponentDetector"/>
+        /// </summary>
+        /// <param name="componentDetector"></param>
+        /// <returns></returns>
+        public AutofacAnnotationModule SetComponentDetector(IComponentDetector componentDetector)
+        {
+            this.ComponentDetector = componentDetector;
             return this;
         }
 
@@ -925,7 +941,7 @@ namespace Autofac.Annotation
                     var types = assembly.GetExportedTypes();
                     //找到类型中含有 Component 标签的类 排除掉抽象类
                     var beanTypeList = (from type in types
-                        let bean = type.GetCustomAttribute<Component>()
+                        let bean = type.GetComponent(ComponentDetector)
                         where type.IsClass && !type.IsAbstract && bean != null
                         select new BeanDefination
                         {

@@ -220,54 +220,6 @@ namespace Autofac.Annotation
             return returnObj;
         }
 
-        // /// <summary>
-        // /// 装配 parameter参数
-        // /// </summary>
-        // /// <param name="classType"></param>
-        // /// <param name="type"></param>
-        // /// <param name="fieldOrPropertyName"></param>
-        // /// <param name="context"></param>
-        // /// <param name="typeDescription"></param>
-        // /// <returns></returns>
-        // /// <exception cref="DependencyResolutionException"></exception>
-        // internal object Resolve(Type classType, Type type,string fieldOrPropertyName, IComponentContext context, string typeDescription)
-        // {
-        //     if ((typeof(IObjectFactory).IsAssignableFrom(type)))
-        //     {
-        //         return context.Resolve<ObjectBeanFactory>().CreateAutowiredFactory(this, type, classType,fieldOrPropertyName, typeDescription);
-        //     }
-        //
-        //     object obj = null;
-        //     if (!string.IsNullOrEmpty(this.Name))
-        //     {
-        //         context.TryResolveKeyed(this.Name, type, out obj);
-        //     }
-        //     else
-        //     {
-        //         if (type.IsGenericEnumerableInterfaceType())
-        //         {
-        //             var genericType = type.GenericTypeArguments[0];
-        //             if (genericType.FullName != null && genericType.FullName.StartsWith("System.Lazy`1"))
-        //             {
-        //                 genericType = genericType.GenericTypeArguments[0];
-        //             }
-        //
-        //             context.TryResolveKeyed("`1System.Collections.Generic.IEnumerable`1" + genericType.FullName, type, out obj);
-        //         }
-        //         else
-        //         {
-        //             context.TryResolve(type, out obj);
-        //         }
-        //     }
-        //
-        //     if (obj == null && this.Required)
-        //     {
-        //         throw new DependencyResolutionException($"Autowire error,can not resolve class type:{classType.FullName},${typeDescription} name:{type.Name}.{fieldOrPropertyName} "
-        //                                                 + (!string.IsNullOrEmpty(this.Name) ? $",with key:[{this.Name}]" : ""));
-        //     }
-        //
-        //     return obj;
-        // }
 
     }
 }

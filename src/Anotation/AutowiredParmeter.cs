@@ -10,13 +10,13 @@ namespace Autofac.Annotation
     /// <summary>
     /// 
     /// </summary>
-    internal class AutowiredParmeter:Parameter
+    internal class AutowiredParmeter : Parameter
     {
         /// <summary>
         /// 集合
         /// </summary>
-        private readonly ConcurrentDictionary<string,object> AutowiredChains = new ConcurrentDictionary<string, object>();
-        
+        private readonly ConcurrentDictionary<string, object> AutowiredChains = new ConcurrentDictionary<string, object>();
+
         private readonly List<string> chainList = new List<string>();
 
         /// <summary>
@@ -24,10 +24,10 @@ namespace Autofac.Annotation
         /// </summary>
         /// <param name="service"></param>
         /// <param name="instance"></param>
-        public bool TryAdd(string service,object instance)
-        { 
+        public bool TryAdd(string service, object instance)
+        {
             chainList.Add(service);
-           return this.AutowiredChains.TryAdd(service, instance);
+            return this.AutowiredChains.TryAdd(service, instance);
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public bool TryGet(string service, out object instance)
         {
-           return this.AutowiredChains.TryGetValue(service,out instance);
+            return this.AutowiredChains.TryGetValue(service, out instance);
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public string GetCircualrChains()
         {
-            return "Circular component dependency detected:"+string.Join("->", chainList);
+            return "Circular component dependency detected:" + string.Join("->", chainList);
         }
 
         /// <summary>

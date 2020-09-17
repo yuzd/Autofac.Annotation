@@ -83,7 +83,7 @@ namespace Autofac.Annotation
                 throw new ArgumentException(nameof(assemblyList));
             }
 
-            _assemblyList = assemblyList.ToList();
+            _assemblyList = assemblyList.Distinct().ToList();
             _assemblyList.Add(typeof(AutofacAnnotationModule).Assembly);
         }
 
@@ -95,11 +95,11 @@ namespace Autofac.Annotation
         {
             if (assemblyNameList != null && assemblyNameList.Length > 0)
             {
-                _assemblyList = getCurrentDomainAssemblies().Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).ToList();
+                _assemblyList = getCurrentDomainAssemblies().Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).Distinct().ToList();
                 return;
             }
 
-            _assemblyList = getCurrentDomainAssemblies().ToList();
+            _assemblyList = getCurrentDomainAssemblies().Distinct().ToList();
         }
 
 
@@ -108,7 +108,7 @@ namespace Autofac.Annotation
         /// </summary>
         public AutofacAnnotationModule() 
         {
-            _assemblyList = getCurrentDomainAssemblies();
+            _assemblyList = getCurrentDomainAssemblies().Distinct().ToList();
         }
 
         /// <summary>
@@ -933,14 +933,38 @@ namespace Autofac.Annotation
                 DynamicComponentModelCache = new ConcurrentDictionary<string, ComponentModel>()
             };
             try
-            {
+            {   
                 var result = new List<ComponentModel>();
-                var assemblyList = _assemblyList.Distinct();
-                foreach (var assembly in assemblyList)
+                var beanTypeList = new List<BeanDefination>();
+                
+                //获取打了PointCut的标签的class注册到DI
+                foreach (var pointcutConfig in pointCutConfigurationList.PointcutConfigurationInfoList
+                    .GroupBy(r=>r.PointClass)
+                    .ToDictionary(r=>r.Key,
+                        y=>y.ToList()))
+                {
+                    var pointCutAtt = pointcutConfig.Value.First();
+                    beanTypeList.Add(new BeanDefination
+                    {
+                        Type = pointcutConfig.Key,
+                        Bean = new Component (pointcutConfig.Key)
+                        {
+                            AutofacScope = AutofacScope.SingleInstance,
+                            InitMethod = pointCutAtt.Pointcut.InitMethod,
+                            DestroyMethod = pointCutAtt.Pointcut.DestroyMethod
+                        },
+                        OrderIndex = int.MinValue,
+                    });
+                }
+                
+                List<Tuple<Import,Type>> importList = new List<Tuple<Import, Type>>();
+                
+                //从assembly里面解析打了Compoment标签的 或者 自定义设置了 ComponentDetector的采用ComponentDetector的方式去解析生产的Compoment
+                foreach (var assembly in _assemblyList)
                 {
                     var types = assembly.GetExportedTypes();
                     //找到类型中含有 Component 标签的类 排除掉抽象类
-                    var beanTypeList = (from type in types
+                    var assemblBeanTypeList = (from type in types
                         let bean = type.GetComponent(ComponentDetector)
                         where type.IsClass && !type.IsAbstract && bean != null
                         select new BeanDefination
@@ -949,43 +973,36 @@ namespace Autofac.Annotation
                             Bean = bean,
                             OrderIndex = bean.OrderIndex
                         }).ToList();
-
-                    foreach (var pointcutConfig in pointCutConfigurationList.PointcutConfigurationInfoList
-                        .GroupBy(r=>r.PointClass)
-                        .ToDictionary(r=>r.Key,y=>y.ToList()))
+                    beanTypeList.AddRange(assemblBeanTypeList);
+                    
+                    //找到类型中含有 Import 标签的类 排除掉抽象类
+                    var importBeanTypeList = (from type in types
+                        let bean = type.GetCustomAttribute<Import>()
+                        where type.IsClass && !type.IsAbstract && bean != null
+                        select new Tuple<Import,Type>(bean,type)).ToList();
+                    importList.AddRange(importBeanTypeList);
+                }
+                
+                beanTypeList.AddRange(DoImportComponent(importList));
+                
+                //拿到了所有的BenDefinition之后注册到DI容器里面去 按照从小到大的顺序注册 如果同一个Type被处理多次会被覆盖！
+                foreach (var bean in beanTypeList.OrderBy(r => r.OrderIndex))
+                {
+                    var component = EnumerateComponentServices(bean.Bean, bean.Type);
+                    component.MetaSourceList = new List<MetaSourceData>();
+                    component.AspectAttribute = bean.Type.GetCustomAttribute<AspectAttribute>();
+                    EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
+                    result.Add(component);
+                    if (component.isDynamicGeneric)
                     {
-                        var pointCutAtt = pointcutConfig.Value.First();
-                        beanTypeList.Add(new BeanDefination
+                        if (component.AutoActivate)//动态泛型注册类 没法容器完成就实例化
                         {
-                            Type = pointcutConfig.Key,
-                            Bean = new Component (pointcutConfig.Key)
-                            {
-                                AutofacScope = AutofacScope.SingleInstance,
-                                InitMethod = pointCutAtt.Pointcut.InitMethod,
-                                DestroyMethod = pointCutAtt.Pointcut.DestroyMethod
-                            },
-                            OrderIndex = int.MinValue,
-                        });
-                    }
-
-                    foreach (var bean in beanTypeList.OrderByDescending(r => r.OrderIndex))
-                    {
-                        var component = EnumerateComponentServices(bean.Bean, bean.Type);
-                        component.MetaSourceList = new List<MetaSourceData>();
-                        component.AspectAttribute = bean.Type.GetCustomAttribute<AspectAttribute>();
-                        EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
-                        result.Add(component);
-                        if (component.isDynamicGeneric)
-                        {
-                            if (component.AutoActivate)//动态泛型注册类 没法容器完成就实例化
-                            {
-                                throw new InvalidOperationException(
-                                    $"The class `{component.CurrentType.FullName}` register as genericTypeDefinition, can not set AutoActivate:true ");
-                            }
-                            singleton.DynamicComponentModelCache[bean.Type.Namespace+bean.Type.Name] = component;
+                            throw new InvalidOperationException(
+                                $"The class `{component.CurrentType.FullName}` register as genericTypeDefinition, can not set AutoActivate:true ");
                         }
-                        singleton.ComponentModelCache[bean.Type] = component;
+                        singleton.DynamicComponentModelCache[bean.Type.Namespace+bean.Type.Name] = component;
                     }
+                    singleton.ComponentModelCache[bean.Type] = component;
                 }
 
                 return result;
@@ -996,6 +1013,51 @@ namespace Autofac.Annotation
             }
         }
 
+
+        /// <summary>
+        /// 解析程序集的Import标签并解析得到结果注册到DI容器
+        /// </summary>
+        /// <returns></returns>
+        private List<BeanDefination> DoImportComponent(List<Tuple<Import, Type>> importList)
+        {
+            var result = new List<BeanDefination>();
+            foreach (var import in importList)
+            {
+                //查看当前的Type的类型是否是继承了ImportSelector
+                if (typeof(ImportSelector).IsAssignableFrom(import.Item2))
+                {
+                    if ((Activator.CreateInstance(import.Item2) is ImportSelector importSelectorInstance))
+                    {
+                        result.AddRange(importSelectorInstance.SelectImports());
+                    }
+                }
+
+                if (import.Item1.ImportTypes == null || !import.Item1.ImportTypes.Any())
+                {
+                    continue;
+                }
+
+                //直接注册进来
+                foreach (var item in import.Item1.ImportTypes)
+                {
+                    if (typeof(ImportSelector).IsAssignableFrom(item))
+                    {
+                        if ((Activator.CreateInstance(item) is ImportSelector importSelectorInstance))
+                        {
+                            result.AddRange(importSelectorInstance.SelectImports());
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+        
+
+        /// <summary>
+        /// 解析程序集AutoConfiguration标签并解析里面打了Bean标签的方法并注册到DI容器
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         private void DoAutofacConfiguration(ContainerBuilder builder)
         {
             AutoConfigurationList list = new AutoConfigurationList
@@ -1128,8 +1190,7 @@ namespace Autofac.Annotation
             }
 
             var result = new List<AutofacConfigurationInfo>();
-            var assemblyList = _assemblyList.Distinct();
-            foreach (var assembly in assemblyList)
+            foreach (var assembly in _assemblyList)
             {
                 var types = assembly.GetExportedTypes();
                 //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
@@ -1169,8 +1230,7 @@ namespace Autofac.Annotation
             }
 
             var result = new List<PointcutConfigurationInfo>();
-            var assemblyList = _assemblyList.Distinct();
-            foreach (var assembly in assemblyList)
+            foreach (var assembly in _assemblyList)
             {
                 var types = assembly.GetExportedTypes();
                 //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
@@ -1307,7 +1367,7 @@ namespace Autofac.Annotation
         {
             if (bean == null)
             {
-                throw new ArgumentNullException(nameof(bean));
+                bean = new Component();
             }
 
             var result = new ComponentModel

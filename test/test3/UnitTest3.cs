@@ -297,5 +297,22 @@ namespace Autofac.Configuration.Test.test3
             Assert.Equal(a132.Name,"1002");
             
         }
+        
+        [Fact]
+        public void Test_Type_17()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest3).Assembly));
+
+            var container = builder.Build();
+
+            var a132 = container.Resolve<TestImport1>();
+            var a1322= container.Resolve<ITestImport>();
+            Assert.Equal("TestImport1", a132.Name);
+            a1322.Test();
+            
+        }
     }
 }

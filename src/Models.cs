@@ -230,10 +230,58 @@ namespace Autofac.Annotation
     /// <summary>
     /// 注册信息
     /// </summary>
-    internal class BeanDefination
+    public class BeanDefination
     {
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public BeanDefination()
+        {
+            
+        }
+        
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public BeanDefination(Type _type)
+        {
+            this.Type = _type;
+            this.Bean = new Component();
+        }
+        
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="_type">要注册的类型</param>
+        /// <param name="asType">注册成为的类型</param>
+        public BeanDefination(Type _type,Type asType)
+        {
+            this.Type = _type;
+            this.Bean = new Component(asType);
+        }
+        
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="_type">要注册的类型</param>
+        /// <param name="asKey">注册的key</param>
+        public BeanDefination(Type _type,string asKey)
+        {
+            this.Type = _type;
+            this.Bean = new Component(asKey);
+        }
+        
+        /// <summary>
+        /// 当前类型
+        /// </summary>
         public Type Type { get; set; }
+        /// <summary>
+        /// 注册定义
+        /// </summary>
         public Component Bean { get; set; }
-        public int OrderIndex { get; set; }
+        /// <summary>
+        /// 按照从小到大的顺序注册 如果同一个Type被处理多次会被覆盖！
+        /// </summary>
+        internal int OrderIndex { get; set; }
     }
 }

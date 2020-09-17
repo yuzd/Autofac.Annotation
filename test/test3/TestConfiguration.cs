@@ -9,6 +9,7 @@ namespace Autofac.Configuration.Test.test3
 
 //    [PropertySource("/file/appsettings1.json")]
     [AutoConfiguration]
+    [Import(typeof(TestImportSelector))]
     public class TestConfiguration
     {
         [Bean]

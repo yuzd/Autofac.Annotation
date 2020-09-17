@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Autofac.Core;
 using Autofac.Features.AttributeFilters;
 using Autofac.Features.Metadata;
@@ -50,7 +51,7 @@ namespace Autofac.Annotation.Test
             var builder = new ContainerBuilder();
 
             // autofac打标签模式
-            builder.RegisterModule(new AutofacAnnotationModule());
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(AnotationTest).Assembly));
 
             var container = builder.Build();
 
@@ -726,6 +727,7 @@ namespace Autofac.Annotation.Test
             Assert.Equal(a39,a391);
             
             A38 ss = a39.A38.GetObject();
+            Thread.Sleep(100);
             A38 ss2 = a39.A38.GetObject();
             Assert.True(ss2.Now>ss.Now);
 

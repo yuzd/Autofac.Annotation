@@ -9,7 +9,7 @@ using Autofac.Aspect;
 namespace Autofac.Configuration.Test.test7
 {
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-    public class AutoCacheAbleAttribute : AspectPointAttribute
+    public class AutoCacheAbleAttribute : AspectArroundAttribute
     {
 
         private static readonly ConcurrentDictionary<string, object> _cache  = new ConcurrentDictionary<string, object>();

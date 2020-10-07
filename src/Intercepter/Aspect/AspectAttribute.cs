@@ -304,33 +304,32 @@ namespace Autofac.Aspect
         }
 
     }
-    
-    
+
+
     /// <summary>
-    /// AOP环绕拦截器
+    /// 
     /// </summary>
-    public abstract class AspectAroundAttribute : AspectInvokeAttribute
+    internal class AspectAttributeInfo
     {
-
-
-        /// <summary>
-        /// 后置执行
-        /// </summary>
-        /// <param name="aspectContext"></param>
-        public abstract Task After(AspectContext aspectContext);
-
-
-        /// <summary>
-        /// 前置执行
-        /// </summary>
-        /// <param name="aspectContext"></param>
-        public abstract Task Before(AspectContext aspectContext);
-
+        public AspectAttributeInfo()
+        {
+            AspectBeforeAttributeList = new List<AspectBeforeAttribute>();
+            AspectAfterAttributeList = new List<AspectAfterAttribute>();
+            AspectAfterReturningAttributeList = new List<AspectAfterReturningAttribute>();
+            AspectAfterThrowingAttributeList = new List<AspectAfterThrowingAttribute>();
+            AspectArroundAttributeList = new List<AspectArroundAttribute>();
+        }
+        public List<AspectBeforeAttribute> AspectBeforeAttributeList { get; set; }
+        public List<AspectAfterAttribute> AspectAfterAttributeList { get; set; }
+        public List<AspectAfterReturningAttribute> AspectAfterReturningAttributeList { get; set; }
+        public List<AspectAfterThrowingAttribute> AspectAfterThrowingAttributeList { get; set; }
+        public List<AspectArroundAttribute> AspectArroundAttributeList { get; set; }
     }
 
-
+    
+    
     /// <summary>
-    /// AOP前置拦截器
+    /// 前置通知
     /// </summary>
     public abstract class AspectBeforeAttribute : AspectInvokeAttribute
     {
@@ -343,9 +342,23 @@ namespace Autofac.Aspect
 
     }
 
+    
+    /// <summary>
+    /// 后置通知
+    /// </summary>
+    public abstract class AspectAfterReturningAttribute : AspectInvokeAttribute
+    {
+        /// <summary>
+        /// 后置执行
+        /// </summary>
+        /// <param name="aspectContext"></param>
+        /// <param name="result"></param>
+        public abstract Task AfterReturning(AspectContext aspectContext,object result);
+
+    }
 
     /// <summary>
-    /// AOP后置拦截器
+    /// 最终通知
     /// </summary>
     public abstract class AspectAfterAttribute : AspectInvokeAttribute
     {
@@ -357,11 +370,25 @@ namespace Autofac.Aspect
         public abstract Task After(AspectContext aspectContext);
 
     }
+    
+    /// <summary>
+    /// 异常通知
+    /// </summary>
+    public abstract class AspectAfterThrowingAttribute : AspectInvokeAttribute
+    {
+        /// <summary>
+        /// 后置执行
+        /// </summary>
+        /// <param name="aspectContext"></param>
+        /// <param name="exception"></param>
+        public abstract Task AfterThrowing(AspectContext aspectContext,Exception exception);
+
+    }
 
     /// <summary>
-    /// 切入点拦截器
+    /// 环绕通知
     /// </summary>
-    public abstract class AspectPointAttribute : AspectInvokeAttribute
+    public abstract class AspectArroundAttribute : AspectInvokeAttribute
     {
 
         /// <summary>
@@ -398,18 +425,6 @@ namespace Autofac.Aspect
             this.InvocationContext = invocation;
         }
 
-        /// <summary>
-        /// 构造方法
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="invocation"></param>
-        /// <param name="exception"></param>
-        public AspectContext(IComponentContext context,IInvocation invocation,Exception exception)
-        {
-            this.ComponentContext = context;
-            this.InvocationContext = invocation;
-            this.Exception = exception;
-        }
 
         /// <summary>
         /// autofac容器
@@ -422,11 +437,6 @@ namespace Autofac.Aspect
 
         public IInvocation InvocationContext { get; set; }
        
-        
-        /// <summary>
-        /// 错误
-        /// </summary>
-        public Exception Exception { get; set; }
         
         /// <summary>
         /// 有返回结果的

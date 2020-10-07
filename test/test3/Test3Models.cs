@@ -142,11 +142,7 @@ namespace Autofac.Configuration.Test.test3
             Console.WriteLine("SayAfter");
         }
 
-        [TestHelloArround]
-        public virtual void SayArround()
-        {
-            Console.WriteLine("SayArround");
-        }
+       
     }
 
     [Component]
@@ -155,6 +151,7 @@ namespace Autofac.Configuration.Test.test3
     {
 
         [TestHelloBefor]
+        [TestHelloAfterThrowing]
         public virtual void Say()
         {
             Console.WriteLine("say");
@@ -162,18 +159,13 @@ namespace Autofac.Configuration.Test.test3
         }
 
         [TestHelloAfter]
+        [TestHelloAfterThrowing]
         public virtual void SayAfter()
         {
             Console.WriteLine("SayAfter");
             throw new Exception("ddd");
         }
 
-        [TestHelloArround]
-        public virtual void SayArround()
-        {
-            Console.WriteLine("SayArround");
-            throw new Exception("ddd");
-        }
     }
     public class TestHelloBefor : AspectBeforeAttribute
     {
@@ -190,29 +182,20 @@ namespace Autofac.Configuration.Test.test3
 
         public override Task After(AspectContext aspectContext)
         {
-            if(aspectContext.Exception!=null) Console.WriteLine(aspectContext.Exception.Message);
             Console.WriteLine("TestHelloAfter");
             return Task.CompletedTask;
         }
     }
 
-
-    public class TestHelloArround : AspectAroundAttribute
+    public class TestHelloAfterThrowing : AspectAfterThrowingAttribute
     {
-
-        public override Task After(AspectContext aspectContext)
+        public override Task AfterThrowing(AspectContext aspectContext, Exception exception)
         {
-            if (aspectContext.Exception != null) Console.WriteLine(aspectContext.Exception.Message);
-            Console.WriteLine("TestHelloArround");
-            return Task.CompletedTask;
-        }
-
-        public override Task Before(AspectContext aspectContext)
-        {
-            Console.WriteLine("TestHelloArround.Before");
+            Console.WriteLine(aspectContext.InvocationContext.MethodInvocationTarget.Name+":"+ exception.Message);
             return Task.CompletedTask;
         }
     }
+
     [Component]
     [Aspect]
     public class TestModel91
@@ -233,13 +216,7 @@ namespace Autofac.Configuration.Test.test3
             return "SayAfter";
         }
 
-        [TestHelloArround]
-        public virtual async Task<string> SayArround()
-        {
-            Console.WriteLine("SayArround");
-            await Task.Delay(1000);
-            return "SayArround";
-        }
+       
     }
 
     [Component]
@@ -264,14 +241,6 @@ namespace Autofac.Configuration.Test.test3
             return "SayAfter";
         }
 
-        [TestHelloArround]
-        public virtual async Task<string> SayArround()
-        {
-            Console.WriteLine("SayArround");
-            await Task.Delay(1000);
-            throw new Exception("ddd");
-            return "SayArround";
-        }
     }
 
     //[Component(Interceptor = typeof(Log))]
@@ -289,12 +258,6 @@ namespace Autofac.Configuration.Test.test3
         public virtual void SayAfter()
         {
             Console.WriteLine("SayAfter");
-        }
-
-        [TestHelloArround]
-        public virtual void SayArround()
-        {
-            Console.WriteLine("SayArround");
         }
     }
 
@@ -337,7 +300,7 @@ namespace Autofac.Configuration.Test.test3
         }
     }
 
-    public class StopWatchInterceptor : AspectPointAttribute
+    public class StopWatchInterceptor : AspectArroundAttribute
     {
         public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
         {
@@ -357,7 +320,7 @@ namespace Autofac.Configuration.Test.test3
     }
     
     
-    public class TransactionInterceptor : AspectPointAttribute
+    public class TransactionInterceptor : AspectArroundAttribute
     {
         public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
         {

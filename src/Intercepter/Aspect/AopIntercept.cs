@@ -28,8 +28,8 @@ namespace Autofac.Aspect
         /// </summary>
         public AopMethodInvokeCache(IComponentContext context)
         {
-            CacheList = new ConcurrentDictionary<MethodInfo, List<AspectInvokeAttribute>>();
-            DynamicCacheList = new ConcurrentDictionary<string, List<AspectInvokeAttribute>>();
+            CacheList = new ConcurrentDictionary<MethodInfo, AspectAttributeInfo>();
+            DynamicCacheList = new ConcurrentDictionary<string, AspectAttributeInfo>();
             var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
             var aspectClassList = componentModelCacheSingleton.ComponentModelCache.Values
                 .Where(r => r.AspectAttribute != null).ToList();
@@ -52,24 +52,48 @@ namespace Autofac.Aspect
                         .GroupBy(r => r.Attribute.GetType().FullName)
                         .Select(r => r.First().Attribute).ToList();
 
+                    if (!attributes.Any()) continue;
+                    var aspectAttributeInfo = new AspectAttributeInfo();
+                    foreach (var attribute in attributes)
+                    {
+                        switch (attribute)
+                        {
+                            case AspectBeforeAttribute aspectBeforeAttribute:
+                                aspectAttributeInfo.AspectBeforeAttributeList.Add(aspectBeforeAttribute);
+                                break;
+                            case AspectAfterAttribute aspectAfterAttribute:
+                                aspectAttributeInfo.AspectAfterAttributeList.Add(aspectAfterAttribute);
+                                break;
+                            case AspectAfterReturningAttribute aspectAfterReturning:
+                                aspectAttributeInfo.AspectAfterReturningAttributeList.Add(aspectAfterReturning);
+                                break;
+                            case AspectAfterThrowingAttribute aspectAfterThrowing:
+                                aspectAttributeInfo.AspectAfterThrowingAttributeList.Add(aspectAfterThrowing);
+                                break;
+                            case AspectArroundAttribute aspectPointAttribute:
+                                aspectAttributeInfo.AspectArroundAttributeList.Add(aspectPointAttribute);
+                                break;
+                        }
+                    }
+
                     if (aspectClass.isDynamicGeneric)
                     {
-                        DynamicCacheList.TryAdd(method.GetMethodInfoUniqueName(), attributes);
+                        DynamicCacheList.TryAdd(method.GetMethodInfoUniqueName(), aspectAttributeInfo);
                         continue;
                     }
-                    CacheList.TryAdd(method, attributes);
+                    CacheList.TryAdd(method, aspectAttributeInfo);
                 }
             }
         }
         /// <summary>
         /// 缓存
         /// </summary>
-        public ConcurrentDictionary<MethodInfo,List<AspectInvokeAttribute>> CacheList { get; set; }
+        internal ConcurrentDictionary<MethodInfo,AspectAttributeInfo> CacheList { get; set; }
         
         /// <summary>
         /// 由于动态泛型的method是跟着泛型T变化的  所以需要单独缓存
         /// </summary>
-        public ConcurrentDictionary<string,List<AspectInvokeAttribute>> DynamicCacheList { get; set; }
+        internal ConcurrentDictionary<string,AspectAttributeInfo> DynamicCacheList { get; set; }
         
      
     }
@@ -94,66 +118,19 @@ namespace Autofac.Aspect
             _cache = cache;
         }
 
-        /// <summary>
-        /// 执行前置拦截器
-        /// </summary>
-        /// <param name="invocation"></param>
-        private async Task<Tuple<List<AspectPointAttribute>, List<AspectInvokeAttribute>,Exception>> BeforeInterceptAttribute(IInvocation invocation)
-        {
-            //先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
-            if(!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget,out var Attributes) || Attributes==null || !Attributes.Any())
-            {
-                //动态泛型类
-                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType || (!_cache.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var AttributesDynamic) || AttributesDynamic==null || !AttributesDynamic.Any()))
-                {
-                    return null;
-                }
-
-                Attributes = AttributesDynamic;
-            }
-           
-            var aspectContext = new AspectContext(_component, invocation);
-            Exception ex = null;
-            try
-            {
-                foreach (var attribute in Attributes)
-                {
-                    //如果一个方法上面既有AspectAroundAttribute 又有 AspectBeforeAttribute 的话 按照下面的优先级 抛弃 AspectBeforeAttribute
-                    switch (attribute)
-                    {
-                        case AspectAroundAttribute aspectAroundAttribute:
-                            await aspectAroundAttribute.Before(aspectContext);
-                            break;
-                        case AspectBeforeAttribute aspectBeforeAttribute:
-                            await aspectBeforeAttribute.Before(aspectContext);
-                            break;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                ex = e;
-            }
-            return new Tuple<List<AspectPointAttribute>, List<AspectInvokeAttribute>,Exception>(Attributes.OfType<AspectPointAttribute>().ToList(), Attributes,ex);
-        }
-
-        private async Task AfterInterceptAttribute(List<AspectInvokeAttribute> Attributes, IInvocation invocation, Exception exp)
-        {
-            var aspectContext = new AspectContext(_component, invocation, exp);
-            foreach (var attribute in Attributes)
-            {
-                switch (attribute)
-                {
-                    case AspectAroundAttribute aspectAroundAttribute:
-                        await aspectAroundAttribute.After(aspectContext);
-                        break;
-                    case AspectAfterAttribute aspectAfterAttribute:
-                        await aspectAfterAttribute.After(aspectContext);
-                        break;
-                }
-            }
-        }
-
+        // try{
+        //     try{
+        //         //@Before
+        //         method.invoke(..);
+        //     }finally{
+        //         //@After
+        //     }
+        //     //@AfterReturning
+        // }catch(){
+        //     //@AfterThrowing
+        // }
+        
+       
         /// <summary>
         /// 无返回值拦截器
         /// </summary>
@@ -163,43 +140,87 @@ namespace Autofac.Aspect
         /// <returns></returns>
         protected override async Task InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task> proceed)
         {
-            var attribute = await BeforeInterceptAttribute(invocation);
-            try
+            //先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
+            if(!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget,out var attribute))
             {
-                if (attribute == null)
+                //动态泛型类
+                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType || (!_cache.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var AttributesDynamic) ))
                 {
                     await proceed(invocation, proceedInfo);
                     return;
                 }
 
-                if (attribute.Item3 != null)
-                {
-                    await AfterInterceptAttribute(attribute.Item2, invocation, attribute.Item3);
-                    throw attribute.Item3;
-                }
+                attribute = AttributesDynamic;
+            }
+            var aspectContext = new AspectContext(_component, invocation);
+            try
+            {
                 
-                if (attribute.Item1 == null || !attribute.Item1.Any())
+                try
                 {
-                    await proceed(invocation, proceedInfo);
-                }
-                else
-                {
-                    AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
-                    foreach (var pointAspect in attribute.Item1)
+                    #region Before
+
+                    foreach (var beforeAttribute in attribute.AspectBeforeAttributeList)
                     {
-                        builder.Use(next => async ctx => { await pointAspect.OnInvocation(ctx, next); });
+                        await beforeAttribute.Before(aspectContext);
                     }
 
-                    builder.Use(next => async ctx => { await proceed(invocation, proceedInfo); });
+                    #endregion
 
-                    var aspectfunc = builder.Build();
-                    await aspectfunc(new AspectContext(_component, invocation));
+                    #region method.invoke(..)
+                    if (attribute.AspectArroundAttributeList.Any())
+                    {
+                        AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
+                        foreach (var pointAspect in attribute.AspectArroundAttributeList)
+                        {
+                            builder.Use(next => async ctx => { await pointAspect.OnInvocation(ctx, next); });
+                        }
+
+                        builder.Use(next => async ctx => { await proceed(invocation, proceedInfo); });
+
+                        var aspectfunc = builder.Build();
+                        await aspectfunc(new AspectContext(_component, invocation));
+                    }
+                    else
+                    {
+                        await proceed(invocation, proceedInfo);
+                    }
+                    
+
+                    #endregion
                 }
-                await AfterInterceptAttribute(attribute.Item2, invocation, null);
+                finally
+                {
+                    #region After
+
+                    foreach (var afterAttribute in attribute.AspectAfterAttributeList)
+                    {
+                        await afterAttribute.After(aspectContext);
+                    }
+
+                    #endregion
+                }
+
+                #region AfterReurning
+
+                foreach (var afterReturning in attribute.AspectAfterReturningAttributeList)
+                {
+                    await afterReturning.AfterReturning(aspectContext,null);
+                }
+
+                #endregion
             }
             catch (Exception e)
             {
-                if(attribute!=null) await AfterInterceptAttribute(attribute.Item2, invocation, e);
+                #region AfterThrow
+                
+                foreach (var aspectAfterThrowing in attribute.AspectAfterThrowingAttributeList)
+                {
+                    await aspectAfterThrowing.AfterThrowing(aspectContext,e);
+                }
+
+                #endregion
+
                 throw;
             }
         }
@@ -214,68 +235,105 @@ namespace Autofac.Aspect
         /// <returns></returns>
         protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
         {
-            var attribute = await BeforeInterceptAttribute(invocation);
-            try
+            TResult r;
+            
+            //先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
+            if(!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget,out var attribute))
             {
-                TResult r;
-
-                if (attribute == null)
+                //动态泛型类
+                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType || (!_cache.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var AttributesDynamic) ))
                 {
                     r = await proceed(invocation, proceedInfo);
                     return r;
                 }
 
-                if (attribute.Item3 != null)
+                attribute = AttributesDynamic;
+            }
+            
+            var aspectContext = new AspectContext(_component, invocation);
+            try
+            {
+                try
                 {
-                    await AfterInterceptAttribute(attribute.Item2, invocation, attribute.Item3);
-                    throw attribute.Item3;
-                }
-                
-             
-                if (attribute.Item1 == null || !attribute.Item1.Any())
-                {
-                    r = await proceed(invocation, proceedInfo);
-                }
-                else
-                {
-                    AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
-                    foreach (var pointAspect in attribute.Item1)
+                    #region Before
+
+                    foreach (var beforeAttribute in attribute.AspectBeforeAttributeList)
                     {
-                        builder.Use(next => async ctx =>
-                        {
-                            await pointAspect.OnInvocation(ctx, next);
-                            //如果有拦截器设置 ReturnValue 那么就直接拿这个作为整个拦截器的方法返回值
-                            if (ctx.InvocationContext.ReturnValue != null)
-                            {
-                                ctx.Result = ctx.InvocationContext.ReturnValue;
-                            }
-                        });
+                        await beforeAttribute.Before(aspectContext);
                     }
 
+                    #endregion
 
-                    builder.Use(next => async ctx => 
+                    #region method.invoke(..)
+
+                    if (attribute.AspectArroundAttributeList.Any())
                     {
-                         ctx.Result = await proceed(invocation, proceedInfo);
-                         invocation.ReturnValue = ctx.Result;//原方法的执行返回值
-                    });
+                        AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
+                        foreach (var pointAspect in attribute.AspectArroundAttributeList)
+                        {
+                            builder.Use(next => async ctx =>
+                            {
+                                await pointAspect.OnInvocation(ctx, next);
+                                //如果有拦截器设置 ReturnValue 那么就直接拿这个作为整个拦截器的方法返回值
+                                if (ctx.InvocationContext.ReturnValue != null)
+                                {
+                                    ctx.Result = ctx.InvocationContext.ReturnValue;
+                                }
+                            });
+                        }
 
-                    var aspectfunc = builder.Build();
-                    var aspectContext = new AspectContext(_component, invocation);
-                    await aspectfunc(aspectContext);
-                    r = (TResult)aspectContext.Result;
+                        builder.Use(next => async ctx => 
+                        {
+                            ctx.Result = await proceed(invocation, proceedInfo);
+                            invocation.ReturnValue = ctx.Result;//原方法的执行返回值
+                        });
+
+                        var aspectfunc = builder.Build();
+                        await aspectfunc(aspectContext);
+                        r = (TResult)aspectContext.Result;
+                    }
+                    else
+                    {
+                        r = await proceed(invocation, proceedInfo);
+                    }
+
+                    #endregion
+                }
+                finally
+                {
+                    #region After
+
+                    foreach (var afterAttribute in attribute.AspectAfterAttributeList)
+                    {
+                        await afterAttribute.After(aspectContext);
+                    }
+
+                    #endregion
                 }
 
-                await AfterInterceptAttribute(attribute.Item2, invocation, null);
+                #region AfterReurning
+
+                foreach (var afterReturning in attribute.AspectAfterReturningAttributeList)
+                {
+                    await afterReturning.AfterReturning(aspectContext,r);
+                }
+
+                #endregion
                 return r;
             }
             catch (Exception e)
             {
-                if(attribute!=null) await AfterInterceptAttribute(attribute.Item2, invocation, e);
+                #region AfterThrow
+                
+                foreach (var aspectAfterThrowing in attribute.AspectAfterThrowingAttributeList)
+                {
+                    await aspectAfterThrowing.AfterThrowing(aspectContext,e);
+                }
+
+                #endregion
                 throw;
             }
         }
-
-   
     }
 
 

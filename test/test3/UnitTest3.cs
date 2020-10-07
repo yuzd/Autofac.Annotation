@@ -149,7 +149,6 @@ namespace Autofac.Configuration.Test.test3
 
             a12.Say();
             a12.SayAfter();
-            a12.SayArround();
 
         }
 
@@ -168,7 +167,6 @@ namespace Autofac.Configuration.Test.test3
 
             Assert.Throws<Exception>(() => a12.Say());
             Assert.Throws<Exception>(() => a12.SayAfter());
-            Assert.Throws<Exception>(() => a12.SayArround());
 
         }
 
@@ -186,7 +184,6 @@ namespace Autofac.Configuration.Test.test3
 
             await a12.Say();
             await a12.SayAfter();
-            await a12.SayArround();
 
         }
 
@@ -204,7 +201,6 @@ namespace Autofac.Configuration.Test.test3
 
             await Assert.ThrowsAsync<Exception>(  () =>  a12.Say());
             await Assert.ThrowsAsync<Exception>(  () =>  a12.SayAfter());
-            await Assert.ThrowsAsync<Exception>(  () =>  a12.SayArround());
             
 
         }

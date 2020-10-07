@@ -4,30 +4,41 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Autofac.Core;
+using Autofac.Core.Resolving;
+using Autofac.Core.Resolving.Pipeline;
 
 namespace Autofac.Annotation
 {
     /// <summary>
     /// 
     /// </summary>
-    internal class AutowiredParmeter : Parameter
+    internal class AutowiredParmeterStack :Parameter
     {
         /// <summary>
         /// 集合
         /// </summary>
-        private readonly ConcurrentDictionary<string, object> AutowiredChains = new ConcurrentDictionary<string, object>();
+        private readonly SegmentedStack<Tuple<Service,object>> chainList = new SegmentedStack<Tuple<Service,object>>();
 
-        private readonly List<string> chainList = new List<string>();
 
         /// <summary>
         /// 添加
         /// </summary>
         /// <param name="service"></param>
         /// <param name="instance"></param>
-        public bool TryAdd(string service, object instance)
+        public void Push(Service service, object instance)
         {
-            chainList.Add(service);
-            return this.AutowiredChains.TryAdd(service, instance);
+            chainList.Push(new Tuple<Service, object>(service,instance));
+        }
+    
+        /// <summary>
+        /// 删除
+        /// </summary>
+        public void Dispose()
+        {
+            while (this.chainList.Count>0)
+            {
+                chainList.Pop();
+            }
         }
 
         /// <summary>
@@ -36,9 +47,34 @@ namespace Autofac.Annotation
         /// <param name="service"></param>
         /// <param name="instance"></param>
         /// <returns></returns>
-        public bool TryGet(string service, out object instance)
+        public bool CircularDetected(Service service, out object instance)
         {
-            return this.AutowiredChains.TryGetValue(service, out instance);
+            foreach (var requestEntry in chainList)
+            {
+                if (requestEntry.Item1 == service)
+                {
+                    instance = requestEntry.Item2;
+                    return true;
+                }
+            }
+
+            instance = null;
+            return false;
+        }
+
+      
+
+        /// <summary>
+        /// Circular component dependency detected
+        /// </summary>
+        /// <returns></returns>
+        public string GetCircualrChains(Service service)
+        {
+            var err =  "Circular component dependency detected:" + string.Join("->", (from obj in this.chainList
+                    let ob = obj.Item2.GetType()
+                        select ob.Namespace+"."+ob.Name
+                    ).Reverse() )+ "->" + service?.Description;
+            return err;
         }
 
         /// <summary>
@@ -52,24 +88,6 @@ namespace Autofac.Annotation
         {
             valueProvider = null;
             return false;
-        }
-
-        /// <summary>
-        /// Circular component dependency detected
-        /// </summary>
-        /// <returns></returns>
-        public string GetCircualrChains()
-        {
-            return "Circular component dependency detected:" + string.Join("->", chainList);
-        }
-
-        /// <summary>
-        /// release
-        /// </summary>
-        public void Dispose()
-        {
-            this.chainList.Clear();
-            this.AutowiredChains.Clear();
         }
     }
 }

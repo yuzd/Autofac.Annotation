@@ -67,8 +67,7 @@ namespace Autofac.Annotation
         public string Key { get;}
 
         /// <summary>
-        /// 自定义注册顺序 越大越先注册 但是注意 相同的类型谁最小就会拿resolve谁
-        /// 注册同类型顺序越大越先注册但Resolve获取的是顺序越小的 和autofac本身是保持一致的
+        /// 自定义注册顺序 越小越先注册 但是注意 相同的类型谁最后注册就会拿resolve谁
         /// </summary>
         public int OrderIndex { get; set; }
 

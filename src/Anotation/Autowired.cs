@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Autofac.Annotation.Util;
+using Autofac.Core.Resolving;
 
 namespace Autofac.Annotation
 {
@@ -16,7 +17,6 @@ namespace Autofac.Annotation
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter)]
     public class Autowired : ParameterFilterAttribute
     {
-        //     
         /// <summary>
         /// 默认的
         /// </summary>
@@ -76,7 +76,6 @@ namespace Autofac.Annotation
         public override object ResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));
-            // return parameter == null ? null : Resolve(parameter.Member.DeclaringType, parameter.ParameterType,parameter.Name, context, "parameter");
             return Resolve(context, null, parameter.Member.DeclaringType, parameter.ParameterType,parameter.Name, null);
         }
 
@@ -88,6 +87,11 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public override bool CanResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
+            //构造方法不支持配置循环注入
+            if (this.AllowCircularDependencies != null && this.AllowCircularDependencies.Value)
+            {
+                return false;
+            }
             return true;
         }
 
@@ -99,10 +103,9 @@ namespace Autofac.Annotation
         /// <param name="Parameters"></param>
         /// <param name="instance"></param>
         /// <returns></returns>
-        public object ResolveField(FieldInfo property, IComponentContext context, IEnumerable<Parameter> Parameters, object instance)
+        public object ResolveField(FieldInfo property, IComponentContext context, List<Parameter> Parameters, object instance)
         {
             if (property == null) throw new ArgumentNullException(nameof(property));
-            // if (this.AllowCircularDependencies == null || !this.AllowCircularDependencies.Value) return Resolve(property.DeclaringType, property.FieldType,property.Name, context, "field");
             return Resolve(context, instance, property.DeclaringType, property.FieldType,property.Name, Parameters);
         }
 
@@ -114,25 +117,24 @@ namespace Autofac.Annotation
         /// <param name="Parameters"></param>
         /// <param name="instance"></param>
         /// <returns></returns>
-        public object ResolveProperty(PropertyInfo property, IComponentContext context, IEnumerable<Parameter> Parameters, object instance)
+        public object ResolveProperty(PropertyInfo property, IComponentContext context, List<Parameter> Parameters, object instance)
         {
             if (property == null) throw new ArgumentNullException(nameof(property));
-            // if (this.AllowCircularDependencies == null || !this.AllowCircularDependencies.Value) return Resolve(property.DeclaringType, property.PropertyType,property.Name, context, "property");
             return Resolve(context, instance, property.DeclaringType, property.PropertyType,property.Name, Parameters);
         }
 
-        internal object Resolve(IComponentContext context, object instance, Type classType, Type memberType,string fieldOrPropertyName, IEnumerable<Parameter> Parameters)
+        internal object Resolve(IComponentContext context, object instance, Type classType, Type memberType,string fieldOrPropertyName, List<Parameter> Parameters)
         {
             object returnObj = null;
             
             //针对继承 IObjectFactory 的 需要动态创建
             if ((typeof(IObjectFactory).IsAssignableFrom(memberType)))
             {
-                return context.Resolve<ObjectBeanFactory>().CreateAutowiredFactory(this, memberType, classType,fieldOrPropertyName, instance, Parameters);
+                return context.Resolve<ObjectBeanFactory>().CreateAutowiredFactory(this, memberType, classType,fieldOrPropertyName, instance, null);
             }
             else if (memberType.IsGenericType && memberType.GetGenericTypeDefinition() == typeof(Lazy<>))
             {
-                return context.Resolve<ObjectBeanFactory>().CreateLazyFactory(this, memberType, classType,fieldOrPropertyName, instance, Parameters);
+                return context.Resolve<ObjectBeanFactory>().CreateLazyFactory(this, memberType, classType,fieldOrPropertyName, instance, null);
             }
             else if (string.IsNullOrEmpty(this.Name) && memberType.IsGenericEnumerableInterfaceType())
             {
@@ -163,50 +165,44 @@ namespace Autofac.Annotation
                 propertyService = new TypedService(memberType);
             }
 
-            //如果没有开启支持循环注入的话
-            // ReSharper disable once PossibleMultipleEnumeration
-            if (Parameters != null && Parameters.Count() == 1)
+            if (Parameters != null && Parameters.Any()  && ((Parameters.First() is AutowiredParmeterStack AutowiredParmeter)))
             {
-                // ReSharper disable once PossibleMultipleEnumeration
-                if (!(Parameters.First() is AutowiredParmeter AutowiredParmeter))
-                {
-                    //error
-                }
-                // ReSharper disable once AssignNullToNotNullAttribute
-                else if (AutowiredParmeter.TryGet(memberType.Namespace+"."+memberType.Name, out returnObj))
+                //先检查是否已注册过
+                if (AutowiredParmeter.CircularDetected(propertyService, out returnObj))
                 {
                     if (this.AllowCircularDependencies == null || !this.AllowCircularDependencies.Value)
                     {
-                        var err = AutowiredParmeter.GetCircualrChains() + ($"->{classType.Namespace}.{classType.Name}");
-                        AutowiredParmeter.Dispose();
-                        throw new DependencyResolutionException(err);
+                        throw new DependencyResolutionException(AutowiredParmeter.GetCircualrChains(propertyService));
                     }
-                    AutowiredParmeter.Dispose();
                 }
-                else
+                else if (context.TryResolveService(propertyService, new Parameter[] {AutowiredParmeter}, out returnObj))
                 {
-                    // ReSharper disable once PossibleNullReferenceException
-                    AutowiredParmeter.TryAdd(classType.Namespace+"."+classType.Name, instance);
-                    if (context.TryResolveService(propertyService, new Parameter[] {AutowiredParmeter}, out returnObj))
+                }
+                //先判断根据Type来找是否能找得到 发现Type没有就尝试用当前的属性定义的名称去找
+                else if(string.IsNullOrEmpty(this.Name))
+                {
+                    propertyService = new KeyedService(fieldOrPropertyName, memberType);
+                    if (AutowiredParmeter.CircularDetected(propertyService, out returnObj))
                     {
-                        //success
-                    } //先判断根据Type来找是否能找得到 发现Type没有就尝试用当前的属性定义的名称去找
-                    else if(string.IsNullOrEmpty(this.Name) && context.TryResolveService( new KeyedService(fieldOrPropertyName, memberType), new Parameter[] {AutowiredParmeter}, out returnObj))
+                        AutowiredParmeter.Dispose();
+                        if (this.AllowCircularDependencies == null || !this.AllowCircularDependencies.Value)
+                        {
+                            throw new DependencyResolutionException(AutowiredParmeter.GetCircualrChains(propertyService));
+                        }
+                    }
+                    else if (context.TryResolveService(propertyService, new Parameter[] {AutowiredParmeter}, out returnObj))
                     {
-                        //success
                     }
                 }
             }
             else
             {
-                var instanceTypeParameter = new AutowiredParmeter();
-                // ReSharper disable once PossibleNullReferenceException
-                instanceTypeParameter.TryAdd(classType.Namespace+"."+classType.Name, instance);
-                if (context.TryResolveService(propertyService, new Parameter[] {instanceTypeParameter},out returnObj))
+                //构造方法注入的分支
+                if (context.TryResolveService(propertyService, new Parameter[] {}, out returnObj))
                 {
                     //success
-                }//先判断根据Type来找是否能找得到 发现Type没有就尝试用当前的属性定义的名称去找
-                else if(string.IsNullOrEmpty(this.Name) && context.TryResolveService( new KeyedService(fieldOrPropertyName, memberType), new Parameter[] {instanceTypeParameter}, out returnObj))
+                }
+                else if(string.IsNullOrEmpty(this.Name) && context.TryResolveService(new KeyedService(fieldOrPropertyName, memberType), new Parameter[] {}, out returnObj))
                 {
                     //success
                 }

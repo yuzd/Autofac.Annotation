@@ -11,6 +11,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Autofac.Aspect;
+using Autofac.Core.Resolving;
+using Autofac.Core.Resolving.Pipeline;
 using Autofac.Features.AttributeFilters;
 using Microsoft.Extensions.Configuration;
 
@@ -700,7 +702,12 @@ namespace Autofac.Annotation
                 });
                 
                 //支持循环
-                registrar.RegistrationData.ActivatedHandlers.Add((s, e) => { DoAutoWired(e.Context, e.Parameters, e.Instance); });
+                registrar.ConfigurePipeline(p => p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
+                {
+                    next(ctxt);
+                    DoAutoWired(ctxt, ctxt.Parameters.ToList(), ctxt.Instance);
+                }));
+               
             }
         }
 
@@ -1668,7 +1675,7 @@ namespace Autofac.Annotation
         /// <param name="context">容器</param>
         /// <param name="Parameters">参数</param>
         /// <param name="instance">实例</param>
-        private void DoAutoWired(IComponentContext context, IEnumerable<Parameter> Parameters, object instance)
+        private void DoAutoWired(ResolveRequestContext context, List<Parameter> Parameters, object instance)
         {
             if (instance == null) return;
             Type instanceType = instance.GetType();
@@ -1689,73 +1696,97 @@ namespace Autofac.Annotation
                 }
                 model = mode1;
             }
-            //字段注入
-            foreach (var field in model.AutowiredFieldInfoList)
+
+            AutowiredParmeterStack firstStack = null;
+            // context.Service
+            if (Parameters != null)
             {
-                // ReSharper disable once PossibleMultipleEnumeration
-                var obj = field.Item2.ResolveField(field.Item1, context, Parameters, RealInstance);
-                if (obj == null)
+                if ((!Parameters.Any() || (!(Parameters.First() is AutowiredParmeterStack AutowiredParmeter))))
                 {
-                    if (field.Item2.Required)
-                    {
-                        throw new DependencyResolutionException(
-                            $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
-                            + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""));
-                    }
-
-                    continue;
+                    firstStack = new AutowiredParmeterStack();
+                    firstStack.Push(context.Service,RealInstance);
+                    Parameters.Add(firstStack);
                 }
-
-                try
+                else
                 {
-                    if (model.isDynamicGeneric)//如果是动态泛型的话
-                    {
-                        instanceType.GetTypeInfo().GetField(field.Item1.Name).GetReflector().SetValue(RealInstance,obj);
-                        continue;
-                    }
-                    
-                    field.Item3.SetValue(RealInstance, obj);
-                }
-                catch (Exception ex)
-                {
-                    throw new DependencyResolutionException(
-                        $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
-                        + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""), ex);
+                    AutowiredParmeter.Push(context.Service,RealInstance);
                 }
             }
 
-            //属性注入
-            foreach (var property in model.AutowiredPropertyInfoList)
+            try
             {
-                // ReSharper disable once PossibleMultipleEnumeration
-                var obj = property.Item2.ResolveProperty(property.Item1, context, Parameters, RealInstance);
-                if (obj == null)
+                //字段注入
+                foreach (var field in model.AutowiredFieldInfoList)
                 {
-                    if (property.Item2.Required)
+                    // ReSharper disable once PossibleMultipleEnumeration
+                    var obj = field.Item2.ResolveField(field.Item1, context, Parameters, RealInstance);
+                    if (obj == null)
+                    {
+                        if (field.Item2.Required)
+                        {
+                            throw new DependencyResolutionException(
+                                $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
+                                + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""));
+                        }
+
+                        continue;
+                    }
+
+                    try
+                    {
+                        if (model.isDynamicGeneric)//如果是动态泛型的话
+                        {
+                            instanceType.GetTypeInfo().GetField(field.Item1.Name).GetReflector().SetValue(RealInstance,obj);
+                            continue;
+                        }
+                        
+                        field.Item3.SetValue(RealInstance, obj);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new DependencyResolutionException(
+                            $"Autowire error,can not resolve class type:{instanceType.FullName},field name:{field.Item1.Name} "
+                            + (!string.IsNullOrEmpty(field.Item2.Name) ? $",with key:{field.Item2.Name}" : ""), ex);
+                    }
+                }
+
+                //属性注入
+                foreach (var property in model.AutowiredPropertyInfoList)
+                {
+                    // ReSharper disable once PossibleMultipleEnumeration
+                    var obj = property.Item2.ResolveProperty(property.Item1, context, Parameters, RealInstance);
+                    if (obj == null)
+                    {
+                        if (property.Item2.Required)
+                        {
+                            throw new DependencyResolutionException(
+                                $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
+                                + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""));
+                        }
+
+                        continue;
+                    }
+
+                    try
+                    {
+                        if (model.isDynamicGeneric)//如果是动态泛型的话
+                        {
+                            instanceType.GetTypeInfo().GetProperty(property.Item1.Name).GetReflector().SetValue(RealInstance,obj);
+                            continue;
+                        }
+                        property.Item3.SetValue(RealInstance, obj);
+                    }
+                    catch (Exception ex)
                     {
                         throw new DependencyResolutionException(
                             $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
-                            + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""));
+                            + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""), ex);
                     }
-
-                    continue;
                 }
-
-                try
-                {
-                    if (model.isDynamicGeneric)//如果是动态泛型的话
-                    {
-                        instanceType.GetTypeInfo().GetProperty(property.Item1.Name).GetReflector().SetValue(RealInstance,obj);
-                        continue;
-                    }
-                    property.Item3.SetValue(RealInstance, obj);
-                }
-                catch (Exception ex)
-                {
-                    throw new DependencyResolutionException(
-                        $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
-                        + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""), ex);
-                }
+            }
+            finally
+            {
+                firstStack?.Dispose();
             }
         }
     }

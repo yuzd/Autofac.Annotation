@@ -37,7 +37,7 @@ namespace Autofac.Configuration.Test.test2
 
     }
 
-    [Component()]
+    [Component(OrderIndex = 1000)]
     public class Model222 : Model12
     {
 
@@ -62,7 +62,7 @@ namespace Autofac.Configuration.Test.test2
     [Component()]
     public class Model32 : Model3
     {
-        }
+    }
 
     public interface Imodel2
     {
@@ -75,7 +75,7 @@ namespace Autofac.Configuration.Test.test2
 
     }
 
-    [Component()]
+    [Component(OrderIndex = 1000)]
     public class Model42 : Model4
     {
 

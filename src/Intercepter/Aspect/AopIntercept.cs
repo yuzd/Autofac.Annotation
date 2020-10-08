@@ -10,7 +10,7 @@ using AspectCore.Extensions.Reflection;
 using Autofac.Annotation;
 using Autofac.Aspect;
 using Castle.DynamicProxy;
-using  Autofac.Annotation.Util;
+using Autofac.Annotation.Util;
 
 namespace Autofac.Aspect
 {
@@ -19,10 +19,9 @@ namespace Autofac.Aspect
     /// 在DI容器build的时候会触发这个实例new
     /// 然后解析所有打了Aspect标签的class进行解析打了有继承AspectInvokeAttribute的所有方法并且缓存起来
     /// </summary>
-    [Component(AutofacScope = AutofacScope.SingleInstance,AutoActivate = true)]
+    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true)]
     public class AopMethodInvokeCache
     {
-
         /// <summary>
         /// 构造方法
         /// </summary>
@@ -39,14 +38,16 @@ namespace Autofac.Aspect
                     .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
                     .Select(r => new {IsClass = true, Attribute = r, Index = r.OrderIndex}).ToList();
 
-                var myArrayMethodInfo = aspectClass.CurrentType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(m => !m.IsSpecialName);
+                var myArrayMethodInfo = aspectClass.CurrentType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                    .Where(m => !m.IsSpecialName);
 
                 foreach (var method in myArrayMethodInfo)
                 {
                     var allAttributes = allAttributesinClass.Concat(method.GetReflector()
-                            .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
-                            .Select(r => new { IsClass = false, Attribute = r, Index = r.OrderIndex }));
+                        .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
+                        .Select(r => new {IsClass = false, Attribute = r, Index = r.OrderIndex}));
 
+                    //如果class上也打了 method上也打了 优先用method上的
                     var attributes = allAttributes
                         .OrderBy(r => r.IsClass).ThenByDescending(r => r.Index)
                         .GroupBy(r => r.Attribute.GetType().FullName)
@@ -81,21 +82,21 @@ namespace Autofac.Aspect
                         DynamicCacheList.TryAdd(method.GetMethodInfoUniqueName(), aspectAttributeInfo);
                         continue;
                     }
+
                     CacheList.TryAdd(method, aspectAttributeInfo);
                 }
             }
         }
+
         /// <summary>
         /// 缓存
         /// </summary>
-        internal ConcurrentDictionary<MethodInfo,AspectAttributeInfo> CacheList { get; set; }
-        
+        internal ConcurrentDictionary<MethodInfo, AspectAttributeInfo> CacheList { get; set; }
+
         /// <summary>
         /// 由于动态泛型的method是跟着泛型T变化的  所以需要单独缓存
         /// </summary>
-        internal ConcurrentDictionary<string,AspectAttributeInfo> DynamicCacheList { get; set; }
-        
-     
+        internal ConcurrentDictionary<string, AspectAttributeInfo> DynamicCacheList { get; set; }
     }
 
 
@@ -129,8 +130,8 @@ namespace Autofac.Aspect
         // }catch(){
         //     //@AfterThrowing
         // }
-        
-       
+
+
         /// <summary>
         /// 无返回值拦截器
         /// </summary>
@@ -138,13 +139,15 @@ namespace Autofac.Aspect
         /// <param name="proceedInfo"></param>
         /// <param name="proceed"></param>
         /// <returns></returns>
-        protected override async Task InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task> proceed)
+        protected override async Task InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo,
+            Func<IInvocation, IInvocationProceedInfo, Task> proceed)
         {
             //先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
-            if(!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget,out var attribute))
+            if (!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget, out var attribute))
             {
                 //动态泛型类
-                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType || (!_cache.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var AttributesDynamic) ))
+                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
+                    (!_cache.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var AttributesDynamic)))
                 {
                     await proceed(invocation, proceedInfo);
                     return;
@@ -152,10 +155,10 @@ namespace Autofac.Aspect
 
                 attribute = AttributesDynamic;
             }
+
             var aspectContext = new AspectContext(_component, invocation);
             try
             {
-                
                 try
                 {
                     #region Before
@@ -168,6 +171,7 @@ namespace Autofac.Aspect
                     #endregion
 
                     #region method.invoke(..)
+
                     if (attribute.AspectArroundAttributeList.Any())
                     {
                         AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
@@ -185,7 +189,6 @@ namespace Autofac.Aspect
                     {
                         await proceed(invocation, proceedInfo);
                     }
-                    
 
                     #endregion
                 }
@@ -205,7 +208,7 @@ namespace Autofac.Aspect
 
                 foreach (var afterReturning in attribute.AspectAfterReturningAttributeList)
                 {
-                    await afterReturning.AfterReturning(aspectContext,null);
+                    await afterReturning.AfterReturning(aspectContext, null);
                 }
 
                 #endregion
@@ -213,10 +216,10 @@ namespace Autofac.Aspect
             catch (Exception e)
             {
                 #region AfterThrow
-                
+
                 foreach (var aspectAfterThrowing in attribute.AspectAfterThrowingAttributeList)
                 {
-                    await aspectAfterThrowing.AfterThrowing(aspectContext,e);
+                    await aspectAfterThrowing.AfterThrowing(aspectContext, e);
                 }
 
                 #endregion
@@ -233,15 +236,17 @@ namespace Autofac.Aspect
         /// <param name="proceedInfo"></param>
         /// <param name="proceed"></param>
         /// <returns></returns>
-        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
+        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo,
+            Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
         {
             TResult r;
-            
+
             //先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
-            if(!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget,out var attribute))
+            if (!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget, out var attribute))
             {
                 //动态泛型类
-                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType || (!_cache.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var AttributesDynamic) ))
+                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
+                    (!_cache.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var AttributesDynamic)))
                 {
                     r = await proceed(invocation, proceedInfo);
                     return r;
@@ -249,7 +254,7 @@ namespace Autofac.Aspect
 
                 attribute = AttributesDynamic;
             }
-            
+
             var aspectContext = new AspectContext(_component, invocation);
             try
             {
@@ -282,15 +287,15 @@ namespace Autofac.Aspect
                             });
                         }
 
-                        builder.Use(next => async ctx => 
+                        builder.Use(next => async ctx =>
                         {
                             ctx.Result = await proceed(invocation, proceedInfo);
-                            invocation.ReturnValue = ctx.Result;//原方法的执行返回值
+                            invocation.ReturnValue = ctx.Result; //原方法的执行返回值
                         });
 
                         var aspectfunc = builder.Build();
                         await aspectfunc(aspectContext);
-                        r = (TResult)aspectContext.Result;
+                        r = (TResult) aspectContext.Result;
                     }
                     else
                     {
@@ -315,22 +320,24 @@ namespace Autofac.Aspect
 
                 foreach (var afterReturning in attribute.AspectAfterReturningAttributeList)
                 {
-                    await afterReturning.AfterReturning(aspectContext,r);
+                    await afterReturning.AfterReturning(aspectContext, r);
                 }
 
                 #endregion
+
                 return r;
             }
             catch (Exception e)
             {
                 #region AfterThrow
-                
+
                 foreach (var aspectAfterThrowing in attribute.AspectAfterThrowingAttributeList)
                 {
-                    await aspectAfterThrowing.AfterThrowing(aspectContext,e);
+                    await aspectAfterThrowing.AfterThrowing(aspectContext, e);
                 }
 
                 #endregion
+
                 throw;
             }
         }
@@ -355,7 +362,7 @@ namespace Autofac.Aspect
             _component = context;
             _configuration = configurationList;
         }
-        
+
         /// <summary>
         /// 一个目标方法只会适 Before After Arround 其中的一个切面
         /// </summary>
@@ -363,11 +370,14 @@ namespace Autofac.Aspect
         /// <param name="proceedInfo"></param>
         /// <param name="proceed"></param>
         /// <returns></returns>
-        protected override async Task InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task> proceed)
+        protected override async Task InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo,
+            Func<IInvocation, IInvocationProceedInfo, Task> proceed)
         {
             if (!_configuration.PointcutTargetInfoList.TryGetValue(invocation.MethodInvocationTarget, out var pointCut))
             {
-                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType || !_configuration.DynamicPointcutTargetInfoList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var pointCutDynamic))
+                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
+                    !_configuration.DynamicPointcutTargetInfoList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(),
+                        out var pointCutDynamic))
                 {
                     //该方法不需要拦截
                     await proceed(invocation, proceedInfo);
@@ -385,36 +395,35 @@ namespace Autofac.Aspect
                 ComponentContext = _component,
                 InvocationMethod = invocation.MethodInvocationTarget,
             };
-                
+
             if (pointCut.AroundMethod != null)
             {
-                aspectContext.Proceed = async () =>
-                {
-                    await proceed(invocation, proceedInfo);
-                };
-                
-                var rt = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AroundMethod, _component,aspectContext);
+                aspectContext.Proceed = async () => { await proceed(invocation, proceedInfo); };
+
+                var rt = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AroundMethod, _component, aspectContext);
                 if (typeof(Task).IsAssignableFrom(pointCut.AroundMethod.ReturnType))
                 {
                     await ((Task) rt).ConfigureAwait(false);
                 }
+
                 return;
             }
-            
+
             try
             {
                 if (pointCut.BeforeMethod != null)
                 {
-                    var rtBefore = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.BeforeMethod, _component,aspectContext);
+                    var rtBefore = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.BeforeMethod, _component, aspectContext);
                     if (typeof(Task).IsAssignableFrom(pointCut.BeforeMethod.ReturnType))
                     {
                         await ((Task) rtBefore).ConfigureAwait(false);
                     }
                 }
+
                 await proceed(invocation, proceedInfo);
                 if (pointCut.AfterMethod != null)
                 {
-                    var rtAfter = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AfterMethod, _component,aspectContext);
+                    var rtAfter = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AfterMethod, _component, aspectContext);
                     if (typeof(Task).IsAssignableFrom(pointCut.AfterMethod.ReturnType))
                     {
                         await ((Task) rtAfter).ConfigureAwait(false);
@@ -426,12 +435,13 @@ namespace Autofac.Aspect
                 aspectContext.Exception = e;
                 if (pointCut.AfterMethod != null)
                 {
-                    var rtAfter = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AfterMethod, _component,aspectContext);
+                    var rtAfter = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AfterMethod, _component, aspectContext);
                     if (typeof(Task).IsAssignableFrom(pointCut.AfterMethod.ReturnType))
                     {
                         await ((Task) rtAfter).ConfigureAwait(false);
                     }
                 }
+
                 throw;
             }
         }
@@ -444,19 +454,22 @@ namespace Autofac.Aspect
         /// <param name="proceed"></param>
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
-        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
+        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo,
+            Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
         {
             if (!_configuration.PointcutTargetInfoList.TryGetValue(invocation.MethodInvocationTarget, out var pointCut))
             {
-                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType || !_configuration.DynamicPointcutTargetInfoList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var pointCutDynamic))
+                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
+                    !_configuration.DynamicPointcutTargetInfoList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(),
+                        out var pointCutDynamic))
                 {
                     //该方法不需要拦截
                     return await proceed(invocation, proceedInfo);
                 }
-             
+
                 pointCut = pointCutDynamic;
             }
-            
+
             //pointcut定义所在对象
             var instance = _component.Resolve(pointCut.PointClass);
 
@@ -465,44 +478,41 @@ namespace Autofac.Aspect
                 ComponentContext = _component,
                 InvocationMethod = invocation.MethodInvocationTarget,
             };
-                
+
             if (pointCut.AroundMethod != null)
             {
-                aspectContext.Proceed = async () =>
-                {
-                    invocation.ReturnValue =  await proceed(invocation, proceedInfo);
-                };
-                
-                var rt = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AroundMethod, _component,aspectContext);
+                aspectContext.Proceed = async () => { invocation.ReturnValue = await proceed(invocation, proceedInfo); };
+
+                var rt = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AroundMethod, _component, aspectContext);
                 if (typeof(Task).IsAssignableFrom(pointCut.AroundMethod.ReturnType))
                 {
                     await ((Task) rt).ConfigureAwait(false);
                 }
 
-                return (TResult)invocation.ReturnValue;
+                return (TResult) invocation.ReturnValue;
             }
-            
+
             try
             {
                 if (pointCut.BeforeMethod != null)
                 {
-                    var rtBefore = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.BeforeMethod, _component,aspectContext);
+                    var rtBefore = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.BeforeMethod, _component, aspectContext);
                     if (typeof(Task).IsAssignableFrom(pointCut.BeforeMethod.ReturnType))
                     {
                         await ((Task) rtBefore).ConfigureAwait(false);
                     }
                 }
-                
+
                 var rt = await proceed(invocation, proceedInfo);
-                
-                
+
+
                 if (pointCut.AfterMethod != null)
                 {
-                   var rtAfter = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AfterMethod, _component,aspectContext);
-                   if (typeof(Task).IsAssignableFrom(pointCut.AfterMethod.ReturnType))
-                   {
-                       await ((Task) rtAfter).ConfigureAwait(false);
-                   }
+                    var rtAfter = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AfterMethod, _component, aspectContext);
+                    if (typeof(Task).IsAssignableFrom(pointCut.AfterMethod.ReturnType))
+                    {
+                        await ((Task) rtAfter).ConfigureAwait(false);
+                    }
                 }
 
                 return rt;
@@ -512,15 +522,15 @@ namespace Autofac.Aspect
                 aspectContext.Exception = e;
                 if (pointCut.AfterMethod != null)
                 {
-                    var rtAfter = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AfterMethod, _component,aspectContext);
+                    var rtAfter = AutoConfigurationHelper.InvokeInstanceMethod(instance, pointCut.AfterMethod, _component, aspectContext);
                     if (typeof(Task).IsAssignableFrom(pointCut.AfterMethod.ReturnType))
                     {
                         await ((Task) rtAfter).ConfigureAwait(false);
                     }
                 }
+
                 throw;
             }
-            
         }
     }
 }

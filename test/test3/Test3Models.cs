@@ -7,6 +7,7 @@ using System.Transactions;
 using Autofac.Annotation;
 using Autofac.Annotation.Test;
 using Autofac.Aspect;
+using Autofac.Aspect.Advice;
 using Autofac.Configuration.Test.test2;
 using Castle.DynamicProxy;
 
@@ -179,17 +180,16 @@ namespace Autofac.Configuration.Test.test3
 
     public class TestHelloAfter : AspectAfterAttribute
     {
-
-        public override Task After(AspectContext aspectContext)
+        public override Task After(AspectContext aspectContext, object result)
         {
             Console.WriteLine("TestHelloAfter");
             return Task.CompletedTask;
         }
     }
 
-    public class TestHelloAfterThrowing : AspectAfterThrowingAttribute
+    public class TestHelloAfterThrowing : AspectThrowingAttribute
     {
-        public override Task AfterThrowing(AspectContext aspectContext, Exception exception)
+        public override Task Throwing<Exception>(AspectContext aspectContext, Exception exception)
         {
             Console.WriteLine(aspectContext.InvocationContext.MethodInvocationTarget.Name+":"+ exception.Message);
             return Task.CompletedTask;

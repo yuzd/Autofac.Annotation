@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Autofac.Annotation;
 using Autofac.Annotation.Util;
+using Autofac.Aspect.Advice;
+using Autofac.Aspect.Advice.Impl;
 using Castle.DynamicProxy;
 
 namespace Autofac.Aspect
@@ -306,146 +308,10 @@ namespace Autofac.Aspect
     }
 
 
-    /// <summary>
-    /// 
-    /// </summary>
-    internal class AspectAttributeInfo
-    {
-        public AspectAttributeInfo()
-        {
-            AspectBeforeAttributeList = new List<AspectBeforeAttribute>();
-            AspectAfterAttributeList = new List<AspectAfterAttribute>();
-            AspectAfterReturningAttributeList = new List<AspectAfterReturningAttribute>();
-            AspectAfterThrowingAttributeList = new List<AspectAfterThrowingAttribute>();
-            AspectArroundAttributeList = new List<AspectArroundAttribute>();
-        }
-        public List<AspectBeforeAttribute> AspectBeforeAttributeList { get; set; }
-        public List<AspectAfterAttribute> AspectAfterAttributeList { get; set; }
-        public List<AspectAfterReturningAttribute> AspectAfterReturningAttributeList { get; set; }
-        public List<AspectAfterThrowingAttribute> AspectAfterThrowingAttributeList { get; set; }
-        public List<AspectArroundAttribute> AspectArroundAttributeList { get; set; }
-    }
 
     
     
-    /// <summary>
-    /// 前置通知
-    /// </summary>
-    public abstract class AspectBeforeAttribute : AspectInvokeAttribute
-    {
-
-        /// <summary>
-        /// 前置执行
-        /// </summary>
-        /// <param name="aspectContext"></param>
-        public abstract Task Before(AspectContext aspectContext);
-
-    }
-
-    
-    /// <summary>
-    /// 后置通知
-    /// </summary>
-    public abstract class AspectAfterReturningAttribute : AspectInvokeAttribute
-    {
-        /// <summary>
-        /// 后置执行
-        /// </summary>
-        /// <param name="aspectContext"></param>
-        /// <param name="result"></param>
-        public abstract Task AfterReturning(AspectContext aspectContext,object result);
-
-    }
-
-    /// <summary>
-    /// 最终通知
-    /// </summary>
-    public abstract class AspectAfterAttribute : AspectInvokeAttribute
-    {
-
-        /// <summary>
-        /// 后置执行
-        /// </summary>
-        /// <param name="aspectContext"></param>
-        public abstract Task After(AspectContext aspectContext);
-
-    }
-    
-    /// <summary>
-    /// 异常通知
-    /// </summary>
-    public abstract class AspectAfterThrowingAttribute : AspectInvokeAttribute
-    {
-        /// <summary>
-        /// 后置执行
-        /// </summary>
-        /// <param name="aspectContext"></param>
-        /// <param name="exception"></param>
-        public abstract Task AfterThrowing(AspectContext aspectContext,Exception exception);
-
-    }
-
-    /// <summary>
-    /// 环绕通知
-    /// </summary>
-    public abstract class AspectArroundAttribute : AspectInvokeAttribute
-    {
-
-        /// <summary>
-        /// 拦截器
-        /// </summary>
-        /// <param name="aspectContext">拦截上下文</param>
-        /// <param name="_next">下一个拦截器 最后一个是执行被拦截的方法</param>
-        /// <returns></returns>
-        public abstract Task OnInvocation(AspectContext aspectContext,AspectDelegate _next);
-
-    }
-    
-    /// <summary>
-    /// 拦截器上下文
-    /// </summary>
-    public class AspectContext
-    {
-        /// <summary>
-        /// 空的构造方法
-        /// </summary>
-        public AspectContext()
-        {
-            
-        }
-
-        /// <summary>
-        /// 构造方法
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="invocation"></param>
-        public AspectContext(IComponentContext context,IInvocation invocation)
-        {
-            this.ComponentContext = context;
-            this.InvocationContext = invocation;
-        }
-
-
-        /// <summary>
-        /// autofac容器
-        /// </summary>
-        public IComponentContext ComponentContext { get; set; }
-        
-        /// <summary>
-        /// 执行环节上下文
-        /// </summary>
-
-        public IInvocation InvocationContext { get; set; }
-       
-        
-        /// <summary>
-        /// 有返回结果的
-        /// </summary>
-        internal object Result { get; set; }
-        
-        
-    }
-
+  
     
     /// <summary>
     /// 拦截器上下文
@@ -484,67 +350,5 @@ namespace Autofac.Aspect
     public delegate System.Threading.Tasks.Task AspectDelegate(AspectContext context);
     
     
-    /// <summary>
-    /// 拦截node组装
-    /// </summary>
-    internal class AspectMiddlewareComponentNode
-    {
-        /// <summary>
-        /// 下一个
-        /// </summary>
-        public AspectDelegate Next;
-        /// <summary>
-        /// 执行器
-        /// </summary>
-        public AspectDelegate Process;
-        /// <summary>
-        /// 组件
-        /// </summary>
-        public Func<AspectDelegate, AspectDelegate> Component;
-    }
 
-    internal class AspectMiddlewareBuilder
-    {
-        private readonly LinkedList<AspectMiddlewareComponentNode> Components = new LinkedList<AspectMiddlewareComponentNode>();
-       
-        /// <summary>
-        /// 新增拦截器链
-        /// </summary>
-        /// <param name="component"></param>
-        public void Use(Func<AspectDelegate, AspectDelegate> component)
-        {
-            var node = new AspectMiddlewareComponentNode
-            {
-                Component = component
-            };
- 
-            Components.AddLast(node);
-        }
-        
-        /// <summary>
-        /// 构建拦截器链
-        /// </summary>
-        /// <returns></returns>
-        public AspectDelegate Build()
-        {
-            var node = Components.Last;
-            while(node != null)
-            {
-                node.Value.Next = GetNextFunc(node);
-                node.Value.Process = node.Value.Component(node.Value.Next);
-                node = node.Previous;
-            }
-            return Components.First.Value.Process;
-        }
- 
-        /// <summary>
-        /// 获取下一个
-        /// </summary>
-        /// <param name="node"></param>
-        /// <returns></returns>
-        private AspectDelegate GetNextFunc(LinkedListNode<AspectMiddlewareComponentNode> node)
-        {
-            return node.Next == null ? ctx => Task.CompletedTask : node.Next.Value.Process;
-        }
-    }
 }

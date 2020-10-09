@@ -11,6 +11,7 @@ using Autofac.Annotation;
 using Autofac.Aspect;
 using Castle.DynamicProxy;
 using Autofac.Annotation.Util;
+using Autofac.Aspect.Advice;
 
 namespace Autofac.Aspect
 {
@@ -27,11 +28,13 @@ namespace Autofac.Aspect
         /// </summary>
         public AopMethodInvokeCache(IComponentContext context)
         {
-            CacheList = new ConcurrentDictionary<MethodInfo, AspectAttributeInfo>();
-            DynamicCacheList = new ConcurrentDictionary<string, AspectAttributeInfo>();
+            CacheList = new ConcurrentDictionary<MethodInfo, AspectAttributeChainBuilder>();
+            DynamicCacheList = new ConcurrentDictionary<string, AspectAttributeChainBuilder>();
             var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
             var aspectClassList = componentModelCacheSingleton.ComponentModelCache.Values
                 .Where(r => r.AspectAttribute != null).ToList();
+            //一个标签对应一种exception类型
+            var throwingExceptionTypeCache = new ConcurrentDictionary<Type, Type>();
             foreach (var aspectClass in aspectClassList)
             {
                 var allAttributesinClass = aspectClass.CurrentType.GetReflector()
@@ -54,7 +57,7 @@ namespace Autofac.Aspect
                         .Select(r => r.First().Attribute).ToList();
 
                     if (!attributes.Any()) continue;
-                    var aspectAttributeInfo = new AspectAttributeInfo();
+                    var aspectAttributeInfo = new AspectAttributeChainBuilder();
                     foreach (var attribute in attributes)
                     {
                         switch (attribute)
@@ -65,10 +68,16 @@ namespace Autofac.Aspect
                             case AspectAfterAttribute aspectAfterAttribute:
                                 aspectAttributeInfo.AspectAfterAttributeList.Add(aspectAfterAttribute);
                                 break;
-                            case AspectAfterReturningAttribute aspectAfterReturning:
-                                aspectAttributeInfo.AspectAfterReturningAttributeList.Add(aspectAfterReturning);
-                                break;
-                            case AspectAfterThrowingAttribute aspectAfterThrowing:
+                            case AspectThrowingAttribute aspectAfterThrowing:
+                                var cacheKey = aspectAfterThrowing.GetType();
+                                if (!throwingExceptionTypeCache.TryGetValue(cacheKey, out var exceptionType))
+                                {
+                                    var throwType = aspectAfterThrowing.GetType();
+                                    exceptionType = throwType.GetMethod("AfterThrowing")?.GetGenericArguments().First();
+                                    throwingExceptionTypeCache.TryAdd(cacheKey, exceptionType);
+                                }
+
+                                aspectAfterThrowing.ExceptionType = exceptionType;
                                 aspectAttributeInfo.AspectAfterThrowingAttributeList.Add(aspectAfterThrowing);
                                 break;
                             case AspectArroundAttribute aspectPointAttribute:
@@ -91,12 +100,12 @@ namespace Autofac.Aspect
         /// <summary>
         /// 缓存
         /// </summary>
-        internal ConcurrentDictionary<MethodInfo, AspectAttributeInfo> CacheList { get; set; }
+        internal ConcurrentDictionary<MethodInfo, AspectAttributeChainBuilder> CacheList { get; set; }
 
         /// <summary>
         /// 由于动态泛型的method是跟着泛型T变化的  所以需要单独缓存
         /// </summary>
-        internal ConcurrentDictionary<string, AspectAttributeInfo> DynamicCacheList { get; set; }
+        internal ConcurrentDictionary<string, AspectAttributeChainBuilder> DynamicCacheList { get; set; }
     }
 
 
@@ -118,20 +127,7 @@ namespace Autofac.Aspect
             _component = context;
             _cache = cache;
         }
-
-        // try{
-        //     try{
-        //         //@Before
-        //         method.invoke(..);
-        //     }finally{
-        //         //@After
-        //     }
-        //     //@AfterReturning
-        // }catch(){
-        //     //@AfterThrowing
-        // }
-
-
+        
         /// <summary>
         /// 无返回值拦截器
         /// </summary>
@@ -142,7 +138,8 @@ namespace Autofac.Aspect
         protected override async Task InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo,
             Func<IInvocation, IInvocationProceedInfo, Task> proceed)
         {
-            //先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
+            #region 先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
+
             if (!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget, out var attribute))
             {
                 //动态泛型类
@@ -156,76 +153,11 @@ namespace Autofac.Aspect
                 attribute = AttributesDynamic;
             }
 
-            var aspectContext = new AspectContext(_component, invocation);
-            try
-            {
-                try
-                {
-                    #region Before
+            #endregion
 
-                    foreach (var beforeAttribute in attribute.AspectBeforeAttributeList)
-                    {
-                        await beforeAttribute.Before(aspectContext);
-                    }
-
-                    #endregion
-
-                    #region method.invoke(..)
-
-                    if (attribute.AspectArroundAttributeList.Any())
-                    {
-                        AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
-                        foreach (var pointAspect in attribute.AspectArroundAttributeList)
-                        {
-                            builder.Use(next => async ctx => { await pointAspect.OnInvocation(ctx, next); });
-                        }
-
-                        builder.Use(next => async ctx => { await proceed(invocation, proceedInfo); });
-
-                        var aspectfunc = builder.Build();
-                        await aspectfunc(new AspectContext(_component, invocation));
-                    }
-                    else
-                    {
-                        await proceed(invocation, proceedInfo);
-                    }
-
-                    #endregion
-                }
-                finally
-                {
-                    #region After
-
-                    foreach (var afterAttribute in attribute.AspectAfterAttributeList)
-                    {
-                        await afterAttribute.After(aspectContext);
-                    }
-
-                    #endregion
-                }
-
-                #region AfterReurning
-
-                foreach (var afterReturning in attribute.AspectAfterReturningAttributeList)
-                {
-                    await afterReturning.AfterReturning(aspectContext, null);
-                }
-
-                #endregion
-            }
-            catch (Exception e)
-            {
-                #region AfterThrow
-
-                foreach (var aspectAfterThrowing in attribute.AspectAfterThrowingAttributeList)
-                {
-                    await aspectAfterThrowing.AfterThrowing(aspectContext, e);
-                }
-
-                #endregion
-
-                throw;
-            }
+            var aspectContext = new AspectContext(_component, invocation,proceedInfo);
+            var runTask = attribute.BuilderMethodChain(aspectContext, proceed);
+            await runTask(aspectContext);
         }
 
         /// <summary>
@@ -241,7 +173,8 @@ namespace Autofac.Aspect
         {
             TResult r;
 
-            //先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
+            #region 先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
+
             if (!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget, out var attribute))
             {
                 //动态泛型类
@@ -255,92 +188,15 @@ namespace Autofac.Aspect
                 attribute = AttributesDynamic;
             }
 
-            var aspectContext = new AspectContext(_component, invocation);
-            try
-            {
-                try
-                {
-                    #region Before
+            #endregion
 
-                    foreach (var beforeAttribute in attribute.AspectBeforeAttributeList)
-                    {
-                        await beforeAttribute.Before(aspectContext);
-                    }
-
-                    #endregion
-
-                    #region method.invoke(..)
-
-                    if (attribute.AspectArroundAttributeList.Any())
-                    {
-                        AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
-                        foreach (var pointAspect in attribute.AspectArroundAttributeList)
-                        {
-                            builder.Use(next => async ctx =>
-                            {
-                                await pointAspect.OnInvocation(ctx, next);
-                                //如果有拦截器设置 ReturnValue 那么就直接拿这个作为整个拦截器的方法返回值
-                                if (ctx.InvocationContext.ReturnValue != null)
-                                {
-                                    ctx.Result = ctx.InvocationContext.ReturnValue;
-                                }
-                            });
-                        }
-
-                        builder.Use(next => async ctx =>
-                        {
-                            ctx.Result = await proceed(invocation, proceedInfo);
-                            invocation.ReturnValue = ctx.Result; //原方法的执行返回值
-                        });
-
-                        var aspectfunc = builder.Build();
-                        await aspectfunc(aspectContext);
-                        r = (TResult) aspectContext.Result;
-                    }
-                    else
-                    {
-                        r = await proceed(invocation, proceedInfo);
-                    }
-
-                    #endregion
-                }
-                finally
-                {
-                    #region After
-
-                    foreach (var afterAttribute in attribute.AspectAfterAttributeList)
-                    {
-                        await afterAttribute.After(aspectContext);
-                    }
-
-                    #endregion
-                }
-
-                #region AfterReurning
-
-                foreach (var afterReturning in attribute.AspectAfterReturningAttributeList)
-                {
-                    await afterReturning.AfterReturning(aspectContext, r);
-                }
-
-                #endregion
-
-                return r;
-            }
-            catch (Exception e)
-            {
-                #region AfterThrow
-
-                foreach (var aspectAfterThrowing in attribute.AspectAfterThrowingAttributeList)
-                {
-                    await aspectAfterThrowing.AfterThrowing(aspectContext, e);
-                }
-
-                #endregion
-
-                throw;
-            }
+            var aspectContext = new AspectContext(_component, invocation,proceedInfo);
+            var runTask = attribute.BuilderMethodChain(aspectContext, proceed);
+            await runTask(aspectContext);
+            r = (TResult) aspectContext.Result;
+            return r;
         }
+
     }
 
 

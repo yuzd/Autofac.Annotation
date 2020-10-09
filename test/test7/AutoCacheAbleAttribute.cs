@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Autofac.Annotation;
 using Autofac.Aspect;
+using Autofac.Aspect.Advice;
 
 namespace Autofac.Configuration.Test.test7
 {

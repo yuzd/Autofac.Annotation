@@ -49,16 +49,23 @@ namespace Autofac.Aspect.Advice.Impl
             {
                 throw aspectContext.Exception;
             }
-            
+
+            var currentExType = ex.GetType();
             foreach (var _throwAttribute in _aspectThrowingList)
             {
-                if (_throwAttribute.ExceptionType == ex.GetType())
+                if (_throwAttribute.ExceptionType == currentExType)
                 {
                     await _throwAttribute.Throwing(aspectContext,aspectContext.Exception);
+                    if (aspectContext.InvocationContext.ReturnValue != null)
+                    {
+                        //这里提供给异常处理器一个机会是否吃掉异常 返回一个异常处理器包装后的结果
+                        aspectContext.Result = aspectContext.InvocationContext.ReturnValue;
+                        return;
+                    }
                 }
             }
-
-            throw aspectContext.Exception;
+            
+            throw ex;
         }
     }
 

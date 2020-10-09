@@ -52,6 +52,11 @@ namespace Autofac.Aspect.Advice
                 builder.Use(next => async ctx =>
                 {
                     await after.OnInvocation(ctx, next);
+                    //如果有拦截器设置 ReturnValue 那么就直接拿这个作为整个拦截器的方法返回值
+                    if (ctx.InvocationContext.ReturnValue != null)
+                    {
+                        ctx.Result = ctx.InvocationContext.ReturnValue;
+                    }
                 });
             }
             
@@ -61,6 +66,11 @@ namespace Autofac.Aspect.Advice
                 builder.Use(next => async ctx =>
                 {
                     await before.OnInvocation(ctx, next);
+                    //如果有拦截器设置 ReturnValue 那么就直接拿这个作为整个拦截器的方法返回值
+                    if (ctx.InvocationContext.ReturnValue != null)
+                    {
+                        ctx.Result = ctx.InvocationContext.ReturnValue;
+                    }
                 });
             }
             

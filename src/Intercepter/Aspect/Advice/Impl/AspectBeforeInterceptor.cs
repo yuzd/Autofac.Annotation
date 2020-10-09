@@ -1,4 +1,6 @@
+using System.Reflection;
 using System.Threading.Tasks;
+using Autofac.Annotation;
 
 namespace Autofac.Aspect.Advice.Impl
 {
@@ -12,16 +14,33 @@ namespace Autofac.Aspect.Advice.Impl
     /// </summary>
     internal class AspectBeforeInterceptor:IAdvice
     {
-        private readonly AspectBeforeAttribute _beforeAttribute;
-
-        public AspectBeforeInterceptor(AspectBeforeAttribute beforeAttribute)
+        private readonly AspectBefore _beforeAttribute;
+        private readonly (object instance, MethodInfo methodInfo) _pointCutMethod;
+        public AspectBeforeInterceptor(AspectBefore beforeAttribute)
         {
             _beforeAttribute = beforeAttribute;
+        }
+        
+        public AspectBeforeInterceptor((object instance, MethodInfo methodInfo) pointCutMethod)
+        {
+            _pointCutMethod = pointCutMethod;
         }
 
         public async Task OnInvocation(AspectContext aspectContext, AspectDelegate next)
         {
-            await this._beforeAttribute.Before(aspectContext);
+            if (_beforeAttribute != null)
+            {
+                await this._beforeAttribute.Before(aspectContext);
+            }
+            else
+            {
+                var rt = AutoConfigurationHelper.InvokeInstanceMethod(_pointCutMethod.instance, _pointCutMethod.methodInfo, aspectContext.ComponentContext, aspectContext);
+                if (typeof(Task).IsAssignableFrom(_pointCutMethod.methodInfo.ReturnType))
+                {
+                    await ((Task) rt).ConfigureAwait(false);
+                }
+            }
+         
             await next.Invoke(aspectContext);
         }
     }

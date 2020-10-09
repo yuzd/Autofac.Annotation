@@ -1,4 +1,6 @@
+using System.Reflection;
 using System.Threading.Tasks;
+using Autofac.Annotation;
 
 namespace Autofac.Aspect.Advice.Impl
 {
@@ -12,17 +14,46 @@ namespace Autofac.Aspect.Advice.Impl
     /// </summary>
     internal class AspectAfterInterceptor:IAdvice
     {
-        private readonly AspectAfterAttribute _afterAttribute;
+        private readonly AspectAfter _afterAttribute;
 
-        public AspectAfterInterceptor(AspectAfterAttribute afterAttribute)
+        private readonly (object instance,AfterAttribute after , MethodInfo methodInfo) _pointCutMethod;
+        public AspectAfterInterceptor(AspectAfter afterAttribute)
         {
             _afterAttribute = afterAttribute;
         }
 
+        public AspectAfterInterceptor((object instance,AfterAttribute after, MethodInfo methodInfo) pointCutMethod)
+        {
+            _pointCutMethod = pointCutMethod;
+        }
         public async Task OnInvocation(AspectContext aspectContext, AspectDelegate next)
         {
             await next.Invoke(aspectContext);
-            await this._afterAttribute.After(aspectContext,aspectContext.Result);
+            
+           
+            //执行异常了不执行after 去执行Throw
+            if (aspectContext.Exception != null)
+            {
+                return;
+            }
+            
+            
+            if (_afterAttribute != null)
+            {
+                await this._afterAttribute.After(aspectContext,aspectContext.Result);
+            }
+            else
+            {
+                var rt = AutoConfigurationHelper.InvokeInstanceMethod(
+                    _pointCutMethod.instance,
+                    _pointCutMethod.methodInfo,
+                    aspectContext.ComponentContext,
+                    aspectContext,returnValue:aspectContext.InvocationContext.ReturnValue,returnParam:_pointCutMethod.after.Returing);
+                if (typeof(Task).IsAssignableFrom(_pointCutMethod.methodInfo.ReturnType))
+                {
+                    await ((Task) rt).ConfigureAwait(false);
+                }
+            }
         }
     }
 

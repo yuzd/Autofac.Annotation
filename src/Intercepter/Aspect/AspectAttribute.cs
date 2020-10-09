@@ -21,9 +21,14 @@ namespace Autofac.Aspect
     {
 
         /// <summary>
-        /// 排序 越大的先先调用
+        /// 排序 值越低，优先级越高
         /// </summary>
         public int OrderIndex { get; set; }
+        
+        /// <summary>
+        /// 分组名称
+        /// </summary>
+        public string GroupName { get; set; }
 
     }
 
@@ -112,6 +117,67 @@ namespace Autofac.Aspect
         /// 唯一名称
         /// </summary>
         public string Name { get; set; }
+        
+        /// <summary>
+        /// 返回的参数
+        /// </summary>
+        public string Returing { get; set; }
+    }
+    
+    /// <summary>
+    /// 配合pointCut的错误拦截器
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method)]
+    public class ThrowingAttribute : Attribute
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public ThrowingAttribute()
+        {
+            
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public ThrowingAttribute(string name)
+        {
+            this.Name = name;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public ThrowingAttribute(Type exceptionType)
+        {
+            this.ExceptionType = exceptionType;
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        public ThrowingAttribute(string name,Type exceptionType)
+        {
+            this.Name = name;
+            this.ExceptionType = exceptionType;
+        }
+
+        /// <summary>
+        /// 唯一名称
+        /// </summary>
+        public string Name { get; set; }
+        
+        /// <summary>
+        /// 指定拦截的错误类型
+        /// </summary>
+
+        public Type ExceptionType { get; set; }
+        
+        /// <summary>
+        /// 返回异常参数
+        /// </summary>
+        public string Throwing { get; set; }
     }
     
     /// <summary>
@@ -169,10 +235,10 @@ namespace Autofac.Aspect
         /// <summary>
         /// 构造方法
         /// </summary>
-        /// <param name="name">名称 唯一</param>
-        public PointcutAttribute(string name)
+        /// <param name="groupName">名称 唯一</param>
+        public PointcutAttribute(string groupName)
         {
-            this.Name = name;
+            this.GroupName = groupName;
         }
 
         /// <summary>
@@ -186,7 +252,7 @@ namespace Autofac.Aspect
         /// <summary>
         /// 唯一的名称
         /// </summary>
-        public string Name { get; set; } = "";
+        public string GroupName { get; set; } = "";
         /// <summary>
         /// 被创建后执行的方法
         /// </summary>
@@ -195,6 +261,11 @@ namespace Autofac.Aspect
         /// 被Release时执行的方法
         /// </summary>
         public string DestroyMethod { get; set; }
+        
+        /// <summary>
+        /// 值越低，优先级越高
+        /// </summary>
+        public int OrderIndex { get; set; }
 
         /// <summary>
         /// 用于匹配返回类型
@@ -307,42 +378,7 @@ namespace Autofac.Aspect
 
     }
 
-
-
     
-    
-  
-    
-    /// <summary>
-    /// 拦截器上下文
-    /// </summary>
-    public class PointcutContext
-    {
-       
-        /// <summary>
-        /// autofac容器
-        /// </summary>
-        public IComponentContext ComponentContext { get; set; }
-        
-        /// <summary>
-        /// 被代理的原执行方法
-        /// </summary>
-
-        public MethodInfo InvocationMethod { get; set; }
-        
-        
-        /// <summary>
-        /// 错误
-        /// </summary>
-        public Exception Exception { get; set; }
-        
-        /// <summary>
-        /// 回调 只有Arround的时候才有值
-        /// </summary>
-        public Func<Task> Proceed { get; set; }
-        
-    }
-
     /// <summary>
     /// 拦截器
     /// </summary>

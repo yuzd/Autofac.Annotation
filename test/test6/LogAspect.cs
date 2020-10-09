@@ -13,7 +13,7 @@ namespace Autofac.Annotation.Test.test6
     [Pointcut("name5",Class = "TestCacheAop3*",Method="TestInterceptor2")]
     public class LogAspect
     {
-        [Autowired("A3612")]
+        [Autowired("A3612",CircularDependencies = true)]
         public A36 A36 { get; set; }
         
         [Value("aaaaa")]
@@ -58,11 +58,11 @@ namespace Autofac.Annotation.Test.test6
         }
 
         [Around("name3")]
-        public async Task Around(PointcutContext context)
+        public async Task Around(AspectContext context,AspectDelegate _next)
         {
-            Console.WriteLine(context.InvocationMethod.Name + "-->Start");
-            await context.Proceed();
-            Console.WriteLine(context.InvocationMethod.Name + "-->End");
+            Console.WriteLine(context.InvocationContext.MethodInvocationTarget.Name + "-->Start");
+            await _next(context);
+            Console.WriteLine(context.InvocationContext.MethodInvocationTarget.Name + "-->End");
         }
         
         
@@ -98,11 +98,13 @@ namespace Autofac.Annotation.Test.test6
     [Component]
     public class LogAspectTest1
     {
+        //  [Pointcut(Class = "LogAspectTest?",Method = "Test1")]
         public virtual void Test1()
         {
             Console.WriteLine("Test1");
         }
         
+        //不会被切面
         public virtual void Test2()
         {
             Console.WriteLine("Test2");
@@ -165,11 +167,12 @@ namespace Autofac.Annotation.Test.test6
     [Component]
     public class LogAspectB : IAspecB
     {
+        //name2 的切面
         public void Hello(string msg)
         {
             Console.WriteLine(msg);
         }
-        
+        //name2 的切面
         public string Hello2(string msg)
         {
             return msg;

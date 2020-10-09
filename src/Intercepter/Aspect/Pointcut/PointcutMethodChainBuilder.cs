@@ -1,16 +1,18 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
+using Autofac.Annotation;
 using Autofac.Aspect.Advice.Impl;
 using Castle.DynamicProxy;
 
-namespace Autofac.Aspect.Advice
+namespace Autofac.Aspect.Pointcut
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-
-
-    internal class AdviceMethod
+    /// <summary>
+    /// 
+    /// </summary>
+    internal class PointcutMethod
     {
         /// <summary>
         /// 排序
@@ -18,47 +20,61 @@ namespace Autofac.Aspect.Advice
         public int OrderIndex { get; set; }
 
         /// <summary>
-        /// 分组名称
+        /// 切面配置对应的前置方法
         /// </summary>
-        public string GroupName { get; set; }
+        public Tuple<object, MethodInfo> BeforeMethod { get; set; }
 
+        /// <summary>
+        /// 切面配置对应的后置方法
+        /// </summary>
+        public Tuple<object, AfterAttribute, MethodInfo> AfterMethod { get; set; }
 
-        public AspectBefore AspectBefore { get; set; }
-        public AspectAfter AspectAfter { get; set; }
-        public AspectThrowing AspectThrowing { get; set; }
-        public AspectArround AspectArround { get; set; }
+        /// <summary>
+        /// 切面配置对应的环绕方法
+        /// </summary>
+        public Tuple<object, MethodInfo> AroundMethod { get; set; }
+
+        /// <summary>
+        /// 切面配置对应的错误拦截方法
+        /// </summary>
+        public Tuple<object, ThrowingAttribute, MethodInfo> ThrowingMethod { get; set; }
     }
 
-    /// <summary>
-    /// 增强方法调用链
-    /// </summary>
-    internal class AspectAttributeChainBuilder
-    {
-        public List<AdviceMethod> AdviceMethod { get; set; }
 
+    internal class PointcutMethodChainBuilder
+    {
+        public List<PointcutMethod> PointcutMethodChainList { get; set; }
 
         public AspectDelegate BuilderMethodChain<TResult>(AspectContext aspectContext, Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
         {
             AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
 
             var aroundIndex = 0;
-            foreach (var chain in AdviceMethod)
-            {
-                var isLast = aroundIndex == AdviceMethod.Count - 1;
 
-                if (chain.AspectAfter != null)
+            foreach (var chain in PointcutMethodChainList)
+            {
+                var isLast = aroundIndex == PointcutMethodChainList.Count - 1;
+
+                if (chain.AfterMethod != null)
                 {
-                    var after = new AspectAfterInterceptor(chain.AspectAfter);
+                    var after = new AspectAfterInterceptor((chain.AfterMethod.Item1, chain.AfterMethod.Item2, chain.AfterMethod.Item3));
                     //After 后加进去先执行
                     builder.Use(next => async ctx => await after.OnInvocation(ctx, next));
                 }
 
-                if (chain.AspectArround != null)
+                if (chain.AroundMethod != null)
                 {
                     //Arround 先加进去先执行 后续执行权脚在了Arround的实际运行方法
                     builder.Use(next => async ctx =>
                     {
-                        await chain.AspectArround.OnInvocation(ctx, next);
+                        var rt = AutoConfigurationHelper.InvokeInstanceMethod(chain.AroundMethod.Item1, chain.AroundMethod.Item2,
+                            aspectContext.ComponentContext,
+                            aspectContext, next);
+                        if (typeof(Task).IsAssignableFrom(chain.AroundMethod.Item2.ReturnType))
+                        {
+                            await ((Task) rt).ConfigureAwait(false);
+                        }
+
                         //如果有拦截器设置 ReturnValue 那么就直接拿这个作为整个拦截器的方法返回值
                         if (ctx.InvocationContext.ReturnValue != null)
                         {
@@ -67,18 +83,17 @@ namespace Autofac.Aspect.Advice
                     });
                 }
                 
-                var haveThrowingMethod = chain.AspectThrowing != null;
-
+                var haveThrowingMethod = chain.ThrowingMethod != null;
                 if (haveThrowingMethod)
                 {
-                    var aspectThrowingInterceptor = new AspectThrowingInterceptor(chain.AspectThrowing, isLast);
+                    var aspectThrowingInterceptor = new AspectThrowingInterceptor(chain.ThrowingMethod, isLast);
                     builder.Use(next => async ctx => { await aspectThrowingInterceptor.OnInvocation(ctx, next); });
                 }
 
-                if (chain.AspectBefore != null)
+                if (chain.BeforeMethod != null)
                 {
                     //Before先加进去先执行
-                    var before = new AspectBeforeInterceptor(chain.AspectBefore);
+                    var before = new AspectBeforeInterceptor((chain.BeforeMethod.Item1, chain.BeforeMethod.Item2));
                     builder.Use(next => async ctx => await before.OnInvocation(ctx, next));
                 }
 
@@ -114,24 +129,31 @@ namespace Autofac.Aspect.Advice
             AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
 
             var aroundIndex = 0;
-            foreach (var chain in AdviceMethod)
-            {
-                var isLast = aroundIndex == AdviceMethod.Count - 1;
 
-                // var reverseAfter = AdviceMethod.Count == 1? chain.AspectAfter:  AdviceMethod[AdviceMethod.Count - 1 - aroundIndex].AspectAfter;
-                if (chain.AspectAfter != null)
+            foreach (var chain in PointcutMethodChainList)
+            {
+                var isLast = aroundIndex == PointcutMethodChainList.Count - 1;
+
+                if (chain.AfterMethod != null)
                 {
-                    var after = new AspectAfterInterceptor(chain.AspectAfter);
+                    var after = new AspectAfterInterceptor((chain.AfterMethod.Item1, chain.AfterMethod.Item2, chain.AfterMethod.Item3));
                     //After 后加进去先执行
                     builder.Use(next => async ctx => await after.OnInvocation(ctx, next));
                 }
 
-                if (chain.AspectArround != null)
+                if (chain.AroundMethod != null)
                 {
                     //Arround 先加进去先执行 后续执行权脚在了Arround的实际运行方法
                     builder.Use(next => async ctx =>
                     {
-                        await chain.AspectArround.OnInvocation(ctx, next);
+                        var rt = AutoConfigurationHelper.InvokeInstanceMethod(chain.AroundMethod.Item1, chain.AroundMethod.Item2,
+                            aspectContext.ComponentContext,
+                            aspectContext, next);
+                        if (typeof(Task).IsAssignableFrom(chain.AroundMethod.Item2.ReturnType))
+                        {
+                            await ((Task) rt).ConfigureAwait(false);
+                        }
+
                         //如果有拦截器设置 ReturnValue 那么就直接拿这个作为整个拦截器的方法返回值
                         if (ctx.InvocationContext.ReturnValue != null)
                         {
@@ -139,19 +161,18 @@ namespace Autofac.Aspect.Advice
                         }
                     });
                 }
-                
-                var haveThrowingMethod = chain.AspectThrowing != null;
 
+                var haveThrowingMethod = chain.ThrowingMethod != null;
                 if (haveThrowingMethod)
                 {
-                    var aspectThrowingInterceptor = new AspectThrowingInterceptor(chain.AspectThrowing, isLast);
+                    var aspectThrowingInterceptor = new AspectThrowingInterceptor(chain.ThrowingMethod, isLast);
                     builder.Use(next => async ctx => { await aspectThrowingInterceptor.OnInvocation(ctx, next); });
                 }
-
-                if (chain.AspectBefore != null)
+                
+                if (chain.BeforeMethod != null)
                 {
                     //Before先加进去先执行
-                    var before = new AspectBeforeInterceptor(chain.AspectBefore);
+                    var before = new AspectBeforeInterceptor((chain.BeforeMethod.Item1, chain.BeforeMethod.Item2));
                     builder.Use(next => async ctx => await before.OnInvocation(ctx, next));
                 }
 
@@ -176,6 +197,7 @@ namespace Autofac.Aspect.Advice
 
                 aroundIndex++;
             }
+
 
             var aspectfunc = builder.Build();
             return aspectfunc;

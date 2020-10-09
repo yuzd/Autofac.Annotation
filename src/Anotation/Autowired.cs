@@ -167,10 +167,19 @@ namespace Autofac.Annotation
 
             if (Parameters != null && Parameters.Any()  && ((Parameters.First() is AutowiredParmeterStack AutowiredParmeter)))
             {
+                if (!AutowiredParmeter.AllowCircularDependencies && this.AllowCircularDependencies.HasValue && this.AllowCircularDependencies.Value)
+                {
+                    AutowiredParmeter.AllowCircularDependencies = true;
+                }
+                
                 //先检查是否已注册过
                 if (AutowiredParmeter.CircularDetected(propertyService, out returnObj))
                 {
-                    if (this.AllowCircularDependencies == null || !this.AllowCircularDependencies.Value)
+                    if (AutowiredParmeter.AllowCircularDependencies)
+                    {
+                        
+                    }
+                    else if (this.AllowCircularDependencies == null || !this.AllowCircularDependencies.Value)
                     {
                         throw new DependencyResolutionException(AutowiredParmeter.GetCircualrChains(propertyService));
                     }
@@ -184,8 +193,11 @@ namespace Autofac.Annotation
                     propertyService = new KeyedService(fieldOrPropertyName, memberType);
                     if (AutowiredParmeter.CircularDetected(propertyService, out returnObj))
                     {
-                        AutowiredParmeter.Dispose();
-                        if (this.AllowCircularDependencies == null || !this.AllowCircularDependencies.Value)
+                        if (AutowiredParmeter.AllowCircularDependencies)
+                        {
+                        
+                        }
+                        else if (this.AllowCircularDependencies == null || !this.AllowCircularDependencies.Value)
                         {
                             throw new DependencyResolutionException(AutowiredParmeter.GetCircualrChains(propertyService));
                         }

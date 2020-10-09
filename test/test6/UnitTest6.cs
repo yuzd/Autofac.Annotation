@@ -17,7 +17,7 @@ namespace Autofac.Annotation.Test.test6
             var container = builder.Build();
                 
             var a1 = container.Resolve<LogAspectTest1>();
-            var a2 = container.Resolve<LogAspectTest1>();
+            var a2 = container.Resolve<LogAspectTest2>();
             var a3 = container.Resolve<LogAspectT1est>();
            
             //被拦截

@@ -132,7 +132,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// IValue工厂
     /// </summary>
-    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true)]
+    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true,NotUseProxy = true)]
     public class ObjectBeanFactory
     {
         private readonly IComponentContext _context;

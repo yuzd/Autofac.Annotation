@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Autofac.Annotation.Util;
 using Autofac.Aspect;
+using Autofac.Aspect.Pointcut;
 using Autofac.Builder;
 using Autofac.Core;
 using Autofac.Core.Activators.ProvidedInstance;
@@ -95,59 +96,12 @@ namespace Autofac.Annotation
                
             }
         }
-        
-        
-        
-        // /// <summary>
-        // /// 执行自动注册
-        // /// </summary>
-        // /// <param name="context"></param>
-        // internal void Start(IComponentContext context)
-        // {
-        //     lock (this)
-        //     {
-        //         context.TryResolve<AutoConfigurationList>(out var autoConfigurationList);
-        //         if (autoConfigurationList == null || autoConfigurationList.AutoConfigurationDetailList == null || !autoConfigurationList.AutoConfigurationDetailList.Any()) return;
-        //         foreach (var autoConfigurationDetail in autoConfigurationList.AutoConfigurationDetailList)
-        //         {
-        //             context.TryResolve(autoConfigurationDetail.AutoConfigurationClassType, out var autoConfigurationInstance);
-        //             if (autoConfigurationInstance == null) continue;
-        //
-        //
-        //             foreach (var beanMethod in autoConfigurationDetail.BeanMethodInfoList)
-        //             {
-        //                 if (beanMethod.Item2.IsVirtual)
-        //                 {
-        //                     throw new InvalidOperationException(
-        //                         $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` can not be virtual!");
-        //                 }
-        //
-        //                 if (!ProxyUtil.IsAccessible(beanMethod.Item2.ReturnType))
-        //                 {
-        //                     throw new InvalidOperationException(
-        //                         $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` returnType is not accessible!");
-        //                 }
-        //                 if (beanMethod.Item2.ReturnType.IsValueType || beanMethod.Item2.ReturnType.IsEnum)
-        //                 {
-        //                     throw new InvalidOperationException(
-        //                         $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` returnType is invalid!");
-        //                 }
-        //
-        //                 var result = AutoConfigurationHelper.InvokeInstanceMethod(context, autoConfigurationDetail, autoConfigurationInstance, beanMethod.Item2);
-        //                 if (result == null) continue;
-        //                 AutoConfigurationHelper.RegisterInstance(context.ComponentRegistry, beanMethod.Item2.ReturnType,
-        //                     result, beanMethod.Item1.Key).CreateRegistration();
-        //             }
-        //
-        //         }
-        //     }
-        // }
     }
 
 
     internal static class AutoConfigurationHelper
     {
-        public static object InvokeInstanceMethod(object instance, MethodInfo methodInfo,IComponentContext context,PointcutContext invocation = null)
+        public static object InvokeInstanceMethod(object instance, MethodInfo methodInfo,IComponentContext context,AspectContext invocation = null,AspectDelegate _next = null,object returnValue = null,string returnParam = null)
         {
             try
             {
@@ -162,9 +116,21 @@ namespace Autofac.Annotation
                 List<object> parameterObj = new List<object>();
                 foreach (var parameter in parameters)
                 {
-                    if (invocation != null && parameter.ParameterType == typeof(PointcutContext))
+                    if (invocation != null && parameter.ParameterType == typeof(AspectContext))
                     {
                         parameterObj.Add(invocation);
+                        continue;
+                    }
+                    if (_next != null && parameter.ParameterType == typeof(AspectDelegate))
+                    {
+                        parameterObj.Add(_next);
+                        continue;
+                    }
+
+                    if (returnValue != null && !string.IsNullOrWhiteSpace(returnParam) && parameter.Name.Equals(returnParam))
+                    {
+                        //如果指定的类型会出错
+                        parameterObj.Add(returnValue);
                         continue;
                     }
                     
@@ -207,8 +173,9 @@ namespace Autofac.Annotation
                     }
 
 
-
-                    parameterObj.Add(context.Resolve(parameter.ParameterType));
+                    //如果拿不到就默认
+                    context.TryResolve(parameter.ParameterType, out var obj);
+                    parameterObj.Add(obj);
 
                 }
                 
@@ -294,7 +261,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// AutoConfiguration的类代理
     /// </summary>
-    [Component(typeof(AutoConfigurationIntercept))]
+    [Component(typeof(AutoConfigurationIntercept),NotUseProxy = true)]
     public class AutoConfigurationIntercept: AsyncInterceptor
     {
         /// <summary>
@@ -337,6 +304,7 @@ namespace Autofac.Annotation
         }
         
     }
+    
     /// <summary>
     /// AutoConfiguration装配集合数据源
     /// </summary>
@@ -350,33 +318,7 @@ namespace Autofac.Annotation
 
     }
     
-    /// <summary>
-    /// PointCut装配集合数据源
-    /// </summary>
-    public class PointCutConfigurationList
-    {
-
-        /// <summary>
-        /// PointCut装配集合数据源
-        /// </summary>
-        public List<PointcutConfigurationInfo> PointcutConfigurationInfoList { get; set; }
-        
-        /// <summary>
-        /// 对应的method目标集合
-        /// </summary>
-        public ConcurrentDictionary<MethodInfo,PointcutConfigurationInfo> PointcutTargetInfoList { get; set; }
-        
-        /// <summary>
-        /// 针对动态泛型类的method目标集合
-        /// </summary>
-        public ConcurrentDictionary<string,PointcutConfigurationInfo> DynamicPointcutTargetInfoList { get; set; }
-        
-        /// <summary>
-        /// 对应的class目标集合
-        /// </summary>
-        public ConcurrentDictionary<Type,bool> PointcutTypeInfoList { get; set; }
-
-    }
+    
 
     /// <summary>
     /// AutoConfiguration装配集合数据源

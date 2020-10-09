@@ -10,7 +10,7 @@ namespace Autofac.Aspect.Advice
     /// <summary>
     /// 环绕通知
     /// </summary>
-    public abstract class AspectArroundAttribute : AspectInvokeAttribute
+    public abstract class AspectArround : AspectInvokeAttribute
     {
 
         /// <summary>

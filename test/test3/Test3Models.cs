@@ -131,15 +131,19 @@ namespace Autofac.Configuration.Test.test3
     public class TestModel9
     {
 
+        public static List<string> testResult = new List<string>();
+        
         [TestHelloBefor]
         public virtual void Say()
         {
+            testResult.Add("Say");
             Console.WriteLine("say");
         }
 
         [TestHelloAfter]
         public virtual void SayAfter()
         {
+            testResult.Add("SayAfter");
             Console.WriteLine("SayAfter");
         }
 
@@ -150,11 +154,12 @@ namespace Autofac.Configuration.Test.test3
     [Aspect]
     public class TestModel911
     {
-
+        public static List<string> testResult = new List<string>();
         [TestHelloBefor]
-        [TestHelloAfterThrowing]
+        [TestHelloAfterThrowing(typeof(ArgumentException))]//这个进不去 因为 指定的异常 和 抛出去的异常类型不一致
         public virtual void Say()
-        {
+        {   
+            testResult.Add("Say");
             Console.WriteLine("say");
             throw new Exception("ddd");
         }
@@ -163,35 +168,64 @@ namespace Autofac.Configuration.Test.test3
         [TestHelloAfterThrowing]
         public virtual void SayAfter()
         {
+           
+            testResult.Add("SayAfter");
             Console.WriteLine("SayAfter");
-            throw new Exception("ddd");
+            throw new ArgumentException("ddd");
         }
 
     }
-    public class TestHelloBefor : AspectBeforeAttribute
+    public class TestHelloBefor : AspectBefore
     {
         public override Task Before(AspectContext aspectContext)
         {
+            TestModel91.testResult.Add("TestHelloBefor");
+            TestModel911.testResult.Add("TestHelloBefor");
+            TestModel9.testResult.Add("TestHelloBefor");
             var aa1 = aspectContext.ComponentContext.Resolve<TestModel81>();
             Console.WriteLine("TestHelloBefor");
             return Task.CompletedTask;
         }
     }
 
-    public class TestHelloAfter : AspectAfterAttribute
+    public class TestHelloAfter : AspectAfter
     {
         public override Task After(AspectContext aspectContext, object result)
         {
+            TestModel91.testResult.Add("TestHelloAfter");
+            TestModel911.testResult.Add("TestHelloAfter");
+            TestModel9.testResult.Add("TestHelloAfter");
             Console.WriteLine("TestHelloAfter");
             return Task.CompletedTask;
         }
     }
 
-    public class TestHelloAfterThrowing : AspectThrowingAttribute
+    public class TestHelloAfterThrowing : AspectThrowing
     {
-        public override Task Throwing<Exception>(AspectContext aspectContext, Exception exception)
+        /// <summary>
+        /// 
+        /// </summary>
+        public TestHelloAfterThrowing()
         {
-            Console.WriteLine(aspectContext.InvocationContext.MethodInvocationTarget.Name+":"+ exception.Message);
+            
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="e"></param>
+        public TestHelloAfterThrowing(Type e)
+        {
+            ExceptionType = e;
+        }
+        
+        
+        public override Type ExceptionType { get; } 
+
+        public override Task Throwing(AspectContext aspectContext, Exception exception)
+        {
+            TestModel911.testResult.Add("TestHelloAfterThrowing");
+            var ex = exception as ArgumentException;
+            Console.WriteLine(ex.Message);
             return Task.CompletedTask;
         }
     }
@@ -200,12 +234,14 @@ namespace Autofac.Configuration.Test.test3
     [Aspect]
     public class TestModel91
     {
-
+        public static List<string> testResult = new List<string>();
+        
         [TestHelloBefor]
         public virtual async Task Say()
         {
             Console.WriteLine("say");
             await Task.Delay(1000);
+            testResult.Add("Say");
         }
 
         [TestHelloAfter]
@@ -213,6 +249,7 @@ namespace Autofac.Configuration.Test.test3
         {
             Console.WriteLine("SayAfter");
             await Task.Delay(1000);
+            testResult.Add("SayAfter");
             return "SayAfter";
         }
 
@@ -278,8 +315,8 @@ namespace Autofac.Configuration.Test.test3
     {
         public string Name { get; set; } = "TestModel101";
 
-        [StopWatchInterceptor]
-        [TransactionInterceptor]
+        [StopWatchInterceptor(GroupName = "a")]
+        [TransactionInterceptor(GroupName = "b")]
         public virtual void TestInterceptor()
         {
             Console.WriteLine("TestInterceptor");
@@ -290,8 +327,8 @@ namespace Autofac.Configuration.Test.test3
             Console.WriteLine("TestNoInterceptor");
         }
         
-        [StopWatchInterceptor]
-        [TransactionInterceptor]
+        [StopWatchInterceptor(GroupName = "a")]
+        [TransactionInterceptor(GroupName = "b")]
         public virtual async Task<string> TestInterceptor2()
         {
             Task.Delay(1000);   
@@ -300,7 +337,7 @@ namespace Autofac.Configuration.Test.test3
         }
     }
 
-    public class StopWatchInterceptor : AspectArroundAttribute
+    public class StopWatchInterceptor : AspectArround
     {
         public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
         {
@@ -320,7 +357,7 @@ namespace Autofac.Configuration.Test.test3
     }
     
     
-    public class TransactionInterceptor : AspectArroundAttribute
+    public class TransactionInterceptor : AspectArround
     {
         public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
         {
@@ -363,11 +400,11 @@ namespace Autofac.Configuration.Test.test3
 
     [Component]
     [Aspect(InterceptorType.Interface)]
-    [StopWatchInterceptor(OrderIndex = 100)]
+    [StopWatchInterceptor(GroupName = "a2",OrderIndex = 100)]
     public class AopModel1 : BaseRepository<AopClass>, IAopModel
     {
-        [StopWatchInterceptor(OrderIndex = 101)]
-        [TransactionInterceptor]
+        [StopWatchInterceptor(GroupName = "a3",OrderIndex = 101)]
+        [TransactionInterceptor(GroupName = "a1")]
         public void SayHello()
         {
             Console.WriteLine("hello");
@@ -379,6 +416,142 @@ namespace Autofac.Configuration.Test.test3
     {
         [Autowired]
         public IAopModel AopModel1 { get; set; }
+    }
+    public class AdviceArroundTest1:AspectArround
+    {
+        public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
+        {
+            AdviseModel1.testModel.Add("Arround1-start");
+            await _next(aspectContext);
+            AdviseModel1.testModel.Add("Arround1-end");
+        }
+    }
+
+    public class AdviceArroundTest2:AspectArround
+    {
+        public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
+        {
+            AdviseModel1.testModel.Add("Arround2-start");
+            await _next(aspectContext);
+            AdviseModel1.testModel.Add("Arround2-end");
+        }
+    }
+    public class AdviceBeforeTest1:AspectBefore
+    {
+        public override Task Before(AspectContext aspectContext)
+        {
+            AdviseModel1.testModel.Add("Before1");
+            Console.WriteLine("AdviceBeforeTest1");
+            return Task.CompletedTask;
+        }
+    }
+    public class AdviceAfterTest1:AspectAfter
+    {
+
+        public override Task After(AspectContext aspectContext, object result)
+        {
+            AdviseModel1.testModel.Add("After1");
+            Console.WriteLine("AdviceAfterTest1");
+            return Task.CompletedTask;
+        }
+    }
+
+    public class AdviceBeforeTest2:AspectBefore
+    {
+        public override Task Before(AspectContext aspectContext)
+        {
+            AdviseModel1.testModel.Add("Before2");
+            Console.WriteLine("AdviceBeforeTest2");
+            return Task.CompletedTask;
+        }
+    }
+    public class AdviceAfterTest2:AspectAfter
+    {
+
+        public override Task After(AspectContext aspectContext, object result)
+        {
+            AdviseModel1.testModel.Add("After2");
+            Console.WriteLine("AdviceAfterTest2");
+            return Task.CompletedTask;
+        }
+    }
+    public class AdviceExceptionTest1:AspectThrowing
+    {
+        public override Task Throwing(AspectContext aspectContext, Exception exception)
+        {
+            AdviseModel1.testModel.Add("throw1");
+            Console.WriteLine(exception.Message);
+            return Task.CompletedTask;
+        }
+    }
+    public class AdviceExceptionTest2:AspectThrowing
+    {
+        public override Task Throwing(AspectContext aspectContext, Exception exception)
+        {
+            AdviseModel1.testModel.Add("throw2");
+            Console.WriteLine(exception.Message);
+            return Task.CompletedTask;
+        }
+    }
+    
+    [Component]
+    [Aspect]
+    public class AdviseModel1
+    {
+        public static List<string> testModel = new List<string>();
+        
+        [AdviceArroundTest1]
+        [AdviceBeforeTest1]
+        [AdviceAfterTest1]
+        [AdviceExceptionTest1]
+        public virtual void TestArroundBeforeAfter()
+        {
+            AdviseModel1.testModel.Add("TestArroundBeforeAfter");
+        }
+        
+        [AdviceArroundTest1]
+        [AdviceBeforeTest1]
+        [AdviceAfterTest1]
+        [AdviceExceptionTest1]
+        public virtual void TestArroundBeforeThrows()
+        {
+            AdviseModel1.testModel.Add("TestArroundBeforeThrows");
+            throw new Exception("dddddddddd");
+        }
+        
+        
+        [AdviceBeforeTest1(GroupName = "a1")]
+        [AdviceBeforeTest2(GroupName = "a2")]
+        public virtual void TestMuiltBefore()
+        {
+            AdviseModel1.testModel.Add("TestMuiltBefore");
+        }
+        
+        [AdviceAfterTest1(GroupName = "a1")]
+        [AdviceAfterTest2(GroupName = "a2")]
+        public virtual void TestMuiltAfter()
+        {
+            AdviseModel1.testModel.Add("TestMuiltAfter");
+        }
+        
+        [AdviceExceptionTest1(GroupName = "a1")]
+        [AdviceExceptionTest2(GroupName = "a2")]
+        public virtual void TestMuiltThrows()
+        {
+            AdviseModel1.testModel.Add("TestMuiltThrows");
+            throw new Exception("dddddddddd");
+        }
+        
+        [AdviceArroundTest1(GroupName = "a1")]
+        [AdviceAfterTest1(GroupName = "a1")]
+        [AdviceBeforeTest1(GroupName = "a1")]
+        [AdviceArroundTest2(GroupName = "a2")]
+        [AdviceBeforeTest2(GroupName = "a2")]
+        [AdviceAfterTest2(GroupName = "a2")]
+        public virtual void TestMuiltBeforeAfter()
+        {
+            AdviseModel1.testModel.Add("TestMuiltBeforeAfter");
+        }
     }
     
 }

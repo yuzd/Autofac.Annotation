@@ -10,7 +10,7 @@ namespace Autofac.Aspect.Advice
     /// <summary>
     /// 后置通知
     /// </summary>
-    public abstract class AspectAfterAttribute : AspectInvokeAttribute
+    public abstract class AspectAfter : AspectInvokeAttribute
     {
         /// <summary>
         /// 后置执行

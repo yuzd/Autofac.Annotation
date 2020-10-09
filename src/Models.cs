@@ -123,6 +123,11 @@ namespace Autofac.Annotation
         /// </summary>
         public int OrderIndex { get; set; }
         
+        /// <summary>
+        /// 不允许被切面扫描到
+        /// </summary>
+        internal bool NotUseProxy { get; set; }
+        
          
         /// <summary>
         /// 当前注册的类型是否是动态泛型 https://github.com/yuzd/Autofac.Annotation/issues/13

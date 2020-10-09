@@ -19,6 +19,10 @@ namespace Autofac.Annotation
         /// </summary>
         private readonly SegmentedStack<Tuple<Service,object>> chainList = new SegmentedStack<Tuple<Service,object>>();
 
+        /// <summary>
+        /// 在autowire的过程中 父节点设置了开启循环引用 那么在引用到子节点的时候 默认是设置了 循环引用
+        /// </summary>
+        public bool AllowCircularDependencies { get; set; }
 
         /// <summary>
         /// 添加

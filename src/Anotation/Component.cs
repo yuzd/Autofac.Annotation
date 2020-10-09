@@ -65,9 +65,16 @@ namespace Autofac.Annotation
         /// 注册单个的key
         /// </summary>
         public string Key { get;}
+        
+        /// <summary>
+        /// 是否不允许被代理 比如Pointcut的类就不能被代理
+        /// </summary>
+        public bool NotUseProxy { get; set; }
+
 
         /// <summary>
         /// 自定义注册顺序 越小越先注册 但是注意 相同的类型谁最后注册就会拿resolve谁
+        /// 因为autofac是允许重复注册的  以最后一次注册为准
         /// </summary>
         public int OrderIndex { get; set; }
 

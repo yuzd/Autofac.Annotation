@@ -10,7 +10,7 @@ namespace Autofac.Aspect.Advice
     /// <summary>
     /// 前置通知
     /// </summary>
-    public abstract class AspectBeforeAttribute : AspectInvokeAttribute
+    public abstract class AspectBefore : AspectInvokeAttribute
     {
 
         /// <summary>

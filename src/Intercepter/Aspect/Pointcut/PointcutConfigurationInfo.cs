@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Autofac.Annotation;
 
 namespace Autofac.Aspect.Pointcut
 {
@@ -18,7 +19,7 @@ namespace Autofac.Aspect.Pointcut
         /// <summary>
         /// 切面配置信息
         /// </summary>
-        public PointcutAttribute Pointcut { get; set; }
+        public Annotation.Pointcut Pointcut { get; set; }
         
         /// <summary>
         /// 分组name
@@ -33,7 +34,7 @@ namespace Autofac.Aspect.Pointcut
         /// <summary>
         /// 切面配置对应的后置方法
         /// </summary>
-        public Tuple<AfterAttribute,MethodInfo> AfterMethod { get; set; }
+        public Tuple<After,MethodInfo> AfterMethod { get; set; }
         
         /// <summary>
         /// 切面配置对应的环绕方法
@@ -43,7 +44,7 @@ namespace Autofac.Aspect.Pointcut
         /// <summary>
         /// 切面配置对应的错误拦截方法
         /// </summary>
-        public Tuple<ThrowingAttribute,MethodInfo> ThrowingMethod { get; set; }
+        public Tuple<Throws,MethodInfo> ThrowingMethod { get; set; }
 
     }
 }

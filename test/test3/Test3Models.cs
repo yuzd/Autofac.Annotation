@@ -127,7 +127,7 @@ namespace Autofac.Configuration.Test.test3
     }
 
     [Component]
-    [Aspect]
+    [Annotation.Aspect]
     public class TestModel9
     {
 
@@ -151,7 +151,7 @@ namespace Autofac.Configuration.Test.test3
     }
 
     [Component]
-    [Aspect]
+    [Annotation.Aspect]
     public class TestModel911
     {
         public static List<string> testResult = new List<string>();
@@ -200,7 +200,7 @@ namespace Autofac.Configuration.Test.test3
         }
     }
 
-    public class TestHelloAfterThrowing : AspectThrowing
+    public class TestHelloAfterThrowing : AspectThrows
     {
         /// <summary>
         /// 
@@ -231,7 +231,7 @@ namespace Autofac.Configuration.Test.test3
     }
 
     [Component]
-    [Aspect]
+    [Annotation.Aspect]
     public class TestModel91
     {
         public static List<string> testResult = new List<string>();
@@ -257,7 +257,7 @@ namespace Autofac.Configuration.Test.test3
     }
 
     [Component]
-    [Aspect]
+    [Annotation.Aspect]
     public class TestModel912
     {
 
@@ -281,7 +281,7 @@ namespace Autofac.Configuration.Test.test3
     }
 
     //[Component(Interceptor = typeof(Log))]
-    [Aspect]
+    [Annotation.Aspect]
     public class TestModel10
     {
 
@@ -310,7 +310,7 @@ namespace Autofac.Configuration.Test.test3
     }
 
     [Component]
-    [Aspect]
+    [Annotation.Aspect]
     public class TestModel101
     {
         public string Name { get; set; } = "TestModel101";
@@ -399,7 +399,7 @@ namespace Autofac.Configuration.Test.test3
     }
 
     [Component]
-    [Aspect(InterceptorType.Interface)]
+    [Annotation.Aspect(InterceptorType.Interface)]
     [StopWatchInterceptor(GroupName = "a2",OrderIndex = 100)]
     public class AopModel1 : BaseRepository<AopClass>, IAopModel
     {
@@ -475,7 +475,7 @@ namespace Autofac.Configuration.Test.test3
             return Task.CompletedTask;
         }
     }
-    public class AdviceExceptionTest1:AspectThrowing
+    public class AdviceExceptionTest1:AspectThrows
     {
         public override Task Throwing(AspectContext aspectContext, Exception exception)
         {
@@ -484,7 +484,7 @@ namespace Autofac.Configuration.Test.test3
             return Task.CompletedTask;
         }
     }
-    public class AdviceExceptionTest2:AspectThrowing
+    public class AdviceExceptionTest2:AspectThrows
     {
         public override Task Throwing(AspectContext aspectContext, Exception exception)
         {
@@ -495,7 +495,7 @@ namespace Autofac.Configuration.Test.test3
     }
     
     [Component]
-    [Aspect]
+    [Annotation.Aspect]
     public class AdviseModel1
     {
         public static List<string> testModel = new List<string>();

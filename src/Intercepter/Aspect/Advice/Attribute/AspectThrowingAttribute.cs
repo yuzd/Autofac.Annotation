@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Autofac.Annotation;
 
 namespace Autofac.Aspect.Advice
 {
@@ -10,7 +11,7 @@ namespace Autofac.Aspect.Advice
     /// <summary>
     /// 异常通知
     /// </summary>
-    public abstract class AspectThrowing : AspectInvokeAttribute
+    public abstract class AspectThrows : AspectInvokeAttribute
     {
       
         /// <summary>

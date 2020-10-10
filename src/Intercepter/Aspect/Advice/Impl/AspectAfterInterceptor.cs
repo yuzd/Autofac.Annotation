@@ -16,13 +16,13 @@ namespace Autofac.Aspect.Advice.Impl
     {
         private readonly AspectAfter _afterAttribute;
 
-        private readonly (object instance,AfterAttribute after , MethodInfo methodInfo) _pointCutMethod;
+        private readonly (object instance,After after , MethodInfo methodInfo) _pointCutMethod;
         public AspectAfterInterceptor(AspectAfter afterAttribute)
         {
             _afterAttribute = afterAttribute;
         }
 
-        public AspectAfterInterceptor((object instance,AfterAttribute after, MethodInfo methodInfo) pointCutMethod)
+        public AspectAfterInterceptor((object instance,After after, MethodInfo methodInfo) pointCutMethod)
         {
             _pointCutMethod = pointCutMethod;
         }

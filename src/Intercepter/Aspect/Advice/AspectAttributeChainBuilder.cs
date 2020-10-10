@@ -25,7 +25,7 @@ namespace Autofac.Aspect.Advice
 
         public AspectBefore AspectBefore { get; set; }
         public AspectAfter AspectAfter { get; set; }
-        public AspectThrowing AspectThrowing { get; set; }
+        public AspectThrows AspectThrowing { get; set; }
         public AspectArround AspectArround { get; set; }
     }
 

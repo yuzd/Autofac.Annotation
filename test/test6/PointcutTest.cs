@@ -35,7 +35,7 @@ namespace Autofac.Annotation.Test.test6
             Pointcut2Controller.testResult.Add("PointcutTest1.After");
         }
         
-        [Throwing(Throwing = "ex1")]
+        [Throws(Throwing = "ex1")]
         public void Throwing(Exception ex1)
         {
             Pointcut1Controller.testResult.Add("PointcutTest1.Throwing");
@@ -73,7 +73,7 @@ namespace Autofac.Annotation.Test.test6
             Pointcut2Controller.testResult.Add("PointcutTest2.After");
         }
         
-        [Throwing(Throwing = "ex")]
+        [Throws(Throwing = "ex")]
         public void Throwing(Exception ex)
         {
             Pointcut1Controller.testResult.Add("PointcutTest2.Throwing");

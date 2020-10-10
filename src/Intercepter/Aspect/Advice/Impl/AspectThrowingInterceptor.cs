@@ -14,17 +14,17 @@ namespace Autofac.Aspect.Advice.Impl
     /// </summary>
     internal class AspectThrowingInterceptor : IAdvice
     {
-        private readonly AspectThrowing _aspectThrowing;
-        private readonly Tuple<object, ThrowingAttribute, MethodInfo> _pointcutThrowin;
+        private readonly AspectThrows _aspectThrowing;
+        private readonly Tuple<object, Throws, MethodInfo> _pointcutThrowin;
         private readonly bool _isLast;
 
-        public AspectThrowingInterceptor(AspectThrowing throwAttribute,bool isLast)
+        public AspectThrowingInterceptor(AspectThrows throwAttribute,bool isLast)
         {
             _aspectThrowing = throwAttribute;
             _isLast = isLast;
         }
 
-        public AspectThrowingInterceptor(Tuple<object, ThrowingAttribute, MethodInfo> throwAttribute,bool isLast)
+        public AspectThrowingInterceptor(Tuple<object, Throws, MethodInfo> throwAttribute,bool isLast)
         {
             _pointcutThrowin = throwAttribute;
             _isLast = isLast;

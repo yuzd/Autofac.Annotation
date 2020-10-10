@@ -54,7 +54,7 @@ namespace Autofac.Aspect.Pointcut
                     if (pointcut.AfterMethod != null)
                     {
                         pointCutMethod.AfterMethod =
-                            new Tuple<object, AfterAttribute, MethodInfo>(instance, pointcut.AfterMethod.Item1, pointcut.AfterMethod.Item2);
+                            new Tuple<object, After, MethodInfo>(instance, pointcut.AfterMethod.Item1, pointcut.AfterMethod.Item2);
                     }
 
                     if (pointcut.AroundMethod != null)
@@ -65,7 +65,7 @@ namespace Autofac.Aspect.Pointcut
                     if (pointcut.ThrowingMethod != null)
                     {
                         pointCutMethod.ThrowingMethod =
-                            new Tuple<object, ThrowingAttribute, MethodInfo>(instance, pointcut.ThrowingMethod.Item1, pointcut.ThrowingMethod.Item2);
+                            new Tuple<object, Throws, MethodInfo>(instance, pointcut.ThrowingMethod.Item1, pointcut.ThrowingMethod.Item2);
                     }
                 }
 
@@ -102,7 +102,7 @@ namespace Autofac.Aspect.Pointcut
                     if (pointcut.AfterMethod != null)
                     {
                         pointCutMethod.AfterMethod =
-                            new Tuple<object, AfterAttribute, MethodInfo>(instance, pointcut.AfterMethod.Item1, pointcut.AfterMethod.Item2);
+                            new Tuple<object, After, MethodInfo>(instance, pointcut.AfterMethod.Item1, pointcut.AfterMethod.Item2);
                     }
 
                     if (pointcut.AroundMethod != null)
@@ -113,7 +113,7 @@ namespace Autofac.Aspect.Pointcut
                     if (pointcut.ThrowingMethod != null)
                     {
                         pointCutMethod.ThrowingMethod =
-                            new Tuple<object, ThrowingAttribute, MethodInfo>(instance, pointcut.ThrowingMethod.Item1, pointcut.ThrowingMethod.Item2);
+                            new Tuple<object, Throws, MethodInfo>(instance, pointcut.ThrowingMethod.Item1, pointcut.ThrowingMethod.Item2);
                     }
                 }
 

@@ -10,7 +10,7 @@ using Castle.DynamicProxy;
 namespace Autofac.Aspect.Pointcut
 {
     /// <summary>
-    /// 
+    ///  构建拦截器链的方法
     /// </summary>
     internal class PointcutMethod
     {
@@ -27,7 +27,7 @@ namespace Autofac.Aspect.Pointcut
         /// <summary>
         /// 切面配置对应的后置方法
         /// </summary>
-        public Tuple<object, AfterAttribute, MethodInfo> AfterMethod { get; set; }
+        public Tuple<object, After, MethodInfo> AfterMethod { get; set; }
 
         /// <summary>
         /// 切面配置对应的环绕方法
@@ -37,10 +37,12 @@ namespace Autofac.Aspect.Pointcut
         /// <summary>
         /// 切面配置对应的错误拦截方法
         /// </summary>
-        public Tuple<object, ThrowingAttribute, MethodInfo> ThrowingMethod { get; set; }
+        public Tuple<object, Throws, MethodInfo> ThrowingMethod { get; set; }
     }
 
-
+    /// <summary>
+    /// 构建拦截器链
+    /// </summary>
     internal class PointcutMethodChainBuilder
     {
         public List<PointcutMethod> PointcutMethodChainList { get; set; }

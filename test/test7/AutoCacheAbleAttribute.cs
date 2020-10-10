@@ -36,7 +36,7 @@ namespace Autofac.Configuration.Test.test7
 
 
     [Component]
-    [Aspect]
+    [Annotation.Aspect]
     public class TestCacheAop
     {
         public string Name { get; set; } = "TestCacheAop";
@@ -58,7 +58,7 @@ namespace Autofac.Configuration.Test.test7
     
    
     // [Component]
-    [Aspect]
+    [Annotation.Aspect]
     [Component(typeof(ICacheAop2<>))]
     public class TestCacheAop2<T>:ICacheAop2<T>
     {

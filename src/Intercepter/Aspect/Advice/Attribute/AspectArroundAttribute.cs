@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Autofac.Annotation;
 
 namespace Autofac.Aspect.Advice
 {

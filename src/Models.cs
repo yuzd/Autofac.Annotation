@@ -64,7 +64,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// Aspect标签
         /// </summary>
-        internal AspectAttribute AspectAttribute { get; set; }
+        internal Aspect AspectAttribute { get; set; }
 
 
 

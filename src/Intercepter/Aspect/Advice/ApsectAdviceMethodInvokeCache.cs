@@ -59,7 +59,7 @@ namespace Autofac.Aspect.Advice
                     var allGroupNameList = new Dictionary<string,string>();
                     Dictionary<string,AspectBefore> beforeCache = new Dictionary<string, AspectBefore>();
                     Dictionary<string,AspectAfter> afterCache = new Dictionary<string, AspectAfter>();
-                    Dictionary<string,AspectThrowing> afterThrow = new Dictionary<string, AspectThrowing>();
+                    Dictionary<string,AspectThrows> afterThrow = new Dictionary<string, AspectThrows>();
                     Dictionary<string,AspectArround> arround = new Dictionary<string, AspectArround>();
                     
                     foreach (var attribute in attributes)
@@ -103,7 +103,7 @@ namespace Autofac.Aspect.Advice
                                 afterCache.Add(key,aspectAfterAttribute);
                                 if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);
                                 break;
-                            case AspectThrowing aspectAfterThrowing:
+                            case AspectThrows aspectAfterThrowing:
                                 if (afterThrow.ContainsKey(key))
                                 {
                                     //当默认的添加满的时候 自动分组

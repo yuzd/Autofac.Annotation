@@ -62,7 +62,8 @@ namespace Autofac.Aspect
             }
             
             var aspectContext = new AspectContext(_component, invocation,proceedInfo);
-            var runTask = pointCut.BuilderMethodChain(aspectContext, proceed);
+            aspectContext.Proceed = async () => { await proceed(invocation, proceedInfo); };
+            var runTask = pointCut.AspectFunc.Value;
             await runTask(aspectContext);
         }
 
@@ -92,9 +93,14 @@ namespace Autofac.Aspect
 
              
             var aspectContext = new AspectContext(_component, invocation,proceedInfo);
-            var runTask = pointCut.BuilderMethodChain(aspectContext, proceed);
+            aspectContext.Proceed = async () =>
+            {
+                aspectContext.Result = await proceed(invocation, proceedInfo);
+                aspectContext.InvocationContext.ReturnValue = aspectContext.Result; //原方法的执行返回值
+            };
+            var runTask = pointCut.AspectFunc.Value;
             await runTask(aspectContext);
-            TResult r = (TResult) aspectContext.Result;
+            var r = (TResult) aspectContext.Result;
             return r;
         }
     }

@@ -55,8 +55,8 @@ namespace Autofac.Aspect
             #endregion
 
             var aspectContext = new AspectContext(_component, invocation,proceedInfo);
-            // aspectContext.Proceed = async () => { await proceed(invocation, proceedInfo); };
-            var runTask = attribute.BuilderMethodChain(aspectContext, proceed);
+            aspectContext.Proceed = async () => { await proceed(invocation, proceedInfo); };
+            var runTask = attribute.AspectFunc.Value;
             await runTask(aspectContext);
         }
 
@@ -89,8 +89,12 @@ namespace Autofac.Aspect
             #endregion
 
             var aspectContext = new AspectContext(_component, invocation,proceedInfo);
-            // aspectContext.Proceed = async () => { invocation.ReturnValue = await proceed(invocation, proceedInfo); };
-            var runTask = attribute.BuilderMethodChain(aspectContext, proceed);
+            aspectContext.Proceed = async () =>
+            {
+                aspectContext.Result = await proceed(invocation, proceedInfo);
+                aspectContext.InvocationContext.ReturnValue = aspectContext.Result; //原方法的执行返回值
+            };
+            var runTask = attribute.AspectFunc.Value;
             await runTask(aspectContext);
             var r = (TResult) aspectContext.Result;
             return r;

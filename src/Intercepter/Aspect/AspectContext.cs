@@ -55,6 +55,12 @@ namespace Autofac.Aspect
         /// 有返回结果的
         /// </summary>
         internal object Result { get; set; }
+        
+        
+        /// <summary>
+        /// 实际真正的方法用在拦截器链的执行过程中
+        /// </summary>
+        internal Func<Task> Proceed { get; set; }
 
         /// <summary>
         /// 有返回Exception

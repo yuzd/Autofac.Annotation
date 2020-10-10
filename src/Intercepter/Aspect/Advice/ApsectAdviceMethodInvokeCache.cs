@@ -51,7 +51,6 @@ namespace Autofac.Aspect.Advice
 
                     if (!attributes.Any()) continue;
                     
-                    
                     var aspectAttributeInfo = new AspectAttributeChainBuilder
                     {
                         AdviceMethod = new List<AdviceMethod>()
@@ -71,9 +70,17 @@ namespace Autofac.Aspect.Advice
                             case AspectBefore aspectBeforeAttribute:
                                 if (beforeCache.ContainsKey(key))
                                 {
-                                    throw new InvalidOperationException(
-                                        $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectBefore]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                    //当默认的添加满的时候 自动分组
+                                    if (string.IsNullOrEmpty(key))
+                                    {
+                                        key = attribute.GetType().FullName;
+                                    }
 
+                                    if (beforeCache.ContainsKey(key))
+                                    {
+                                        throw new InvalidOperationException(
+                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectBefore]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                    }
                                 }
                                 beforeCache.Add(key,aspectBeforeAttribute);
                                 if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);
@@ -81,9 +88,17 @@ namespace Autofac.Aspect.Advice
                             case AspectAfter aspectAfterAttribute:
                                 if (afterCache.ContainsKey(key))
                                 {
-                                    throw new InvalidOperationException(
-                                        $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectAfter]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                    //当默认的添加满的时候 自动分组
+                                    if (string.IsNullOrEmpty(key))
+                                    {
+                                        key = attribute.GetType().FullName;
+                                    }
 
+                                    if (afterCache.ContainsKey(key))
+                                    {
+                                        throw new InvalidOperationException(
+                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectAfter]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                    }
                                 }
                                 afterCache.Add(key,aspectAfterAttribute);
                                 if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);
@@ -91,9 +106,17 @@ namespace Autofac.Aspect.Advice
                             case AspectThrowing aspectAfterThrowing:
                                 if (afterThrow.ContainsKey(key))
                                 {
-                                    throw new InvalidOperationException(
-                                        $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectThrowing]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                    //当默认的添加满的时候 自动分组
+                                    if (string.IsNullOrEmpty(key))
+                                    {
+                                        key = attribute.GetType().FullName;
+                                    }
 
+                                    if (afterThrow.ContainsKey(key))
+                                    {
+                                        throw new InvalidOperationException(
+                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectThrowing]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                    }
                                 }
                                 afterThrow.Add(key,aspectAfterThrowing);
                                 if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);
@@ -101,9 +124,17 @@ namespace Autofac.Aspect.Advice
                             case AspectArround aspectPointAttribute:
                                 if (arround.ContainsKey(key))
                                 {
-                                    throw new InvalidOperationException(
-                                        $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectArround]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                    //当默认的添加满的时候 自动分组
+                                    if (string.IsNullOrEmpty(key))
+                                    {
+                                        key = attribute.GetType().FullName;
+                                    }
 
+                                    if (arround.ContainsKey(key))
+                                    {
+                                        throw new InvalidOperationException(
+                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectArround]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                    }
                                 }
                                 arround.Add(key,aspectPointAttribute);
                                 if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);

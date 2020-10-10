@@ -315,8 +315,8 @@ namespace Autofac.Configuration.Test.test3
     {
         public string Name { get; set; } = "TestModel101";
 
-        [StopWatchInterceptor(GroupName = "a")]
-        [TransactionInterceptor(GroupName = "b")]
+        [StopWatchInterceptor]
+        [TransactionInterceptor]
         public virtual void TestInterceptor()
         {
             Console.WriteLine("TestInterceptor");
@@ -327,8 +327,8 @@ namespace Autofac.Configuration.Test.test3
             Console.WriteLine("TestNoInterceptor");
         }
         
-        [StopWatchInterceptor(GroupName = "a")]
-        [TransactionInterceptor(GroupName = "b")]
+        [StopWatchInterceptor]
+        [TransactionInterceptor]
         public virtual async Task<string> TestInterceptor2()
         {
             Task.Delay(1000);   
@@ -500,10 +500,7 @@ namespace Autofac.Configuration.Test.test3
     {
         public static List<string> testModel = new List<string>();
         
-        [AdviceArroundTest1]
-        [AdviceBeforeTest1]
-        [AdviceAfterTest1]
-        [AdviceExceptionTest1]
+        [AdviceArroundTest1,AdviceBeforeTest1,AdviceAfterTest1,AdviceExceptionTest1]
         public virtual void TestArroundBeforeAfter()
         {
             AdviseModel1.testModel.Add("TestArroundBeforeAfter");

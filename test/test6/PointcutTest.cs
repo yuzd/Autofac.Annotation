@@ -8,7 +8,7 @@ namespace Autofac.Annotation.Test.test6
     /// <summary>
     /// 第一组切面
     /// </summary>
-    [Pointcut(Class = "Pointcut*",OrderIndex = 1)]
+    [Pointcut(NameSpace = "Autofac.Annotation.Test.test6",Class = "Pointcut*",OrderIndex = 1)]
     public class PointcutTest1
     {
         [Around]
@@ -28,15 +28,15 @@ namespace Autofac.Annotation.Test.test6
             Pointcut2Controller.testResult.Add("PointcutTest1.Before");
         }
         
-        [After(Returing = "value")]
-        public void After(object value)
+        [After(Returing = "value1")]
+        public void After(object value1)
         {
             Pointcut1Controller.testResult.Add("PointcutTest1.After");
             Pointcut2Controller.testResult.Add("PointcutTest1.After");
         }
         
-        [Throwing(Throwing = "ex")]
-        public void Throwing(Exception ex)
+        [Throwing(Throwing = "ex1")]
+        public void Throwing(Exception ex1)
         {
             Pointcut1Controller.testResult.Add("PointcutTest1.Throwing");
             Pointcut2Controller.testResult.Add("PointcutTest1.Throwing");
@@ -46,7 +46,7 @@ namespace Autofac.Annotation.Test.test6
     /// <summary>
     /// 第二组切面
     /// </summary>
-    [Pointcut(Class = "Pointcut*",OrderIndex = 0)]
+    [Pointcut(NameSpace = "Autofac.Annotation.Test.test6",Class = "Pointcut*",OrderIndex = 0)]
     public class PointcutTest2
     {
         [Around]
@@ -88,12 +88,12 @@ namespace Autofac.Annotation.Test.test6
         /// <summary>
         /// 
         /// </summary>
-        public void TestSuccess()
+        public virtual void TestSuccess()
         {
             Pointcut1Controller.testResult.Add("Pointcut1Controller.TestSuccess");
         }
         
-        public void TestThrow()
+        public virtual void TestThrow()
         {
             Pointcut1Controller.testResult.Add("Pointcut1Controller.TestThrow");
             throw new ArgumentException("ddd");
@@ -104,14 +104,16 @@ namespace Autofac.Annotation.Test.test6
     public class Pointcut2Controller
     {
         public static List<string> testResult = new List<string>();
-        public void TestSuccess()
+        public virtual string TestSuccess()
         {
             Pointcut2Controller.testResult.Add("Pointcut2Controller.TestSuccess");
+            return "abc";
         }
         
-        public void TestThrow()
+        public virtual void TestThrow()
         {
             Pointcut2Controller.testResult.Add("Pointcut2Controller.TestThrow");
+            throw new ArgumentException("ddd");
         }
     }
 }

@@ -582,9 +582,9 @@ namespace Autofac.Annotation
                 //切面 不能 切自己
                 if (aspectClass.PointClass == component.CurrentType)
                 {
+                    aspectJ.PointcutTypeInfoList.TryAdd(targetClass, true);
                     return false;
                 }
-                
                 
                 //先检查class是否满足
                 if (aspectClass.Pointcut.IsVaildClass(targetClass))

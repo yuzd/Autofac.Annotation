@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using AspectCore.Extensions.Reflection;
 using Autofac.Annotation;
 using Autofac.Aspect.Impl;
 using Castle.DynamicProxy;
@@ -55,7 +56,17 @@ namespace Autofac.Aspect.Pointcut
         /// <summary>
         /// 被拦截方法
         /// </summary>
-        public MethodInfo MethodInfo { get; set; }
+        public MethodReflector MethodInfo { get; set; }
+
+        /// <summary>
+        /// 方法返回类型
+        /// </summary>
+        public Type MethodReturnType { get; set; }
+
+        /// <summary>
+        /// 方法参数
+        /// </summary>
+        public ParameterInfo[] MethodParameters { get; set; }
         
         /// <summary>
         /// 被拦截方法上的指定的切面注解

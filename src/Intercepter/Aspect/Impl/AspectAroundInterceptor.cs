@@ -43,10 +43,16 @@ namespace Autofac.Aspect.Impl
                 return;
             }
             
-            var rt = AutoConfigurationHelper.InvokeInstanceMethod(_pointCutMethod.Instance, _pointCutMethod.MethodInfo,
+            var rt = AutoConfigurationHelper.InvokeInstanceMethod(
+                _pointCutMethod.Instance,
+                _pointCutMethod.MethodInfo,
+                _pointCutMethod.MethodParameters,
                 aspectContext.ComponentContext,
-                aspectContext, next,injectAnotation:_pointCutMethod.PointcutInjectAnotation);
-            if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodInfo.ReturnType))
+                aspectContext,
+                next,
+                injectAnotation:_pointCutMethod.PointcutInjectAnotation);
+
+            if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
             {
                 await ((Task) rt).ConfigureAwait(false);
             }

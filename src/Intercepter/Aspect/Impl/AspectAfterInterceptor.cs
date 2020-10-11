@@ -49,11 +49,14 @@ namespace Autofac.Aspect.Impl
                 var rt = AutoConfigurationHelper.InvokeInstanceMethod(
                     _pointCutMethod.Instance,
                     _pointCutMethod.MethodInfo,
+                    _pointCutMethod.MethodParameters,
                     aspectContext.ComponentContext,
-                    aspectContext,returnValue:aspectContext.InvocationContext.ReturnValue,
+                    aspectContext,
+                    returnValue:aspectContext.InvocationContext.ReturnValue,
                     returnParam:_pointCutMethod.PointcutBasicAttribute.Returing,
                     injectAnotation:_pointCutMethod.PointcutInjectAnotation);
-                if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodInfo.ReturnType))
+
+                if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
                 {
                     await ((Task) rt).ConfigureAwait(false);
                 }

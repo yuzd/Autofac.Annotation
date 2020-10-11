@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using AspectCore.Extensions.Reflection;
 using Autofac.Annotation.Util;
 using Autofac.Aspect;
 using Autofac.Aspect.Pointcut;
@@ -74,9 +75,9 @@ namespace Autofac.Annotation
                     {
                         var autoConfigurationInstance = context.Resolve(autoConfigurationDetail.AutoConfigurationClassType);
                         var instance = AutoConfigurationHelper.InvokeInstanceMethod(context, autoConfigurationDetail, autoConfigurationInstance, beanMethod.Item2);
-                        if (typeof(Task).IsAssignableFrom(instance.GetType()))
+                        if (instance is Task)
                         {
-                             return typeof(Task<>).MakeGenericType(instanceType).GetProperty("Result").GetValue(instance);
+                             return typeof(Task<>).MakeGenericType(instanceType).GetProperty("Result")?.GetValue(instance);
                         }
                         return instance;
                     }));
@@ -101,6 +102,105 @@ namespace Autofac.Annotation
 
     internal static class AutoConfigurationHelper
     {
+        /// <summary>
+        /// 调用切面的拦截方法
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <param name="methodInfo"></param>
+        /// <param name="parameters"></param>
+        /// <param name="context"></param>
+        /// <param name="invocation"></param>
+        /// <param name="_next"></param>
+        /// <param name="returnValue"></param>
+        /// <param name="returnParam"></param>
+        /// <param name="injectAnotation"></param>
+        /// <returns></returns>
+        public static object InvokeInstanceMethod(object instance, MethodReflector methodInfo,ParameterInfo[] parameters, IComponentContext context,
+          AspectContext invocation = null, AspectDelegate _next = null, object returnValue = null, string returnParam = null, Attribute injectAnotation = null)
+        {
+            if (parameters == null || parameters.Length == 0)
+            {
+                return methodInfo.Invoke(instance, null);
+            }
+
+            //自动类型注入
+
+            List<object> parameterObj = new List<object>();
+            foreach (var parameter in parameters)
+            {
+                if (invocation != null && parameter.ParameterType == typeof(AspectContext))
+                {
+                    parameterObj.Add(invocation);
+                    continue;
+                }
+                if (_next != null && parameter.ParameterType == typeof(AspectDelegate))
+                {
+                    parameterObj.Add(_next);
+                    continue;
+                }
+
+                if (injectAnotation != null && parameter.ParameterType == injectAnotation.GetType())
+                {
+                    parameterObj.Add(injectAnotation);
+                    continue;
+                }
+
+                if (returnValue != null && !string.IsNullOrWhiteSpace(returnParam) && parameter.Name.Equals(returnParam))
+                {
+                    //如果指定的类型会出错
+                    parameterObj.Add(returnValue);
+                    continue;
+                }
+
+                var autowired = parameter.GetCustomAttribute<Autowired>();
+                if (autowired != null)
+                {
+                    parameterObj.Add(autowired.ResolveParameter(parameter, context));
+                    continue;
+                }
+
+                var value = parameter.GetCustomAttribute<Value>();
+                if (value != null)
+                {
+                    parameterObj.Add(value.ResolveParameter(parameter, context));
+                    continue;
+                }
+
+                if (parameter.HasDefaultValue)
+                {
+                    parameterObj.Add(parameter.RawDefaultValue);
+                    continue;
+                }
+
+                if (parameter.IsOptional)
+                {
+                    parameterObj.Add(Type.Missing);
+                    continue;
+                }
+
+                if (parameter.IsOut)
+                {
+                    parameterObj.Add(Type.Missing);
+                    continue;
+                }
+
+                if (parameter.ParameterType.IsValueType || parameter.ParameterType.IsEnum)
+                {
+                    parameterObj.Add(parameter.RawDefaultValue);
+                    continue;
+                }
+
+
+                //如果拿不到就默认
+                context.TryResolve(parameter.ParameterType, out var obj);
+                parameterObj.Add(obj);
+
+            }
+
+            return methodInfo.Invoke(instance, parameterObj.ToArray());
+        }
+
+
         public static object InvokeInstanceMethod(object instance, MethodInfo methodInfo,IComponentContext context,
             AspectContext invocation = null,AspectDelegate _next = null,object returnValue = null,string returnParam = null,Attribute injectAnotation = null)
         {

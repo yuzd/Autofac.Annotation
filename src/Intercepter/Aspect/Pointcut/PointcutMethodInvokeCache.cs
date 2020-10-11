@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using AspectCore.Extensions.Reflection;
 using Autofac.Annotation;
 
 namespace Autofac.Aspect.Pointcut
@@ -51,7 +52,9 @@ namespace Autofac.Aspect.Pointcut
                         pointCutMethod.BeforeMethod = new RunTimePointcutMethod<Before>
                         {
                             Instance = instance,
-                            MethodInfo = pointcut.BeforeMethod.Item2,
+                            MethodInfo = pointcut.BeforeMethod.Item2.GetReflector(),
+                            MethodReturnType = pointcut.BeforeMethod.Item2.ReturnType,
+                            MethodParameters = pointcut.BeforeMethod.Item2.GetParameters(),
                             PointcutBasicAttribute = pointcut.BeforeMethod.Item1,
                             PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
                         };
@@ -62,7 +65,9 @@ namespace Autofac.Aspect.Pointcut
                         pointCutMethod.AfterMethod = new RunTimePointcutMethod<After>
                         {
                             Instance = instance,
-                            MethodInfo = pointcut.AfterMethod.Item2,
+                            MethodInfo = pointcut.AfterMethod.Item2.GetReflector(),
+                            MethodReturnType = pointcut.AfterMethod.Item2.ReturnType,
+                            MethodParameters = pointcut.AfterMethod.Item2.GetParameters(),
                             PointcutBasicAttribute = pointcut.AfterMethod.Item1,
                             PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
                         };
@@ -73,7 +78,9 @@ namespace Autofac.Aspect.Pointcut
                         pointCutMethod.AroundMethod = new RunTimePointcutMethod<Around>
                         {
                             Instance = instance,
-                            MethodInfo = pointcut.AroundMethod.Item2,
+                            MethodInfo = pointcut.AroundMethod.Item2.GetReflector(),
+                            MethodReturnType = pointcut.AroundMethod.Item2.ReturnType,
+                            MethodParameters = pointcut.AroundMethod.Item2.GetParameters(),
                             PointcutBasicAttribute = pointcut.AroundMethod.Item1,
                             PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
                         };
@@ -84,7 +91,9 @@ namespace Autofac.Aspect.Pointcut
                         pointCutMethod.ThrowingMethod = new RunTimePointcutMethod<Throws>
                         {
                             Instance = instance,
-                            MethodInfo = pointcut.ThrowingMethod.Item2,
+                            MethodInfo = pointcut.ThrowingMethod.Item2.GetReflector(),
+                            MethodReturnType = pointcut.ThrowingMethod.Item2.ReturnType,
+                            MethodParameters = pointcut.ThrowingMethod.Item2.GetParameters(),
                             PointcutBasicAttribute = pointcut.ThrowingMethod.Item1,
                             PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
                         };
@@ -122,7 +131,9 @@ namespace Autofac.Aspect.Pointcut
                         pointCutMethod.BeforeMethod = new RunTimePointcutMethod<Before>
                         {
                             Instance = instance,
-                            MethodInfo = pointcut.BeforeMethod.Item2,
+                            MethodInfo = pointcut.BeforeMethod.Item2.GetReflector(),
+                            MethodReturnType = pointcut.BeforeMethod.Item2.ReturnType,
+                            MethodParameters = pointcut.BeforeMethod.Item2.GetParameters(),
                             PointcutBasicAttribute = pointcut.BeforeMethod.Item1,
                             PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
                         };
@@ -133,7 +144,9 @@ namespace Autofac.Aspect.Pointcut
                         pointCutMethod.AfterMethod = new RunTimePointcutMethod<After>
                         {
                             Instance = instance,
-                            MethodInfo = pointcut.AfterMethod.Item2,
+                            MethodInfo = pointcut.AfterMethod.Item2.GetReflector(),
+                            MethodReturnType = pointcut.AfterMethod.Item2.ReturnType,
+                            MethodParameters = pointcut.AfterMethod.Item2.GetParameters(),
                             PointcutBasicAttribute = pointcut.AfterMethod.Item1,
                             PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
                         };
@@ -144,7 +157,9 @@ namespace Autofac.Aspect.Pointcut
                         pointCutMethod.AroundMethod = new RunTimePointcutMethod<Around>
                         {
                             Instance = instance,
-                            MethodInfo = pointcut.AroundMethod.Item2,
+                            MethodInfo = pointcut.AroundMethod.Item2.GetReflector(),
+                            MethodReturnType = pointcut.AroundMethod.Item2.ReturnType,
+                            MethodParameters = pointcut.AroundMethod.Item2.GetParameters(),
                             PointcutBasicAttribute = pointcut.AroundMethod.Item1,
                             PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
                         };
@@ -155,7 +170,9 @@ namespace Autofac.Aspect.Pointcut
                         pointCutMethod.ThrowingMethod = new RunTimePointcutMethod<Throws>
                         {
                             Instance = instance,
-                            MethodInfo = pointcut.ThrowingMethod.Item2,
+                            MethodInfo = pointcut.ThrowingMethod.Item2.GetReflector(),
+                            MethodReturnType = pointcut.ThrowingMethod.Item2.ReturnType,
+                            MethodParameters = pointcut.ThrowingMethod.Item2.GetParameters(),
                             PointcutBasicAttribute = pointcut.ThrowingMethod.Item1,
                             PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
                         };

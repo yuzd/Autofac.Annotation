@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace Autofac.Aspect.Advice
+namespace Autofac.Aspect
 {
     internal interface IAdvice
     {

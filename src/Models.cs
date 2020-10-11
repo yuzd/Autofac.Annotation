@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -11,7 +12,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// 根据注解解析
     /// </summary>
-    public class ComponentModel
+    internal class ComponentModel
     {
         /// <summary>
         /// 构造方法
@@ -65,6 +66,11 @@ namespace Autofac.Annotation
         /// Aspect标签
         /// </summary>
         internal Aspect AspectAttribute { get; set; }
+        
+        /// <summary>
+        ///  当前Class的所有的标签
+        /// </summary>
+        internal List<Attribute> CurrentClassTypeAttributes { get; set; }
 
 
 
@@ -143,12 +149,13 @@ namespace Autofac.Annotation
                 return false;
             } 
         }
+
     }
 
     /// <summary>
     /// MetaSourceData
     /// </summary>
-    public class MetaSourceData
+    internal class MetaSourceData
     {
 
         /// <summary>
@@ -216,7 +223,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// 注册对应的类型
     /// </summary>
-    public class ComponentServiceModel
+    internal class ComponentServiceModel
     {
         /// <summary>
         /// 类型
@@ -288,5 +295,18 @@ namespace Autofac.Annotation
         /// 按照从小到大的顺序注册 如果同一个Type被处理多次会被覆盖！
         /// </summary>
         internal int OrderIndex { get; set; }
+    }
+    
+    /// <summary>
+    /// 注册缓存
+    /// </summary>
+    internal class ComponentModelCacheSingleton
+    {
+        public ConcurrentDictionary<Type, ComponentModel> ComponentModelCache { get; set; }
+        
+        /// <summary>
+        /// 存储动态泛型类
+        /// </summary>
+        public ConcurrentDictionary<string, ComponentModel> DynamicComponentModelCache { get; set; }
     }
 }

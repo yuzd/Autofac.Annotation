@@ -7,7 +7,7 @@ namespace Autofac.Annotation
     /// 配合 AspectAroundAttribute  AspectBeforeAttribute AspectAfterAttribute 使用
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class Aspect : Attribute
+    public sealed class Aspect : Attribute
     {
         /// <summary>
         /// ctor

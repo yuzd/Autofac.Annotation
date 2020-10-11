@@ -6,7 +6,7 @@ namespace Autofac.Annotation
     /// 配合pointCut的后置拦截器
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
-    public class After : Attribute
+    public sealed class After : PointcutBasicAttribute
     {
         /// <summary>
         /// 
@@ -24,11 +24,6 @@ namespace Autofac.Annotation
             this.GroupName = groupName;
         }
 
-        /// <summary>
-        /// 唯一名称
-        /// </summary>
-        public string GroupName { get; set; }
-        
         /// <summary>
         /// 返回的参数
         /// </summary>

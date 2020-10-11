@@ -209,5 +209,61 @@ namespace Autofac.Annotation.Test.test6
             Assert.Equal("PointcutTest1.Throwing",Pointcut2Controller.testResult[5]);
             Assert.Equal("PointcutTest2.Throwing",Pointcut2Controller.testResult[6]);
         }
+        
+        [Fact]
+        public void Test_Type_10()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+                
+            var a1 = container.Resolve<PointcutAnotationTest1>();
+            PointcutAnotationTest1.testResult = new List<string>();
+            a1.TestSuccess();
+            Assert.Equal(13,PointcutAnotationTest1.testResult.Count);
+            Assert.Equal("PointcutTest2.Around-start",PointcutAnotationTest1.testResult[0]);
+            Assert.Equal("PointcutTest2.Before",PointcutAnotationTest1.testResult[1]);
+            Assert.Equal("PointcutTest4.Around-start",PointcutAnotationTest1.testResult[2]);
+            Assert.Equal("PointcutTest1.Around-start",PointcutAnotationTest1.testResult[3]);
+            Assert.Equal("PointcutTest1.Before",PointcutAnotationTest1.testResult[4]);
+            Assert.Equal("PointcutTest3.Around-start",PointcutAnotationTest1.testResult[5]);
+            Assert.Equal("PointcutAnotationTest1.TestSuccess",PointcutAnotationTest1.testResult[6]);
+            Assert.Equal("PointcutTest3.Around-end",PointcutAnotationTest1.testResult[7]);
+            Assert.Equal("PointcutTest1.Around-end",PointcutAnotationTest1.testResult[8]);
+            Assert.Equal("PointcutTest1.After",PointcutAnotationTest1.testResult[9]);
+            Assert.Equal("PointcutTest4.Around-end",PointcutAnotationTest1.testResult[10]);
+            Assert.Equal("PointcutTest2.Around-end",PointcutAnotationTest1.testResult[11]);
+            Assert.Equal("PointcutTest2.After",PointcutAnotationTest1.testResult[12]);
+            
+        }
+        
+        [Fact]
+        public void Test_Type_11()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+                
+            var a1 = container.Resolve<PointcutAnotationTest1>();
+            PointcutAnotationTest1.testResult = new List<string>();
+            Assert.Throws<ArgumentException>(() => a1.TestThrow());
+            Assert.Equal(9,PointcutAnotationTest1.testResult.Count);
+            Assert.Equal("PointcutTest2.Around-start",PointcutAnotationTest1.testResult[0]);
+            Assert.Equal("PointcutTest2.Before",PointcutAnotationTest1.testResult[1]);
+            Assert.Equal("PointcutTest4.Around-start",PointcutAnotationTest1.testResult[2]);
+            Assert.Equal("PointcutTest1.Around-start",PointcutAnotationTest1.testResult[3]);
+            Assert.Equal("PointcutTest1.Before",PointcutAnotationTest1.testResult[4]);
+            Assert.Equal("PointcutTest3.Around-start",PointcutAnotationTest1.testResult[5]);
+            Assert.Equal("PointcutAnotationTest1.TestThrow",PointcutAnotationTest1.testResult[6]);
+            Assert.Equal("PointcutTest1.Throwing",PointcutAnotationTest1.testResult[7]);
+            Assert.Equal("PointcutTest2.Throwing",PointcutAnotationTest1.testResult[8]);
+            
+        }
     }
 }

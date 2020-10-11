@@ -10,10 +10,9 @@ namespace Autofac.Aspect.Pointcut
     /// <summary>
     /// 一个method 可能对应多个切面 需要重新排序
     /// </summary>
-    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true,NotUseProxy = true)]
+    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, NotUseProxy = true)]
     public class PointcutMethodInvokeCache
     {
-
         /// <summary>
         /// 初始化
         /// </summary>
@@ -34,8 +33,9 @@ namespace Autofac.Aspect.Pointcut
                 };
 
                 //一个方法会有多个pointcut
-                foreach (var pointcut in methodCache.Value)
+                foreach (var pointcutRunTime in methodCache.Value)
                 {
+                    var pointcut = pointcutRunTime.PointcutConfigurationInfo;
                     var pointCutMethod = new PointcutMethod()
                     {
                         OrderIndex = pointcut.Pointcut.OrderIndex
@@ -48,24 +48,46 @@ namespace Autofac.Aspect.Pointcut
 
                     if (pointcut.BeforeMethod != null)
                     {
-                        pointCutMethod.BeforeMethod = new Tuple<object, MethodInfo>(instance, pointcut.BeforeMethod);
+                        pointCutMethod.BeforeMethod = new RunTimePointcutMethod<Before>
+                        {
+                            Instance = instance,
+                            MethodInfo = pointcut.BeforeMethod.Item2,
+                            PointcutBasicAttribute = pointcut.BeforeMethod.Item1,
+                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        };
                     }
 
                     if (pointcut.AfterMethod != null)
                     {
-                        pointCutMethod.AfterMethod =
-                            new Tuple<object, After, MethodInfo>(instance, pointcut.AfterMethod.Item1, pointcut.AfterMethod.Item2);
+                        pointCutMethod.AfterMethod = new RunTimePointcutMethod<After>
+                        {
+                            Instance = instance,
+                            MethodInfo = pointcut.AfterMethod.Item2,
+                            PointcutBasicAttribute = pointcut.AfterMethod.Item1,
+                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        };
                     }
 
                     if (pointcut.AroundMethod != null)
                     {
-                        pointCutMethod.AroundMethod = new Tuple<object, MethodInfo>(instance, pointcut.AroundMethod);
+                        pointCutMethod.AroundMethod = new RunTimePointcutMethod<Around>
+                        {
+                            Instance = instance,
+                            MethodInfo = pointcut.AroundMethod.Item2,
+                            PointcutBasicAttribute = pointcut.AroundMethod.Item1,
+                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        };
                     }
 
                     if (pointcut.ThrowingMethod != null)
                     {
-                        pointCutMethod.ThrowingMethod =
-                            new Tuple<object, Throws, MethodInfo>(instance, pointcut.ThrowingMethod.Item1, pointcut.ThrowingMethod.Item2);
+                        pointCutMethod.ThrowingMethod = new RunTimePointcutMethod<Throws>
+                        {
+                            Instance = instance,
+                            MethodInfo = pointcut.ThrowingMethod.Item2,
+                            PointcutBasicAttribute = pointcut.ThrowingMethod.Item1,
+                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        };
                     }
                 }
 
@@ -82,8 +104,9 @@ namespace Autofac.Aspect.Pointcut
                 };
 
                 //一个方法会有多个pointcut
-                foreach (var pointcut in methodCache.Value)
+                foreach (var pointcutRunTime in methodCache.Value)
                 {
+                    var pointcut = pointcutRunTime.PointcutConfigurationInfo;
                     var pointCutMethod = new PointcutMethod()
                     {
                         OrderIndex = pointcut.Pointcut.OrderIndex
@@ -94,26 +117,48 @@ namespace Autofac.Aspect.Pointcut
                     //每个切换先拿到对应的实例 重复拿也没关系 因为是单例的
                     var instance = context.Resolve(pointcut.PointClass);
 
-                    if (pointcut.BeforeMethod != null)
+                      if (pointcut.BeforeMethod != null)
                     {
-                        pointCutMethod.BeforeMethod = new Tuple<object, MethodInfo>(instance, pointcut.BeforeMethod);
+                        pointCutMethod.BeforeMethod = new RunTimePointcutMethod<Before>
+                        {
+                            Instance = instance,
+                            MethodInfo = pointcut.BeforeMethod.Item2,
+                            PointcutBasicAttribute = pointcut.BeforeMethod.Item1,
+                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        };
                     }
 
                     if (pointcut.AfterMethod != null)
                     {
-                        pointCutMethod.AfterMethod =
-                            new Tuple<object, After, MethodInfo>(instance, pointcut.AfterMethod.Item1, pointcut.AfterMethod.Item2);
+                        pointCutMethod.AfterMethod = new RunTimePointcutMethod<After>
+                        {
+                            Instance = instance,
+                            MethodInfo = pointcut.AfterMethod.Item2,
+                            PointcutBasicAttribute = pointcut.AfterMethod.Item1,
+                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        };
                     }
 
                     if (pointcut.AroundMethod != null)
                     {
-                        pointCutMethod.AroundMethod = new Tuple<object, MethodInfo>(instance, pointcut.AroundMethod);
+                        pointCutMethod.AroundMethod = new RunTimePointcutMethod<Around>
+                        {
+                            Instance = instance,
+                            MethodInfo = pointcut.AroundMethod.Item2,
+                            PointcutBasicAttribute = pointcut.AroundMethod.Item1,
+                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        };
                     }
 
                     if (pointcut.ThrowingMethod != null)
                     {
-                        pointCutMethod.ThrowingMethod =
-                            new Tuple<object, Throws, MethodInfo>(instance, pointcut.ThrowingMethod.Item1, pointcut.ThrowingMethod.Item2);
+                        pointCutMethod.ThrowingMethod = new RunTimePointcutMethod<Throws>
+                        {
+                            Instance = instance,
+                            MethodInfo = pointcut.ThrowingMethod.Item2,
+                            PointcutBasicAttribute = pointcut.ThrowingMethod.Item1,
+                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        };
                     }
                 }
 

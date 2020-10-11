@@ -321,7 +321,7 @@ namespace Autofac.Annotation
         /// <typeparam name="TReflectionActivatorData"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void RegisterMethods<TReflectionActivatorData>(ComponentModel component,
+        private void RegisterMethods<TReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
         {
@@ -451,7 +451,7 @@ namespace Autofac.Annotation
         /// <param name="component"></param>
         /// <param name="registrar"></param>
         /// <param name="aspecJ"></param>
-        protected virtual void SetIntercept<TLimit, TConcreteReflectionActivatorData>(ComponentModel component,
+        private void SetIntercept<TLimit, TConcreteReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, object> registrar, PointCutConfigurationList aspecJ)
             where TConcreteReflectionActivatorData : ReflectionActivatorData
         {
@@ -575,8 +575,9 @@ namespace Autofac.Annotation
         private bool needWarpForPointcut(ComponentModel component, PointCutConfigurationList aspectJ)
         {
             Type targetClass = component.CurrentType;
+            
             var result = false;
-            List<MethodInfo> instanceMethodList = null;
+            Dictionary<MethodInfo, List<Attribute>> instanceMthodCustomAttributeList = null;
             foreach (var aspectClass in aspectJ.PointcutConfigurationInfoList)
             {
                 //切面 不能 切自己
@@ -586,45 +587,56 @@ namespace Autofac.Annotation
                     return false;
                 }
                 
-                //先检查class是否满足
-                if (aspectClass.Pointcut.IsVaildClass(targetClass))
+                //先检查class是否满足  pointCutClassInjectAnotation指的是 这个切面 在这个class上有没有对应的
+                if (!aspectClass.Pointcut.IsVaildClass(component,out var pointCutClassInjectAnotation))
                 {
-                    //查看里面的method是否有满足的
-                    if (instanceMethodList == null)
+                   continue;
+                }
+                
+                //查看里面的method是否有满足的
+                if (instanceMthodCustomAttributeList == null)
+                {
+                    var instanceMethodList = targetClass.GetAllInstanceMethod(false).ToList().Where(m => !m.IsSpecialName).ToList();
+                    instanceMthodCustomAttributeList = new Dictionary<MethodInfo, List<Attribute>>();
+                    foreach (var method in instanceMethodList)
                     {
-                        instanceMethodList = targetClass.GetAllInstanceMethod(false).ToList();
+                        instanceMthodCustomAttributeList.Add(method,method.GetCustomAttributes().ToList());
                     }
+                }
 
-                    foreach (var method in instanceMethodList.Where(m => !m.IsSpecialName))
+                foreach (var methodCache in instanceMthodCustomAttributeList)
+                {
+                    var method = methodCache.Key;
+                    //pointCutMethodInjectAnotation 指的是 这个切面 在method 有没有对应的 如果method没有 class有就用class的
+                    if (!aspectClass.Pointcut.IsVaild(component,methodCache,pointCutClassInjectAnotation,out var pointCutMethodInjectAnotation))
                     {
-                        if (aspectClass.Pointcut.IsVaild(method))
+                        continue;
+                    }
+                        
+                    if (component.isDynamicGeneric)
+                    {
+                        var uniqKey = method.GetMethodInfoUniqueName();
+                        if (aspectJ.DynamicPointcutTargetInfoList.ContainsKey(uniqKey))
                         {
-                            if (component.isDynamicGeneric)
-                            {
-                                var uniqKey = method.GetMethodInfoUniqueName();
-                                if (aspectJ.DynamicPointcutTargetInfoList.ContainsKey(uniqKey))
-                                {
-                                    aspectJ.DynamicPointcutTargetInfoList[uniqKey].Add(aspectClass);
-                                }
-                                else
-                                {
-                                    aspectJ.DynamicPointcutTargetInfoList.TryAdd(uniqKey, new List<PointcutConfigurationInfo>{aspectClass});
-                                } 
-                            }
-                            else
-                            {
-                                if (aspectJ.PointcutTargetInfoList.ContainsKey(method))
-                                {
-                                    aspectJ.PointcutTargetInfoList[method].Add(aspectClass);
-                                }
-                                else
-                                {
-                                    aspectJ.PointcutTargetInfoList.TryAdd(method, new List<PointcutConfigurationInfo>{aspectClass});
-                                }
-                            }
-                            result = true;
+                            aspectJ.DynamicPointcutTargetInfoList[uniqKey].Add(new RunTimePointCutConfiguration(aspectClass,pointCutMethodInjectAnotation));
+                        }
+                        else
+                        {
+                            aspectJ.DynamicPointcutTargetInfoList.TryAdd(uniqKey, new List<RunTimePointCutConfiguration>{new RunTimePointCutConfiguration(aspectClass,pointCutMethodInjectAnotation)});
+                        } 
+                    }
+                    else
+                    {
+                        if (aspectJ.PointcutTargetInfoList.ContainsKey(method))
+                        {
+                            aspectJ.PointcutTargetInfoList[method].Add(new RunTimePointCutConfiguration(aspectClass,pointCutMethodInjectAnotation));
+                        }
+                        else
+                        {
+                            aspectJ.PointcutTargetInfoList.TryAdd(method, new List<RunTimePointCutConfiguration>{new RunTimePointCutConfiguration(aspectClass,pointCutMethodInjectAnotation)});
                         }
                     }
+                    result = true;
                 }
             }
 
@@ -639,7 +651,7 @@ namespace Autofac.Annotation
         /// <typeparam name="TReflectionActivatorData"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void SetAutoActivate<TReflectionActivatorData>(ComponentModel component,
+        private void SetAutoActivate<TReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
         {
@@ -667,7 +679,7 @@ namespace Autofac.Annotation
         /// <typeparam name="TReflectionActivatorData"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void SetInjectProperties<TReflectionActivatorData>(ComponentModel component,
+        private void SetInjectProperties<TReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
         {
@@ -745,7 +757,7 @@ namespace Autofac.Annotation
         /// <typeparam name="TReflectionActivatorData"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void SetComponentOwnership<TReflectionActivatorData>(ComponentModel component,
+        private void SetComponentOwnership<TReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
         {
@@ -771,7 +783,7 @@ namespace Autofac.Annotation
         /// <typeparam name="TReflectionActivatorData"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void SetLifetimeScope<TReflectionActivatorData>(ComponentModel component,
+        private void SetLifetimeScope<TReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
         {
@@ -807,7 +819,7 @@ namespace Autofac.Annotation
         /// <typeparam name="TReflectionActivatorData"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void RegisterComponentValues<TReflectionActivatorData>(ComponentModel component,
+        private void RegisterComponentValues<TReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
         {
@@ -910,7 +922,7 @@ namespace Autofac.Annotation
         /// <typeparam name="TReflectionActivatorData"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        protected virtual void RegisterComponentServices<TReflectionActivatorData>(ComponentModel component,
+        private void RegisterComponentServices<TReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
         {
@@ -1192,8 +1204,8 @@ namespace Autofac.Annotation
             PointCutConfigurationList list = new PointCutConfigurationList
             {
                 PointcutConfigurationInfoList = new List<PointcutConfigurationInfo>(),
-                PointcutTargetInfoList = new ConcurrentDictionary<MethodInfo, List<PointcutConfigurationInfo>>(),
-                DynamicPointcutTargetInfoList = new ConcurrentDictionary<string, List<PointcutConfigurationInfo>>(),
+                PointcutTargetInfoList = new ConcurrentDictionary<MethodInfo, List<RunTimePointCutConfiguration>>(),
+                DynamicPointcutTargetInfoList = new ConcurrentDictionary<string, List<RunTimePointCutConfiguration>>(),
                 PointcutTypeInfoList = new ConcurrentDictionary<Type, bool>()
             };
             try
@@ -1275,7 +1287,7 @@ namespace Autofac.Annotation
                     select new
                     {
                         Type = type,
-                        Bean = bean.Where(r => !string.IsNullOrEmpty(r.Class)).ToList()
+                        Bean = bean.Where(r => (!string.IsNullOrEmpty(r.Class) || r.AttributeType!=null)).ToList()
                     }).ToList();
 
                 foreach (var configuration in typeList)
@@ -1284,9 +1296,9 @@ namespace Autofac.Annotation
                     var beanTypeMethodList = configuration.Type.GetAllInstanceMethod(false);
 
                     //一个point标签下 class里面 最多一组 
-                    Dictionary<string, MethodInfo> beforeMethodInfos = new Dictionary<string, MethodInfo>();
+                    Dictionary<string, Tuple<Before,MethodInfo>> beforeMethodInfos = new Dictionary<string, Tuple<Before,MethodInfo>>();
                     Dictionary<string, Tuple<After,MethodInfo>> afterMethodInfos = new Dictionary<string, Tuple<After,MethodInfo>>();
-                    Dictionary<string, MethodInfo> aroundMethodInfos = new Dictionary<string, MethodInfo>();
+                    Dictionary<string, Tuple<Around,MethodInfo>> aroundMethodInfos = new Dictionary<string, Tuple<Around,MethodInfo>>();
                     Dictionary<string, Tuple<Throws,MethodInfo>> throwMethodInfos = new Dictionary<string, Tuple<Throws,MethodInfo>>();
                     foreach (var beanTypeMethod in beanTypeMethodList)
                     {
@@ -1323,7 +1335,7 @@ namespace Autofac.Annotation
                                 throw new InvalidOperationException(
                                     $"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
                             }
-                            aroundMethodInfos.Add(key, beanTypeMethod);
+                            aroundMethodInfos.Add(key, new Tuple<Around, MethodInfo>(aroundAttribute,beanTypeMethod));
                         }
 
                         //返回类型只能是void和Task
@@ -1342,7 +1354,7 @@ namespace Autofac.Annotation
                                     $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
                             }
 
-                            beforeMethodInfos.Add(key, beanTypeMethod);
+                            beforeMethodInfos.Add(key,  new Tuple<Before, MethodInfo>(beforeAttribute,beanTypeMethod));
                          
                         }
 
@@ -1464,7 +1476,8 @@ namespace Autofac.Annotation
                 InitMethod = bean.InitMethod,
                 DestroyMethod = bean.DestroyMethod,
                 OrderIndex = bean.OrderIndex,
-                NotUseProxy = bean.NotUseProxy
+                NotUseProxy = bean.NotUseProxy,
+                CurrentClassTypeAttributes = Enumerable.OfType<Attribute>(currentType.GetCustomAttributes()).ToList()
             };
 
             if (bean.AutofacScope == AutofacScope.Default)
@@ -1866,13 +1879,4 @@ namespace Autofac.Annotation
         }
     }
 
-    internal class ComponentModelCacheSingleton
-    {
-        public ConcurrentDictionary<Type, ComponentModel> ComponentModelCache { get; set; }
-        
-        /// <summary>
-        /// 存储动态泛型类
-        /// </summary>
-        public ConcurrentDictionary<string, ComponentModel> DynamicComponentModelCache { get; set; }
-    }
 }

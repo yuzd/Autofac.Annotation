@@ -6,7 +6,7 @@ namespace Autofac.Annotation
     /// 配合pointCut的错误拦截器
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
-    public class Throws : Attribute
+    public sealed class Throws : PointcutBasicAttribute
     {
         /// <summary>
         /// 
@@ -40,11 +40,6 @@ namespace Autofac.Annotation
             this.GroupName = groupName;
             this.ExceptionType = exceptionType;
         }
-
-        /// <summary>
-        /// 唯一名称
-        /// </summary>
-        public string GroupName { get; set; }
         
         /// <summary>
         /// 指定拦截的错误类型

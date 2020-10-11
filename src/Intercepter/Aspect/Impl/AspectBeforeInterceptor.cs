@@ -1,13 +1,15 @@
 using System.Reflection;
 using System.Threading.Tasks;
 using Autofac.Annotation;
+using Autofac.Aspect.Advice;
+using Autofac.Aspect.Pointcut;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-namespace Autofac.Aspect.Advice.Impl
+namespace Autofac.Aspect.Impl
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
 
     /// <summary>
     /// 前置拦截处理器
@@ -15,13 +17,13 @@ namespace Autofac.Aspect.Advice.Impl
     internal class AspectBeforeInterceptor:IAdvice
     {
         private readonly AspectBefore _beforeAttribute;
-        private readonly (object instance, MethodInfo methodInfo) _pointCutMethod;
+        private readonly RunTimePointcutMethod<Before> _pointCutMethod;
         public AspectBeforeInterceptor(AspectBefore beforeAttribute)
         {
             _beforeAttribute = beforeAttribute;
         }
         
-        public AspectBeforeInterceptor((object instance, MethodInfo methodInfo) pointCutMethod)
+        public AspectBeforeInterceptor(RunTimePointcutMethod<Before> pointCutMethod)
         {
             _pointCutMethod = pointCutMethod;
         }
@@ -34,8 +36,11 @@ namespace Autofac.Aspect.Advice.Impl
             }
             else
             {
-                var rt = AutoConfigurationHelper.InvokeInstanceMethod(_pointCutMethod.instance, _pointCutMethod.methodInfo, aspectContext.ComponentContext, aspectContext);
-                if (typeof(Task).IsAssignableFrom(_pointCutMethod.methodInfo.ReturnType))
+                var rt = AutoConfigurationHelper.InvokeInstanceMethod(
+                    _pointCutMethod.Instance,
+                    _pointCutMethod.MethodInfo, 
+                    aspectContext.ComponentContext, aspectContext,injectAnotation:_pointCutMethod.PointcutInjectAnotation);
+                if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodInfo.ReturnType))
                 {
                     await ((Task) rt).ConfigureAwait(false);
                 }

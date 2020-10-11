@@ -9,7 +9,7 @@ namespace Autofac.Aspect.Pointcut
     /// <summary>
     /// PointCut装配集合数据源
     /// </summary>
-    public class PointCutConfigurationList
+    internal class PointCutConfigurationList
     {
 
         /// <summary>
@@ -20,17 +20,36 @@ namespace Autofac.Aspect.Pointcut
         /// <summary>
         /// 对应的method目标集合
         /// </summary>
-        public ConcurrentDictionary<MethodInfo,List<PointcutConfigurationInfo>> PointcutTargetInfoList { get; set; }
+        public ConcurrentDictionary<MethodInfo,List<RunTimePointCutConfiguration>> PointcutTargetInfoList { get; set; }
         
         /// <summary>
         /// 针对动态泛型类的method目标集合
         /// </summary>
-        public ConcurrentDictionary<string,List<PointcutConfigurationInfo>> DynamicPointcutTargetInfoList { get; set; }
+        public ConcurrentDictionary<string,List<RunTimePointCutConfiguration>> DynamicPointcutTargetInfoList { get; set; }
         
         /// <summary>
         /// 对应的class目标集合
         /// </summary>
         public ConcurrentDictionary<Type,bool> PointcutTypeInfoList { get; set; }
 
+    }
+
+    internal class RunTimePointCutConfiguration
+    {
+        
+        public RunTimePointCutConfiguration(PointcutConfigurationInfo configurationInfo,Attribute methodInjectPointcutAttribute)
+        {
+            PointcutConfigurationInfo = configurationInfo;
+            MethodInjectPointcutAttribute = methodInjectPointcutAttribute;
+        }
+        /// <summary>
+        /// 方法 对应的 切面集合
+        /// </summary>
+        public PointcutConfigurationInfo  PointcutConfigurationInfo{ get; set; }
+        
+        /// <summary>
+        /// 方法运行时 有识别到 需要注入 指定注解
+        /// </summary>
+        public Attribute MethodInjectPointcutAttribute { get; set; }
     }
 }

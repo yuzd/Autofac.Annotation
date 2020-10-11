@@ -15,7 +15,7 @@ namespace Autofac.Annotation
     /// 只能打一个标签 可以继承父类
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter)]
-    public class Autowired : ParameterFilterAttribute
+    public sealed class Autowired : ParameterFilterAttribute
     {
         /// <summary>
         /// 默认的

@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Autofac.Aspect.Advice.Impl;
+using Autofac.Aspect.Impl;
 using Castle.DynamicProxy;
 
 namespace Autofac.Aspect.Advice
@@ -48,11 +48,12 @@ namespace Autofac.Aspect.Advice
             AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
 
             var aroundIndex = 0;
+            var throwsIndex = 0;
+            var throwingMethodCount = AdviceMethod.Count(r => r.AspectThrowing!=null);
             foreach (var chain in AdviceMethod)
             {
                 var isLast = aroundIndex == AdviceMethod.Count - 1;
 
-                // var reverseAfter = AdviceMethod.Count == 1? chain.AspectAfter:  AdviceMethod[AdviceMethod.Count - 1 - aroundIndex].AspectAfter;
                 if (chain.AspectAfter != null)
                 {
                     var after = new AspectAfterInterceptor(chain.AspectAfter);
@@ -62,23 +63,15 @@ namespace Autofac.Aspect.Advice
 
                 if (chain.AspectArround != null)
                 {
+                    var around = new AspectAroundInterceptor(chain.AspectArround);
                     //Arround 先加进去先执行 后续执行权脚在了Arround的实际运行方法
-                    builder.Use(next => async ctx =>
-                    {
-                        await chain.AspectArround.OnInvocation(ctx, next);
-                        //如果有拦截器设置 ReturnValue 那么就直接拿这个作为整个拦截器的方法返回值
-                        if (ctx.InvocationContext.ReturnValue != null)
-                        {
-                            ctx.Result = ctx.InvocationContext.ReturnValue;
-                        }
-                    });
+                    builder.Use(next => async ctx => await around.OnInvocation(ctx, next));
                 }
                 
-                var haveThrowingMethod = chain.AspectThrowing != null;
-
-                if (haveThrowingMethod)
+                if (chain.AspectThrowing != null)
                 {
-                    var aspectThrowingInterceptor = new AspectThrowingInterceptor(chain.AspectThrowing, isLast);
+                    throwsIndex++;
+                    var aspectThrowingInterceptor = new AspectThrowingInterceptor(chain.AspectThrowing, throwsIndex ==throwingMethodCount );
                     builder.Use(next => async ctx => { await aspectThrowingInterceptor.OnInvocation(ctx, next); });
                 }
 
@@ -89,26 +82,38 @@ namespace Autofac.Aspect.Advice
                     builder.Use(next => async ctx => await before.OnInvocation(ctx, next));
                 }
 
-                if (isLast)
+                aroundIndex++;
+                if (!isLast) continue;
+
+                if (throwingMethodCount < 1)
                 {
                     //真正的方法
                     builder.Use(next => async ctx =>
                     {
-                        try
-                        {
-                            await ctx.Proceed();
-                        }
-                        catch (Exception ex)
-                        {
-                            if (!haveThrowingMethod) throw; //如果没有错误增强器直接throw
-                            ctx.Exception = ex; // 只有这里会设置值 到错误增强器里面去处理并 在最后一个错误处理器里面throw
-                        }
-
+                        await ctx.Proceed();
                         await next(ctx);
                     });
+                    continue;
                 }
+                
+                //真正的方法
+                builder.Use(next => async ctx =>
+                {
+                    try
+                    {
+                        await ctx.Proceed();
+                    }
+                    catch (Exception ex)
+                    {
+                        ctx.Exception = ex; // 只有这里会设置值 到错误增强器里面去处理并 在最后一个错误处理器里面throw
+                        throw;
+                    }
 
-                aroundIndex++;
+                    await next(ctx);
+                });
+               
+                
+         
             }
 
             var aspectfunc = builder.Build();

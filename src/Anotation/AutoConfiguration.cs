@@ -13,7 +13,7 @@ namespace Autofac.Annotation
     /// Bean标签在这个类里面才有作用
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public class AutoConfiguration : System.Attribute
+    public sealed class AutoConfiguration : System.Attribute
     {
         /// <summary>
         /// 构造函数

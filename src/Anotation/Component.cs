@@ -9,7 +9,7 @@ namespace Autofac.Annotation
     /// 打在父类上子类没打的话子类就获取不到
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public class Component : System.Attribute
+    public sealed class Component : System.Attribute
     {
         #region Constructor
         /// <summary>

@@ -1,8 +1,10 @@
 using System.Reflection;
 using System.Threading.Tasks;
 using Autofac.Annotation;
+using Autofac.Aspect.Advice;
+using Autofac.Aspect.Pointcut;
 
-namespace Autofac.Aspect.Advice.Impl
+namespace Autofac.Aspect.Impl
 {
     using System;
     using System.Collections.Generic;
@@ -16,13 +18,13 @@ namespace Autofac.Aspect.Advice.Impl
     {
         private readonly AspectAfter _afterAttribute;
 
-        private readonly (object instance,After after , MethodInfo methodInfo) _pointCutMethod;
+        private readonly RunTimePointcutMethod<After> _pointCutMethod;
         public AspectAfterInterceptor(AspectAfter afterAttribute)
         {
             _afterAttribute = afterAttribute;
         }
 
-        public AspectAfterInterceptor((object instance,After after, MethodInfo methodInfo) pointCutMethod)
+        public AspectAfterInterceptor(RunTimePointcutMethod<After> pointCutMethod)
         {
             _pointCutMethod = pointCutMethod;
         }
@@ -45,11 +47,13 @@ namespace Autofac.Aspect.Advice.Impl
             else
             {
                 var rt = AutoConfigurationHelper.InvokeInstanceMethod(
-                    _pointCutMethod.instance,
-                    _pointCutMethod.methodInfo,
+                    _pointCutMethod.Instance,
+                    _pointCutMethod.MethodInfo,
                     aspectContext.ComponentContext,
-                    aspectContext,returnValue:aspectContext.InvocationContext.ReturnValue,returnParam:_pointCutMethod.after.Returing);
-                if (typeof(Task).IsAssignableFrom(_pointCutMethod.methodInfo.ReturnType))
+                    aspectContext,returnValue:aspectContext.InvocationContext.ReturnValue,
+                    returnParam:_pointCutMethod.PointcutBasicAttribute.Returing,
+                    injectAnotation:_pointCutMethod.PointcutInjectAnotation);
+                if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodInfo.ReturnType))
                 {
                     await ((Task) rt).ConfigureAwait(false);
                 }

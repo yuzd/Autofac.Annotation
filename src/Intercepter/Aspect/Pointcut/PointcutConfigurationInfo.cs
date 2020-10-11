@@ -29,7 +29,7 @@ namespace Autofac.Aspect.Pointcut
         /// <summary>
         /// 切面配置对应的前置方法
         /// </summary>
-        public MethodInfo BeforeMethod { get; set; }
+        public Tuple<Before,MethodInfo> BeforeMethod { get; set; }
         
         /// <summary>
         /// 切面配置对应的后置方法
@@ -39,7 +39,7 @@ namespace Autofac.Aspect.Pointcut
         /// <summary>
         /// 切面配置对应的环绕方法
         /// </summary>
-        public MethodInfo AroundMethod { get; set; }
+        public Tuple<Around,MethodInfo> AroundMethod { get; set; }
         
         /// <summary>
         /// 切面配置对应的错误拦截方法

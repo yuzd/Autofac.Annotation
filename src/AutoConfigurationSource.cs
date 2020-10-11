@@ -101,7 +101,8 @@ namespace Autofac.Annotation
 
     internal static class AutoConfigurationHelper
     {
-        public static object InvokeInstanceMethod(object instance, MethodInfo methodInfo,IComponentContext context,AspectContext invocation = null,AspectDelegate _next = null,object returnValue = null,string returnParam = null)
+        public static object InvokeInstanceMethod(object instance, MethodInfo methodInfo,IComponentContext context,
+            AspectContext invocation = null,AspectDelegate _next = null,object returnValue = null,string returnParam = null,Attribute injectAnotation = null)
         {
             try
             {
@@ -124,6 +125,12 @@ namespace Autofac.Annotation
                     if (_next != null && parameter.ParameterType == typeof(AspectDelegate))
                     {
                         parameterObj.Add(_next);
+                        continue;
+                    }
+
+                    if (injectAnotation != null && parameter.ParameterType == injectAnotation.GetType())
+                    {
+                        parameterObj.Add(injectAnotation);
                         continue;
                     }
 
@@ -308,7 +315,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// AutoConfiguration装配集合数据源
     /// </summary>
-    public class AutoConfigurationList
+    internal class AutoConfigurationList
     {
 
         /// <summary>
@@ -323,7 +330,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// AutoConfiguration装配集合数据源
     /// </summary>
-    public class AutoConfigurationDetail
+    internal class AutoConfigurationDetail
     {
         /// <summary>
         /// Configuration 所在的类的类型

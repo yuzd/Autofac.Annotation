@@ -7,7 +7,7 @@ namespace Autofac.Annotation
     /// 配合pointCut的环绕拦截器
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
-    public class Around : System.Attribute
+    public sealed class Around : PointcutBasicAttribute
     {
         /// <summary>
         /// 
@@ -24,10 +24,7 @@ namespace Autofac.Annotation
         {
             this.GroupName = groupName;
         }
-        /// <summary>
-        /// 唯一名称
-        /// </summary>
-        public string GroupName { get; set; }
+
     }
 
 }

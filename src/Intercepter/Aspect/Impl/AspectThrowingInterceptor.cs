@@ -1,13 +1,15 @@
 using System.Reflection;
 using System.Threading.Tasks;
 using Autofac.Annotation;
+using Autofac.Aspect.Advice;
+using Autofac.Aspect.Pointcut;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-namespace Autofac.Aspect.Advice.Impl
+namespace Autofac.Aspect.Impl
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
 
     /// <summary>
     /// 异常返回拦截处理器
@@ -15,7 +17,7 @@ namespace Autofac.Aspect.Advice.Impl
     internal class AspectThrowingInterceptor : IAdvice
     {
         private readonly AspectThrows _aspectThrowing;
-        private readonly Tuple<object, Throws, MethodInfo> _pointcutThrowin;
+        private readonly RunTimePointcutMethod<Throws> _pointcutThrowin;
         private readonly bool _isLast;
 
         public AspectThrowingInterceptor(AspectThrows throwAttribute,bool isLast)
@@ -24,7 +26,7 @@ namespace Autofac.Aspect.Advice.Impl
             _isLast = isLast;
         }
 
-        public AspectThrowingInterceptor(Tuple<object, Throws, MethodInfo> throwAttribute,bool isLast)
+        public AspectThrowingInterceptor(RunTimePointcutMethod<Throws> throwAttribute,bool isLast)
         {
             _pointcutThrowin = throwAttribute;
             _isLast = isLast;
@@ -56,14 +58,17 @@ namespace Autofac.Aspect.Advice.Impl
 
                     if (_pointcutThrowin != null)
                     {
-                        if (_pointcutThrowin.Item2.ExceptionType == null || _pointcutThrowin.Item2.ExceptionType == currentExType)
+                        if (_pointcutThrowin.PointcutBasicAttribute.ExceptionType == null || _pointcutThrowin.PointcutBasicAttribute.ExceptionType == currentExType)
                         {
                             var rt = AutoConfigurationHelper.InvokeInstanceMethod(
-                                _pointcutThrowin.Item1,
-                                _pointcutThrowin.Item3,
+                                _pointcutThrowin.Instance,
+                                _pointcutThrowin.MethodInfo,
                                 aspectContext.ComponentContext,
-                                aspectContext, returnValue: ex, returnParam: _pointcutThrowin.Item2.Throwing);
-                            if (typeof(Task).IsAssignableFrom(_pointcutThrowin.Item3.ReturnType))
+                                aspectContext, 
+                                returnValue: ex, 
+                                returnParam: _pointcutThrowin.PointcutBasicAttribute.Throwing,
+                                injectAnotation:_pointcutThrowin.PointcutInjectAnotation);
+                            if (typeof(Task).IsAssignableFrom(_pointcutThrowin.MethodInfo.ReturnType))
                             {
                                 await ((Task) rt).ConfigureAwait(false);
                             }

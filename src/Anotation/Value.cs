@@ -17,7 +17,7 @@ namespace Autofac.Annotation
     /// 只能打一个标签 可以继承父类
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter | AttributeTargets.Field)]
-    public class Value : ParameterFilterAttribute
+    public sealed class Value : ParameterFilterAttribute
     {
         /// <summary>
         /// The default placeholder prefix.

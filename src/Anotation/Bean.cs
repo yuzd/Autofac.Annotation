@@ -10,7 +10,7 @@ namespace Autofac.Annotation
     /// Bean标签
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
-    public class Bean : System.Attribute
+    public sealed class Bean : System.Attribute
     {
         /// <summary>
         /// 构造函数

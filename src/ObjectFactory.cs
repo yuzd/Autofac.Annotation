@@ -133,7 +133,7 @@ namespace Autofac.Annotation
     /// IValue工厂
     /// </summary>
     [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true,NotUseProxy = true)]
-    public class ObjectBeanFactory
+    public sealed class ObjectBeanFactory
     {
         private readonly IComponentContext _context;
 
@@ -160,7 +160,7 @@ namespace Autofac.Annotation
         /// <param name="parameterInfo"></param>
         /// <param name="autoConfigurationDetail"></param>
         /// <returns></returns>
-        public object CreateValueFactory(Value value, Type memberType, Type classType, string parameterInfo, AutoConfigurationDetail autoConfigurationDetail)
+        internal object CreateValueFactory(Value value, Type memberType, Type classType, string parameterInfo, AutoConfigurationDetail autoConfigurationDetail)
         {
             var targetType = memberType.GenericTypeArguments[0];
             var valueType = typeof(ValueObjectFactory<>);
@@ -198,7 +198,7 @@ namespace Autofac.Annotation
         /// <param name="instance"></param>
         /// <param name="Parameters"></param>
         /// <returns></returns>
-        public object CreateAutowiredFactory(Autowired autowired, Type type, Type classType,string fieldOrPropertyName, object instance, List<Parameter> Parameters)
+        internal object CreateAutowiredFactory(Autowired autowired, Type type, Type classType,string fieldOrPropertyName, object instance, List<Parameter> Parameters)
         {
             var targetType = type.GenericTypeArguments[0];
             var valueType = typeof(AutowiredObjectFactory<>);
@@ -217,7 +217,7 @@ namespace Autofac.Annotation
         /// <param name="instance"></param>
         /// <param name="Parameters"></param>
         /// <returns></returns>
-        public object CreateLazyFactory(Autowired autowired, Type type, Type classType,string fieldOrPropertyName, object instance, List<Parameter> Parameters)
+        internal object CreateLazyFactory(Autowired autowired, Type type, Type classType,string fieldOrPropertyName, object instance, List<Parameter> Parameters)
         {
             var targetType = type.GenericTypeArguments[0];
             var valueType = typeof(LazyAutowiredFactory<>);

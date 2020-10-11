@@ -28,7 +28,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using Autofac.Annotation.Intercepter;
 using Autofac.Builder;
 using Autofac.Core;
 using Autofac.Core.Resolving.Pipeline;
@@ -158,8 +157,8 @@ namespace Autofac.Annotation
 
                 proxyParameters.Add(new PositionalParameter(index++, GetInterceptorServices(e.Component, registration.ActivatorData.ImplementationType)
                     .Select(s => e.Context.ResolveService(s))
-                    .Cast<IAsyncInterceptor>()
-                    .ToArray().ToInterceptors()));
+                    .Cast<IInterceptor>()
+                    .ToArray()));
 
                 if (options.Selector != null)
                 {
@@ -224,8 +223,8 @@ namespace Autofac.Annotation
                 var interfaces = proxiedInterfaces.Skip(1).ToArray();
 
                 var interceptors = GetInterceptorServices(ctxt.Registration, ctxt.Instance.GetType())
-                    .Select(s => ctxt.ResolveService(s))
-                    .Cast<IAsyncInterceptor>()
+                    .Select(ctxt.ResolveService)
+                    .Cast<IInterceptor>()
                     .ToArray();
 
                 //这里需要改一下

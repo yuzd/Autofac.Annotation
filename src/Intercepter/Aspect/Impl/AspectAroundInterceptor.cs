@@ -35,11 +35,6 @@ namespace Autofac.Aspect.Impl
             if (_aroundAttribute != null)
             {
                 await _aroundAttribute.OnInvocation(aspectContext, next);
-                //如果有拦截器设置 ReturnValue 那么就直接拿这个作为整个拦截器的方法返回值
-                if (aspectContext.InvocationContext.ReturnValue != null)
-                {
-                    aspectContext.Result = aspectContext.InvocationContext.ReturnValue;
-                }
                 return;
             }
             
@@ -56,11 +51,7 @@ namespace Autofac.Aspect.Impl
             {
                 await ((Task) rt).ConfigureAwait(false);
             }
-            //如果有拦截器设置 ReturnValue 那么就直接拿这个作为整个拦截器的方法返回值
-            if (aspectContext.InvocationContext.ReturnValue != null)
-            {
-                aspectContext.Result = aspectContext.InvocationContext.ReturnValue;
-            }
+            
         }
     }
 

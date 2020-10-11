@@ -200,4 +200,64 @@ namespace Autofac.Annotation.Test.test6
             throw new ArgumentException("ddd");
         }
     }
+    
+    [Component]
+    public class PointcutAnotationTest3
+    {
+        [RequestWatch(3000)]
+        [RequestWatch2(2000)]
+        public virtual async ValueTask<string> Test(string dd)
+        {
+            if(dd == "hello") return "ddd";
+
+            await Task.Delay(1000);
+            PointcutAnotationTest1.testResult.Add("Test");
+            return "aaaa";
+        }
+    }
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+    public class RequestWatch3 : Attribute
+    {
+        public int Timeout { get; }
+
+        public RequestWatch3(int timeout)
+        {
+            Timeout = timeout;
+        }
+    }
+    [Pointcut(NameSpace = "Autofac.Annotation.Test.test6",AttributeType = typeof(RequestWatch3))]
+    public class PointcutTest5
+    {
+        
+        [Around]
+        public async Task Around(AspectContext context,AspectDelegate next,RequestWatch3 requestWatch)
+        {
+            PointcutAnotationTest1.testResult.Add("PointcutTest4.Around-start");
+            await next(context);
+            PointcutAnotationTest1.testResult.Add("PointcutTest4.Around-end");
+        }
+    }
+    
+    [Component]
+    public class ValueTaskAnotationTest4
+    {
+        [RequestWatch3(2000)]
+        public virtual async ValueTask<string> Test(string dd)
+        {
+            if(dd == "hello") return "ddd";
+
+            await Task.Delay(1000);
+            PointcutAnotationTest1.testResult.Add("Test");
+            return "aaaa";
+        }
+        
+        [RequestWatch3(2000)]
+        public virtual async ValueTask Test2(string dd)
+        {
+            if(dd == "hello") return ;
+
+            await Task.Delay(1000);
+            PointcutAnotationTest1.testResult.Add("Test");
+        }
+    }
 }

@@ -18,9 +18,10 @@ namespace Autofac.Configuration.Test.test7
         public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
         {
             //如果缓存存在，则直接返回
-            if (_cache.TryGetValue(aspectContext.InvocationContext.Method.Name, out var _cacheResult))
+            if (_cache.TryGetValue(aspectContext.TargetMethod.Name, out var _cacheResult))
             {
-                aspectContext.InvocationContext.ReturnValue = _cacheResult;
+                Console.WriteLine("Use cache");
+                aspectContext.ReturnValue = _cacheResult; 
                 return;
             }
 
@@ -28,7 +29,7 @@ namespace Autofac.Configuration.Test.test7
             await _next(aspectContext);
 
             //缓存方法结果 
-            _cache.TryAdd(aspectContext.InvocationContext.Method.Name, aspectContext.InvocationContext.ReturnValue);
+            _cache.TryAdd(aspectContext.TargetMethod.Name, aspectContext.ReturnValue);
 
         }
     }

@@ -375,41 +375,53 @@ namespace Autofac.Annotation
         /// 单例对象缓存
         /// </summary>
         private ConcurrentDictionary<MethodInfo,object> _instanceCache = new ConcurrentDictionary<MethodInfo, object>();
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="invocation"></param>
-        /// <param name="proceedInfo"></param>
-        /// <param name="proceed"></param>
-        /// <returns></returns>
-        protected override async Task InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task> proceed)
-        {
-            await proceed(invocation,proceedInfo);
-        }
+       
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="invocation"></param>
-        /// <param name="proceedInfo"></param>
-        /// <param name="proceed"></param>
-        /// <typeparam name="TResult"></typeparam>
-        /// <returns></returns>
-        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
+        /// <exception cref="NotImplementedException"></exception>
+        protected override void Intercept(IInvocation invocation)
         {
+            if (invocation.MethodInvocationTarget.ReturnType == typeof(void))
+            {
+                invocation.Proceed();
+                return;
+            }
+            
+            
             //单例的
-            if (_instanceCache.TryGetValue(invocation.MethodInvocationTarget, out var instance))
+            if (_instanceCache.TryGetValue(invocation.Method, out var instance))
             {
                 invocation.ReturnValue = instance;
-                return (TResult)instance;
+                return;
+            }
+            
+            invocation.Proceed();
+            
+            _instanceCache.TryAdd(invocation.Method, invocation.ReturnValue);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="invocation"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        protected override async ValueTask InterceptAsync(IAsyncInvocation invocation)
+        {
+            //单例的
+            if (_instanceCache.TryGetValue(invocation.Method, out var instance))
+            {
+                invocation.Result = instance;
+                return;
             }
 
-            var result = await proceed(invocation, proceedInfo);
+            await invocation.ProceedAsync();
 
-            _instanceCache.TryAdd(invocation.MethodInvocationTarget, result);
-            return result;
+            _instanceCache.TryAdd(invocation.Method, invocation.Result);
         }
-        
     }
     
     /// <summary>

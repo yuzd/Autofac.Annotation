@@ -265,5 +265,39 @@ namespace Autofac.Annotation.Test.test6
             Assert.Equal("PointcutTest2.Throwing",PointcutAnotationTest1.testResult[8]);
             
         }
+        
+        [Fact]
+        public async Task Test_Type_12()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+                
+            var ddd = container.Resolve<PointcutAnotationTest3>();
+
+            var r2 = await ddd.Test("ddd");
+            
+            Assert.Equal("PointcutTest2.Around-start",PointcutAnotationTest1.testResult[0]);
+        }
+        
+        [Fact]
+        public async Task Test_Type_13()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(UnitTest6).Assembly).SetAllowCircularDependencies(true));
+
+            var container = builder.Build();
+                
+            var ddd = container.Resolve<ValueTaskAnotationTest4>();
+
+            var r2 = await ddd.Test("ddd");
+             await ddd.Test2("ddd");
+            
+        }
     }
 }

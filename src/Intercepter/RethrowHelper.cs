@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// Copyright (c) 2016-2020 James Skimming. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
-namespace Autofac.Annotation.Intercepter
+namespace Castle.DynamicProxy.NoCoverage
 {
     using System;
     using System.Collections.Generic;

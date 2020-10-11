@@ -13,6 +13,7 @@ using Castle.DynamicProxy;
 using Autofac.Annotation.Util;
 using Autofac.Aspect.Advice;
 using Autofac.Aspect.Pointcut;
+using Castle.DynamicProxy.NoCoverage;
 
 namespace Autofac.Aspect
 {
@@ -37,46 +38,12 @@ namespace Autofac.Aspect
             _configuration = configurationList;
         }
 
-        /// <summary>
-        /// 一个目标方法只会适 Before After Arround 其中的一个切面
-        /// </summary>
-        /// <param name="invocation"></param>
-        /// <param name="proceedInfo"></param>
-        /// <param name="proceed"></param>
-        /// <returns></returns>
-        protected override async Task InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo,
-            Func<IInvocation, IInvocationProceedInfo, Task> proceed)
-        {
-            if (!_configuration.CacheList.TryGetValue(invocation.MethodInvocationTarget, out var pointCut))
-            {
-                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
-                    !_configuration.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(),
-                        out var pointCutDynamic))
-                {
-                    //该方法不需要拦截
-                    await proceed(invocation, proceedInfo);
-                    return;
-                }
-
-                pointCut = pointCutDynamic;
-            }
-            
-            var aspectContext = new AspectContext(_component, invocation,proceedInfo);
-            aspectContext.Proceed = async () => { await proceed(invocation, proceedInfo); };
-            var runTask = pointCut.AspectFunc.Value;
-            await runTask(aspectContext);
-        }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="invocation"></param>
-        /// <param name="proceedInfo"></param>
-        /// <param name="proceed"></param>
-        /// <typeparam name="TResult"></typeparam>
-        /// <returns></returns>
-        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo,
-            Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
+        protected override void Intercept(IInvocation invocation)
         {
             if (!_configuration.CacheList.TryGetValue(invocation.MethodInvocationTarget, out var pointCut))
             {
@@ -85,23 +52,63 @@ namespace Autofac.Aspect
                         out var pointCutDynamic))
                 {
                     //该方法不需要拦截
-                    return await proceed(invocation, proceedInfo);
+                    invocation.Proceed();
+                    return;
+                }
+
+                pointCut = pointCutDynamic;
+            }
+
+            var catpture = invocation.CaptureProceedInfo();
+            var aspectContext = new AspectContext(_component, invocation);
+            aspectContext.Proceed =  () => { 
+                catpture.Invoke();
+                return new ValueTask();
+            };
+            
+            var runTask = pointCut.AspectFunc.Value;
+            var task = runTask(aspectContext);
+            // If the intercept task has yet to complete, wait for it.
+            if (!task.IsCompleted)
+            {
+                // Need to use Task.Run() to prevent deadlock in .NET Framework ASP.NET requests.
+                // GetAwaiter().GetResult() prevents a thrown exception being wrapped in a AggregateException.
+                // See https://stackoverflow.com/a/17284612
+                Task.Run(() => task).GetAwaiter().GetResult();
+            }
+            task.RethrowIfFaulted();
+        }
+
+       
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="invocation"></param>
+        /// <returns></returns>
+        protected override async ValueTask InterceptAsync(IAsyncInvocation invocation)
+        {
+            if (!_configuration.CacheList.TryGetValue(invocation.Method, out var pointCut))
+            {
+                if (!invocation.Method.DeclaringType.GetTypeInfo().IsGenericType ||
+                    !_configuration.DynamicCacheList.TryGetValue(invocation.Method.GetMethodInfoUniqueName(),
+                        out var pointCutDynamic))
+                {
+                    //该方法不需要拦截
+                    await invocation.ProceedAsync();
+                    return;
                 }
 
                 pointCut = pointCutDynamic;
             }
 
              
-            var aspectContext = new AspectContext(_component, invocation,proceedInfo);
+            var aspectContext = new AspectContext(_component, invocation);
             aspectContext.Proceed = async () =>
             {
-                aspectContext.Result = await proceed(invocation, proceedInfo);
-                aspectContext.InvocationContext.ReturnValue = aspectContext.Result; //原方法的执行返回值
+                await invocation.ProceedAsync();
             };
             var runTask = pointCut.AspectFunc.Value;
             await runTask(aspectContext);
-            var r = (TResult) aspectContext.Result;
-            return r;
         }
     }
 }

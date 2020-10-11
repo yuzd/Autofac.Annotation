@@ -10,48 +10,37 @@ namespace Autofac.Configuration.Test.test2
     [Component]
     public class Test2Interceptor : AsyncInterceptor
     {
-        protected override async Task InterceptAsync(
-            IInvocation invocation,
-            IInvocationProceedInfo proceedInfo,
-            Func<IInvocation, IInvocationProceedInfo, Task> proceed)
+        protected override void Intercept(IInvocation invocation)
         {
-            await proceed(invocation, proceedInfo).ConfigureAwait(false);
+            invocation.Proceed();
         }
 
-        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
+        protected override async ValueTask InterceptAsync(IAsyncInvocation invocation)
         {
-            TResult result = await proceed(invocation, proceedInfo).ConfigureAwait(false);
-            if (result is string)
+            await invocation.ProceedAsync();
+            if (invocation.Result is string)
             {
-                var tt = (TResult)Activator.CreateInstance(typeof(String), new char[] { 'a' });
-                invocation.ReturnValue = tt;
-                return tt;
+                invocation.Result = "a";
             }
-            return result;
         }
     }
 
     [Component("Test2Interceptor2")]
     public class Test2Interceptor2 : AsyncInterceptor
     {
-        protected override async Task InterceptAsync(
-            IInvocation invocation,
-            IInvocationProceedInfo proceedInfo,
-            Func<IInvocation, IInvocationProceedInfo, Task> proceed)
+
+        protected override void Intercept(IInvocation invocation)
         {
-            await proceed(invocation, proceedInfo).ConfigureAwait(false);
+            invocation.Proceed();
         }
 
-        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo, Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
+        protected override async ValueTask InterceptAsync(IAsyncInvocation invocation)
         {
-            TResult result = await proceed(invocation, proceedInfo).ConfigureAwait(false);
-            if (result is string)
+            await invocation.ProceedAsync();
+            if (invocation.Result is string)
             {
-                var tt = (TResult)Activator.CreateInstance(typeof(String), new char[] { 'b' });
-                invocation.ReturnValue = tt;
-                return tt;
+                invocation.Result = "b";
             }
-            return result;
         }
     }
 

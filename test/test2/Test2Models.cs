@@ -115,7 +115,7 @@ namespace Autofac.Configuration.Test.test2
         }
     }
 
-    [Component(Interceptor = typeof(IAsyncInterceptor), InterceptorType = InterceptorType.Class,InterceptorKey = nameof(Test2Interceptor2))]
+    [Component(Interceptor = typeof(AsyncInterceptor), InterceptorType = InterceptorType.Class,InterceptorKey = nameof(Test2Interceptor2))]
     public class Model61
     {
         public virtual async Task<string> hello()
@@ -128,6 +128,6 @@ namespace Autofac.Configuration.Test.test2
     public class Model7
     {
         [Autowired]
-        public IList<IAsyncInterceptor> Interceptors;
+        public IList<AsyncInterceptor> Interceptors;
     }
 }

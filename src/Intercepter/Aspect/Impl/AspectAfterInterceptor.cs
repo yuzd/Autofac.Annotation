@@ -42,7 +42,7 @@ namespace Autofac.Aspect.Impl
             
             if (_afterAttribute != null)
             {
-                await this._afterAttribute.After(aspectContext,aspectContext.Result);
+                await this._afterAttribute.After(aspectContext,aspectContext.ReturnValue);
             }
             else
             {
@@ -52,7 +52,7 @@ namespace Autofac.Aspect.Impl
                     _pointCutMethod.MethodParameters,
                     aspectContext.ComponentContext,
                     aspectContext,
-                    returnValue:aspectContext.InvocationContext.ReturnValue,
+                    returnValue:aspectContext.ReturnValue,
                     returnParam:_pointCutMethod.PointcutBasicAttribute.Returing,
                     injectAnotation:_pointCutMethod.PointcutInjectAnotation);
 

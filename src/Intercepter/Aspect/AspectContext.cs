@@ -26,13 +26,23 @@ namespace Autofac.Aspect
         /// </summary>
         /// <param name="context"></param>
         /// <param name="invocation"></param>
-        /// <param name="proceedInfo"></param>
-        public AspectContext(IComponentContext context, IInvocation invocation, IInvocationProceedInfo proceedInfo)
+        public AspectContext(IComponentContext context, IInvocation invocation)
         {
             this.ComponentContext = context;
             this.InvocationContext = invocation;
-            this.CaptureProceedInfo = proceedInfo;
         }
+        /// <summary>
+        /// 构造方法
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="invocation"></param>
+        public AspectContext(IComponentContext context, IAsyncInvocation invocation)
+        {
+            this.ComponentContext = context;
+            this.IAsyncnvocationContext = invocation;
+            
+        }
+        
         /// <summary>
         /// autofac容器
         /// </summary>
@@ -40,28 +50,85 @@ namespace Autofac.Aspect
 
 
         /// <summary>
-        /// 执行快照
-        /// </summary>
-        internal IInvocationProceedInfo CaptureProceedInfo { get; set; }
-
-        /// <summary>
         /// 执行环节上下文
         /// </summary>
 
-        public IInvocation InvocationContext { get; set; }
+        internal IInvocation InvocationContext { get; set; }
+        
+        /// <summary>
+        /// 异步执行环节上下文
+        /// </summary>
+        internal IAsyncInvocation IAsyncnvocationContext { get; set; }
 
 
         /// <summary>
-        /// 有返回结果的
+        /// 被拦截的目标方法的参数
         /// </summary>
-        internal object Result { get; set; }
+       public IReadOnlyList<object> Arguments {
+            get
+            {
+                if (InvocationContext != null)
+                {
+                    return InvocationContext.Arguments;
+                }
+
+                return IAsyncnvocationContext.Arguments;
+            }
+        }
         
-        
+        /// <summary>
+        /// 被拦截的目标方法
+        /// </summary>
+       public  MethodInfo TargetMethod {
+            get
+            {
+                if (InvocationContext != null)
+                {
+                    return InvocationContext.MethodInvocationTarget;
+                }
+
+                return IAsyncnvocationContext.Method;
+            }
+        }
+
+
+        /// <summary>
+        /// 设置返回值或者获取返回值
+        /// </summary>
+        public object ReturnValue {
+            get
+            {
+                if (InvocationContext != null)
+                {
+                    return InvocationContext.ReturnValue ;
+                }
+
+                return IAsyncnvocationContext?.Result;
+            }
+            set
+            {
+                if (InvocationContext != null)
+                {
+                    InvocationContext.ReturnValue = value;
+                    return;
+                }
+
+                if (IAsyncnvocationContext != null)
+                {
+                    IAsyncnvocationContext.Result = value;
+                }
+            }
+        }
+
+
+
+
         /// <summary>
         /// 实际真正的方法用在拦截器链的执行过程中
         /// </summary>
-        internal Func<Task> Proceed { get; set; }
+        internal Func<ValueTask> Proceed { get; set; }
 
+        
         /// <summary>
         /// 有返回Exception
         /// </summary>

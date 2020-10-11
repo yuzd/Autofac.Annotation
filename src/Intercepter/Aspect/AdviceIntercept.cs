@@ -5,6 +5,7 @@ using Autofac.Annotation;
 using Autofac.Annotation.Util;
 using Autofac.Aspect.Advice;
 using Castle.DynamicProxy;
+using Castle.DynamicProxy.NoCoverage;
 
 namespace Autofac.Aspect
 {
@@ -27,15 +28,13 @@ namespace Autofac.Aspect
             _cache = cache;
         }
         
+
         /// <summary>
-        /// 无返回值拦截器
+        /// 
         /// </summary>
         /// <param name="invocation"></param>
-        /// <param name="proceedInfo"></param>
-        /// <param name="proceed"></param>
-        /// <returns></returns>
-        protected override async Task InterceptAsync(IInvocation invocation, IInvocationProceedInfo proceedInfo,
-            Func<IInvocation, IInvocationProceedInfo, Task> proceed)
+        /// <exception cref="NotImplementedException"></exception>
+        protected override void Intercept(IInvocation invocation)
         {
             #region 先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
 
@@ -45,7 +44,7 @@ namespace Autofac.Aspect
                 if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
                     (!_cache.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var AttributesDynamic)))
                 {
-                    await proceed(invocation, proceedInfo);
+                    invocation.Proceed();
                     return;
                 }
 
@@ -53,34 +52,45 @@ namespace Autofac.Aspect
             }
 
             #endregion
-
-            var aspectContext = new AspectContext(_component, invocation,proceedInfo);
-            aspectContext.Proceed = async () => { await proceed(invocation, proceedInfo); };
+            
+            var catpture = invocation.CaptureProceedInfo();
+            var aspectContext = new AspectContext(_component, invocation);
+            aspectContext.Proceed =  () => { 
+                catpture.Invoke();
+                return new ValueTask();
+            };
+            
             var runTask = attribute.AspectFunc.Value;
-            await runTask(aspectContext);
+            var task = runTask(aspectContext);
+            // If the intercept task has yet to complete, wait for it.
+            if (!task.IsCompleted)
+            {
+                // Need to use Task.Run() to prevent deadlock in .NET Framework ASP.NET requests.
+                // GetAwaiter().GetResult() prevents a thrown exception being wrapped in a AggregateException.
+                // See https://stackoverflow.com/a/17284612
+                Task.Run(() => task).GetAwaiter().GetResult();
+            }
+            task.RethrowIfFaulted();
         }
 
         /// <summary>
-        /// 有返回值拦截器
+        /// 
         /// </summary>
-        /// <typeparam name="TResult"></typeparam>
         /// <param name="invocation"></param>
-        /// <param name="proceedInfo"></param>
-        /// <param name="proceed"></param>
         /// <returns></returns>
-        protected override async Task<TResult> InterceptAsync<TResult>(IInvocation invocation, IInvocationProceedInfo proceedInfo,
-            Func<IInvocation, IInvocationProceedInfo, Task<TResult>> proceed)
+        /// <exception cref="NotImplementedException"></exception>
+        protected override async ValueTask InterceptAsync(IAsyncInvocation invocation)
         {
-
             #region 先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
 
-            if (!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget, out var attribute))
+            if (!_cache.CacheList.TryGetValue(invocation.Method, out var attribute))
             {
                 //动态泛型类
-                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
-                    (!_cache.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var AttributesDynamic)))
+                if (!invocation.Method.DeclaringType.GetTypeInfo().IsGenericType ||
+                    (!_cache.DynamicCacheList.TryGetValue(invocation.Method.GetMethodInfoUniqueName(), out var AttributesDynamic)))
                 {
-                    return await proceed(invocation, proceedInfo);
+                     await invocation.ProceedAsync();
+                     return;
                 }
 
                 attribute = AttributesDynamic;
@@ -88,18 +98,15 @@ namespace Autofac.Aspect
 
             #endregion
 
-            var aspectContext = new AspectContext(_component, invocation,proceedInfo);
+            var aspectContext = new AspectContext(_component, invocation);
             aspectContext.Proceed = async () =>
             {
-                aspectContext.Result = await proceed(invocation, proceedInfo);
-                aspectContext.InvocationContext.ReturnValue = aspectContext.Result; //原方法的执行返回值
+                await invocation.ProceedAsync();
             };
+            
             var runTask = attribute.AspectFunc.Value;
             await runTask(aspectContext);
-            var r = (TResult) aspectContext.Result;
-            return r;
         }
-
     }
 
 }

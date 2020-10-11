@@ -60,9 +60,9 @@ namespace Autofac.Annotation.Test.test6
         [Around("name3")]
         public async Task Around(AspectContext context,AspectDelegate _next)
         {
-            Console.WriteLine(context.InvocationContext.MethodInvocationTarget.Name + "-->Start");
+            Console.WriteLine(context.TargetMethod.Name + "-->Start");
             await _next(context);
-            Console.WriteLine(context.InvocationContext.MethodInvocationTarget.Name + "-->End");
+            Console.WriteLine(context.TargetMethod.Name + "-->End");
         }
         
         

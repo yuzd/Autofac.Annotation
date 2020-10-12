@@ -22,19 +22,20 @@ namespace Autofac.Configuration.Test.test7
             var container = builder.Build();
 
             var a1 = container.Resolve<TestCacheAop>();
-            var result = await a1.TestInterceptor2();
-            var result2 = await a1.TestInterceptor2();
+            var result = await a1.TestInterceptor1();
+            Assert.NotEmpty(result);
             
-          
-            Assert.Equal(result2,result);
+            var result2 = await a1.TestInterceptor1();
+            
+            Assert.Equal(result+"_Cache",result2);
             
             
             var a11 = container.Resolve<ICacheAop2<Model1>>();
             var result1 = await a11.TestInterceptor2();
+            Assert.NotEmpty(result1);
             var result21 = await a11.TestInterceptor2();
-            
+            Assert.Equal(result1+"_Cache",result21);
           
-            Assert.Equal(result21,result1);
         }
     }
 }

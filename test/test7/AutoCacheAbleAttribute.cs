@@ -21,7 +21,7 @@ namespace Autofac.Configuration.Test.test7
             if (_cache.TryGetValue(aspectContext.TargetMethod.Name, out var _cacheResult))
             {
                 Console.WriteLine("Use cache");
-                aspectContext.ReturnValue = _cacheResult; 
+                aspectContext.ReturnValue = _cacheResult+"_Cache"; 
                 return;
             }
 
@@ -43,7 +43,7 @@ namespace Autofac.Configuration.Test.test7
         public string Name { get; set; } = "TestCacheAop";
 
         [AutoCacheAble]
-        public virtual async Task<string> TestInterceptor2()
+        public virtual async Task<string> TestInterceptor1()
         {
             await Task.Delay(1000);
             Console.WriteLine("TestCacheAop");

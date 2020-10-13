@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Autofac.AspectIntercepter.Advice;
 using Autofac.Features.AttributeFilters;
 using Castle.DynamicProxy;
 
@@ -771,4 +773,137 @@ namespace Autofac.Annotation.Test
     {
         public string Name { get; set; } = "LazyModel2";
     }
+    
+    
+    public class TestHelloBefore1:AspectBefore
+    {
+        public override Task Before(AspectContext aspectContext)
+        {
+            Console.WriteLine("TestHelloBefore1");
+            return Task.CompletedTask;
+        }
+    }
+    
+    public class TestHelloAfter1:AspectAfter
+    {
+        //这个 returnValue 如果目标方法正常返回的话 那就是目标方法的返回值
+        // 如果目标方法抛异常的话 那就是异常本身
+        public override Task After(AspectContext aspectContext,object returnValue)
+        {
+            Console.WriteLine("TestHelloAfter1");
+            return Task.CompletedTask;
+        }
+    }
+    
+    public class TestHelloAfterReturn1:AspectAfterReturn
+    {
+        //result 是目标方法的返回 (如果目标方法是void 则为null)
+        public override Task AfterReturn(AspectContext aspectContext, object result)
+        {
+            Console.WriteLine("TestHelloAfterReturn1");
+            return Task.CompletedTask;
+        }
+    }
+    
+    public class TestHelloAround1:AspectArround
+    {
+        public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
+        {
+            Console.WriteLine("TestHelloAround1 start");
+            await _next(aspectContext);
+            Console.WriteLine("TestHelloAround1 end");
+        }
+    }
+    
+    public class TestHelloAfterThrows1:AspectAfterThrows
+    {
+       
+        public override Task AfterThrows(AspectContext aspectContext, Exception exception)
+        {
+            Console.WriteLine("TestHelloAfterThrows1");
+            return Task.CompletedTask;
+        }
+    }
+    
+    
+
+    //////////////////////////////////////////////
+    public class TestHelloBefore2:AspectBefore
+    {
+        public override Task Before(AspectContext aspectContext)
+        {
+            Console.WriteLine("TestHelloBefore2");
+            return Task.CompletedTask;
+        }
+    }
+    
+    public class TestHelloAfter2:AspectAfter
+    {
+        //这个 returnValue 如果目标方法正常返回的话 那就是目标方法的返回值
+        // 如果目标方法抛异常的话 那就是异常本身
+        public override Task After(AspectContext aspectContext,object returnValue)
+        {
+            Console.WriteLine("TestHelloAfter2");
+            return Task.CompletedTask;
+        }
+    }
+    
+    public class TestHelloAfterReturn2:AspectAfterReturn
+    {
+        //result 是目标方法的返回 (如果目标方法是void 则为null)
+        public override Task AfterReturn(AspectContext aspectContext, object result)
+        {
+            Console.WriteLine("TestHelloAfterReturn2");
+            return Task.CompletedTask;
+        }
+    }
+    
+    public class TestHelloAround2:AspectArround
+    {
+        public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
+        {
+            Console.WriteLine("TestHelloAround2 start");
+            await _next(aspectContext);
+            Console.WriteLine("TestHelloAround2 end");
+        }
+    }
+    
+    public class TestHelloAfterThrows2:AspectAfterThrows
+    {
+       
+        public override Task AfterThrows(AspectContext aspectContext, Exception exception)
+        {
+            Console.WriteLine("TestHelloAfterThrows2");
+            return Task.CompletedTask;
+        }
+    }
+    
+    [Component(EnableAspect = true)]
+    public class TestHello
+    {
+
+        [
+            TestHelloAround1(GroupName = "Aspect1",OrderIndex = 10),
+            TestHelloBefore1(GroupName = "Aspect1",OrderIndex = 10),
+            TestHelloAfter1(GroupName = "Aspect1",OrderIndex = 10),
+            TestHelloAfterReturn1(GroupName = "Aspect1",OrderIndex = 10),
+            TestHelloAfterThrows1(GroupName = "Aspect1",OrderIndex = 10)
+        ]
+        [
+            TestHelloAround2(GroupName = "Aspect2",OrderIndex = 1),
+            TestHelloBefore2(GroupName = "Aspect2",OrderIndex = 1),
+            TestHelloAfter2(GroupName = "Aspect2",OrderIndex = 1),
+            TestHelloAfterReturn2(GroupName = "Aspect2",OrderIndex = 1),
+            TestHelloAfterThrows2(GroupName = "Aspect2",OrderIndex = 1)
+        ]
+        public virtual void SayGroup()
+        {
+            Console.WriteLine("Say");
+            throw new ArgumentException("exception");
+        }
+    }
+    
+    
+    
+    
 }

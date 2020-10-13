@@ -10,8 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Autofac.Aspect;
-using Autofac.Aspect.Pointcut;
+using Autofac.AspectIntercepter;
+using Autofac.AspectIntercepter.Pointcut;
 using Autofac.Core.Resolving;
 using Autofac.Core.Resolving.Pipeline;
 using Autofac.Features.AttributeFilters;
@@ -460,13 +460,10 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(registrar));
             }
 
-       
-
-            var aspAttribute = component.CurrentType.GetCustomAttribute<Aspect>();
-            if (aspAttribute != null && component.Interceptor != null)
+            if (component.EnableAspect && component.Interceptor != null)
             {
                 throw new InvalidOperationException(
-                    $"'{component.CurrentType.FullName}' can not interceptor by both AspectAttribute:'{aspAttribute.GetType().FullName}' and Interceptor:'{component.Interceptor.FullName}' ");
+                    $"'{component.CurrentType.FullName}' can not interceptor by both EnableAspect and Interceptor:'{component.Interceptor.FullName}' ");
             }
             else if (component.Interceptor != null)
             {
@@ -491,9 +488,13 @@ namespace Autofac.Annotation
 
                         registrar.EnableClassInterceptors().InterceptedBy(component.Interceptor);
                         return;
+                    default:
+                        throw new InvalidOperationException(
+                            $"'{component.CurrentType.FullName}' can not interceptor by both EnableAspect and Interceptor:'{component.Interceptor.FullName}' ");
+
                 }
             }
-            else if (aspAttribute != null)
+            else if (component.EnableAspect)
             {
                 if (component.isDynamicGeneric)
                 {
@@ -505,7 +506,7 @@ namespace Autofac.Annotation
                     //打了[InterfaceInterceptor]标签
                     registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept));
                 }
-                else if (aspAttribute.AspectType == InterceptorType.Interface)
+                else if (component.InterceptorType == InterceptorType.Interface)
                 {
                     //指定了 interface 拦截器 或
                     registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept));
@@ -1021,6 +1022,7 @@ namespace Autofac.Annotation
                         }).ToList();
                     beanTypeList.AddRange(assemblBeanTypeList);
                     
+                    
                     //找到类型中含有 Import 标签的类 排除掉抽象类
                     var importBeanTypeList = (from type in types
                         let bean = type.GetCustomAttribute<Import>()
@@ -1036,7 +1038,6 @@ namespace Autofac.Annotation
                 {
                     var component = EnumerateComponentServices(bean.Bean, bean.Type);
                     component.MetaSourceList = new List<MetaSourceData>();
-                    component.AspectAttribute = bean.Type.GetCustomAttribute<Aspect>();
                     EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
                     result.Add(component);
                     if (component.isDynamicGeneric)
@@ -1507,6 +1508,7 @@ namespace Autofac.Annotation
                 DestroyMethod = bean.DestroyMethod,
                 OrderIndex = bean.OrderIndex,
                 NotUseProxy = bean.NotUseProxy,
+                EnableAspect = bean.EnableAspect,
                 CurrentClassTypeAttributes = Enumerable.OfType<Attribute>(currentType.GetCustomAttributes()).ToList()
             };
 

@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Autofac.Annotation;
 using Autofac.Annotation.Test;
-using Autofac.Aspect;
-using Autofac.Aspect.Advice;
+using Autofac.AspectIntercepter.Advice;
 using Autofac.Configuration.Test.test2;
 using Castle.DynamicProxy;
 
@@ -64,7 +63,7 @@ namespace Autofac.Configuration.Test.test3
         void Hello(string aa);
     }
 
-    [Component(Interceptor = typeof(Log))]
+    [Component(Interceptor = typeof(Log),InterceptorType = InterceptorType.Interface)]
     public class TestModel6 : ITestModel6
     {
         public void Hello(string aa)
@@ -73,7 +72,8 @@ namespace Autofac.Configuration.Test.test3
         }
     }
 
-    [Component(Interceptor = typeof(Log),InterceptorType = InterceptorType.Class)]
+    [Component(Interceptor = typeof(Log))]
+    //    [Component(Interceptor = typeof(Log),InterceptorType = InterceptorType.Interface)] 不能这么写，因为在自动注册父类的时候 会检测当前是设置了Interceptor默认的是class拦截。 有继承接口就会被忽略注册
     public class TestModel61 : ITestModel6
     {
         public virtual void Hello(string aa)
@@ -126,8 +126,7 @@ namespace Autofac.Configuration.Test.test3
         public TestModel8 TestModel8 { get; set; }
     }
 
-    [Component]
-    [Annotation.Aspect]
+    [Component(EnableAspect = true)]
     public class TestModel9
     {
 
@@ -150,8 +149,7 @@ namespace Autofac.Configuration.Test.test3
        
     }
 
-    [Component]
-    [Annotation.Aspect]
+    [Component(EnableAspect = true)]
     public class TestModel911
     {
         public static List<string> testResult = new List<string>();
@@ -230,8 +228,7 @@ namespace Autofac.Configuration.Test.test3
         }
     }
 
-    [Component]
-    [Annotation.Aspect]
+    [Component(EnableAspect = true)]
     public class TestModel91
     {
         public static List<string> testResult = new List<string>();
@@ -256,8 +253,7 @@ namespace Autofac.Configuration.Test.test3
        
     }
 
-    [Component]
-    [Annotation.Aspect]
+    [Component(EnableAspect = true)]
     public class TestModel912
     {
 
@@ -280,8 +276,7 @@ namespace Autofac.Configuration.Test.test3
 
     }
 
-    //[Component(Interceptor = typeof(Log))]
-    [Annotation.Aspect]
+    [Component(EnableAspect = true)]
     public class TestModel10
     {
 
@@ -309,8 +304,7 @@ namespace Autofac.Configuration.Test.test3
         public string Name { get; set; } = "TestModel99";
     }
 
-    [Component]
-    [Annotation.Aspect]
+    [Component(EnableAspect = true)]
     public class TestModel101
     {
         public string Name { get; set; } = "TestModel101";
@@ -398,8 +392,7 @@ namespace Autofac.Configuration.Test.test3
         void SayHello();
     }
 
-    [Component]
-    [Annotation.Aspect(InterceptorType.Interface)]
+    [Component(EnableAspect = true,InterceptorType = InterceptorType.Interface)]
     [StopWatchInterceptor(GroupName = "a2",OrderIndex = 100)]
     public class AopModel1 : BaseRepository<AopClass>, IAopModel
     {
@@ -513,8 +506,8 @@ namespace Autofac.Configuration.Test.test3
         }
     }
     
-    [Component]
-    [Annotation.Aspect]
+    [Component(EnableAspect = true)]
+
     public class AdviseModel1
     {
         public static List<string> testModel = new List<string>();
@@ -570,6 +563,15 @@ namespace Autofac.Configuration.Test.test3
         public virtual void TestMuiltBeforeAfter()
         {
             AdviseModel1.testModel.Add("TestMuiltBeforeAfter");
+        }
+    }
+
+    [Component(EnableAspect = true)]
+    public class TestModel9111
+    {
+        public virtual void SayAfterReturn()
+        {
+            Console.WriteLine("SayAfterReturn");
         }
     }
     

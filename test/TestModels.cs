@@ -322,7 +322,7 @@ namespace Autofac.Annotation.Test
         string GetSchool();
     }
 
-    [Component(Interceptor = typeof(AsyncInterceptor))]
+    [Component(Interceptor = typeof(AsyncInterceptor),InterceptorType = InterceptorType.Interface)]
     public class A23:IA23
     {
         //public A23([Value("name")]string name)
@@ -349,7 +349,7 @@ namespace Autofac.Annotation.Test
         private string ttt;
     }
 
-    [Component(Interceptor = typeof(AsyncInterceptor),InterceptorType = InterceptorType.Class )]
+    [Component(Interceptor = typeof(AsyncInterceptor) )]
     public class A24
     {
         public A24([Value("name")]string name,[Autowired]A21 a21)
@@ -369,7 +369,7 @@ namespace Autofac.Annotation.Test
         public A21 A21 { get; set; }
     }
 
-    [Component(Interceptor = typeof(AsyncInterceptor),InterceptorType = InterceptorType.Class,InterceptorKey = "log2")]
+    [Component(Interceptor = typeof(AsyncInterceptor),InterceptorKey = "log2")]
     public class A25
     {
         //public A25([Value("name")]string name)

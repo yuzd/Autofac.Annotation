@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using AspectCore.Extensions.Reflection;
-using Autofac.Aspect;
 
 namespace Autofac.Annotation
 {
@@ -62,10 +61,6 @@ namespace Autofac.Annotation
         /// </summary>
         public List<MetaSourceData> MetaSourceList { get; set; }
 
-        /// <summary>
-        /// Aspect标签
-        /// </summary>
-        internal Aspect AspectAttribute { get; set; }
         
         /// <summary>
         ///  当前Class的所有的标签
@@ -114,6 +109,7 @@ namespace Autofac.Annotation
         /// 拦截器类型
         /// </summary>
         public InterceptorType InterceptorType { get; set; } 
+        public bool EnableAspect { get; set; } 
         
         /// <summary>
         /// 被创建后执行的方法
@@ -149,7 +145,7 @@ namespace Autofac.Annotation
                 return false;
             } 
         }
-
+     
     }
 
     /// <summary>

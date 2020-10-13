@@ -1,7 +1,6 @@
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
-using Autofac.Aspect;
 
 namespace Autofac.Annotation.Test.test6
 {

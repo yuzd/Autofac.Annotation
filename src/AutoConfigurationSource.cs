@@ -8,8 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using AspectCore.Extensions.Reflection;
 using Autofac.Annotation.Util;
-using Autofac.Aspect;
-using Autofac.Aspect.Pointcut;
 using Autofac.Builder;
 using Autofac.Core;
 using Autofac.Core.Activators.ProvidedInstance;

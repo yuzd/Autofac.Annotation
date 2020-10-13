@@ -83,11 +83,11 @@ namespace Autofac.Aspect
         {
             #region 先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
 
-            if (!_cache.CacheList.TryGetValue(invocation.Method, out var attribute))
+            if (!_cache.CacheList.TryGetValue(invocation.TargetMethod, out var attribute))
             {
                 //动态泛型类
-                if (!invocation.Method.DeclaringType.GetTypeInfo().IsGenericType ||
-                    (!_cache.DynamicCacheList.TryGetValue(invocation.Method.GetMethodInfoUniqueName(), out var AttributesDynamic)))
+                if (!invocation.TargetMethod.DeclaringType.GetTypeInfo().IsGenericType ||
+                    (!_cache.DynamicCacheList.TryGetValue(invocation.TargetMethod.GetMethodInfoUniqueName(), out var AttributesDynamic)))
                 {
                      await invocation.ProceedAsync();
                      return;

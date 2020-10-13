@@ -87,10 +87,10 @@ namespace Autofac.Aspect
         /// <returns></returns>
         protected override async ValueTask InterceptAsync(IAsyncInvocation invocation)
         {
-            if (!_configuration.CacheList.TryGetValue(invocation.Method, out var pointCut))
+            if (!_configuration.CacheList.TryGetValue(invocation.TargetMethod, out var pointCut))
             {
-                if (!invocation.Method.DeclaringType.GetTypeInfo().IsGenericType ||
-                    !_configuration.DynamicCacheList.TryGetValue(invocation.Method.GetMethodInfoUniqueName(),
+                if (!invocation.TargetMethod.DeclaringType.GetTypeInfo().IsGenericType ||
+                    !_configuration.DynamicCacheList.TryGetValue(invocation.TargetMethod.GetMethodInfoUniqueName(),
                         out var pointCutDynamic))
                 {
                     //该方法不需要拦截

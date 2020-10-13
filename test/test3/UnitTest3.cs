@@ -358,16 +358,17 @@ namespace Autofac.Configuration.Test.test3
             Assert.Equal("Before1", AdviseModel1.testModel[1]);
             Assert.Equal("TestArroundBeforeAfter", AdviseModel1.testModel[2]);
             Assert.Equal("Arround1-end", AdviseModel1.testModel[3]);
-            Assert.Equal("After1", AdviseModel1.testModel[4]);
+            Assert.Equal("AfterReturn1", AdviseModel1.testModel[4]);
           
             
             AdviseModel1.testModel=new List<string>();
             Assert.Throws<Exception>(() =>  a132.TestArroundBeforeThrows());
-            Assert.Equal(4, AdviseModel1.testModel.Count);
+            Assert.Equal(5, AdviseModel1.testModel.Count);
             Assert.Equal("Arround1-start", AdviseModel1.testModel[0]);
             Assert.Equal("Before1", AdviseModel1.testModel[1]);
             Assert.Equal("TestArroundBeforeThrows", AdviseModel1.testModel[2]);
-            Assert.Equal("throw1", AdviseModel1.testModel[3]);
+            Assert.Equal("After1", AdviseModel1.testModel[3]);
+            Assert.Equal("throw1", AdviseModel1.testModel[4]);
             
             AdviseModel1.testModel=new List<string>();
             a132.TestMuiltBefore();
@@ -380,8 +381,8 @@ namespace Autofac.Configuration.Test.test3
             a132.TestMuiltAfter();
             Assert.Equal(3, AdviseModel1.testModel.Count);
             Assert.Equal("TestMuiltAfter", AdviseModel1.testModel[0]);
-            Assert.Equal("After2", AdviseModel1.testModel[1]);
-            Assert.Equal("After1", AdviseModel1.testModel[2]);
+            Assert.Equal("AfterReturn2", AdviseModel1.testModel[1]);
+            Assert.Equal("AfterReturn1", AdviseModel1.testModel[2]);
             
             AdviseModel1.testModel=new List<string>();
             Assert.Throws<Exception>(() =>  a132.TestMuiltThrows());
@@ -392,7 +393,7 @@ namespace Autofac.Configuration.Test.test3
             
             AdviseModel1.testModel=new List<string>();
             a132.TestMuiltBeforeAfter();
-            Assert.Equal(9, AdviseModel1.testModel.Count);
+            Assert.Equal(11, AdviseModel1.testModel.Count);
             Assert.Equal("Arround1-start", AdviseModel1.testModel[0]);
             Assert.Equal("Before1", AdviseModel1.testModel[1]);
             Assert.Equal("Arround2-start", AdviseModel1.testModel[2]);
@@ -400,8 +401,10 @@ namespace Autofac.Configuration.Test.test3
             Assert.Equal("TestMuiltBeforeAfter", AdviseModel1.testModel[4]);
             Assert.Equal("Arround2-end", AdviseModel1.testModel[5]);
             Assert.Equal("After2", AdviseModel1.testModel[6]);
-            Assert.Equal("Arround1-end", AdviseModel1.testModel[7]);
-            Assert.Equal("After1", AdviseModel1.testModel[8]);
+            Assert.Equal("AfterReturn2", AdviseModel1.testModel[7]);
+            Assert.Equal("Arround1-end", AdviseModel1.testModel[8]);
+            Assert.Equal("After1", AdviseModel1.testModel[9]);
+            Assert.Equal("AfterReturn1", AdviseModel1.testModel[10]);
        
         }
     }

@@ -14,29 +14,29 @@ namespace Autofac.Aspect.Impl
     /// <summary>
     /// 异常返回拦截处理器
     /// </summary>
-    internal class AspectThrowingInterceptor : IAdvice
+    internal class AspectAfterThrowsInterceptor : IAdvice
     {
-        private readonly AspectThrows _aspectThrowing;
-        private readonly RunTimePointcutMethod<Throws> _pointcutThrowin;
-        private readonly bool _isLast;
+        private readonly AspectAfterThrows _aspectThrowing;
+        private readonly bool _isFromAround;
+        private readonly RunTimePointcutMethod<AfterThrows> _pointcutThrowin;
 
-        public AspectThrowingInterceptor(AspectThrows throwAttribute,bool isLast)
+        public AspectAfterThrowsInterceptor(AspectAfterThrows throwAttribute, bool isFromAround = false)
         {
             _aspectThrowing = throwAttribute;
-            _isLast = isLast;
+            _isFromAround = isFromAround;
         }
 
-        public AspectThrowingInterceptor(RunTimePointcutMethod<Throws> throwAttribute,bool isLast)
+        public AspectAfterThrowsInterceptor(RunTimePointcutMethod<AfterThrows> throwAttribute, bool isFromAround = false)
         {
             _pointcutThrowin = throwAttribute;
-            _isLast = isLast;
+            _isFromAround = isFromAround;
         }
 
         public async Task OnInvocation(AspectContext aspectContext, AspectDelegate next)
         {
             try
             {
-                await next.Invoke(aspectContext);
+                if(!_isFromAround) await next.Invoke(aspectContext);
             }
             finally
             {
@@ -79,14 +79,8 @@ namespace Autofac.Aspect.Impl
                     {
                         if (_aspectThrowing.ExceptionType == null || _aspectThrowing.ExceptionType == currentExType)
                         {
-                            await _aspectThrowing.Throwing(aspectContext, aspectContext.Exception);
+                            await _aspectThrowing.AfterThrows(aspectContext, aspectContext.Exception);
                         }
-                    }
-
-
-                    if (_isLast)
-                    {
-                        throw ex;
                     }
                  
                 }

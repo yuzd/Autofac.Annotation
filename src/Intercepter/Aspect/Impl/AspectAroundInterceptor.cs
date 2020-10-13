@@ -13,43 +13,87 @@ namespace Autofac.Aspect.Impl
 
 
     /// <summary>
-    /// 后置返回拦截处理器
+    /// 环绕返回拦截处理器
     /// </summary>
     internal class AspectAroundInterceptor:IAdvice
     {
         private readonly AspectArround _aroundAttribute;
+        private readonly AspectAfterInterceptor _aspectAfter;
+        private readonly AspectAfterThrowsInterceptor _aspectThrows;
 
         private readonly RunTimePointcutMethod<Around> _pointCutMethod;
-        public AspectAroundInterceptor(AspectArround aroundAttribute)
+
+        public AspectAroundInterceptor(AspectArround aroundAttribute, AspectAfter aspectAfter, AspectAfterThrows chainAspectAfterThrows)
         {
             _aroundAttribute = aroundAttribute;
+            if (aspectAfter != null)
+            {
+                _aspectAfter = new AspectAfterInterceptor(aspectAfter,true);
+            }
+
+            if (chainAspectAfterThrows != null)
+            {
+                _aspectThrows= new AspectAfterThrowsInterceptor(chainAspectAfterThrows,true);
+            }
         }
 
-        public AspectAroundInterceptor(RunTimePointcutMethod<Around> pointCutMethod)
+        public AspectAroundInterceptor(RunTimePointcutMethod<Around> pointCutMethod,AspectAfterInterceptor aspectAfter, AspectAfterThrowsInterceptor chainAspectAfterThrows)
         {
             _pointCutMethod = pointCutMethod;
+            _aspectAfter = aspectAfter;
+            _aspectThrows= chainAspectAfterThrows;
         }
         
         public async Task OnInvocation(AspectContext aspectContext, AspectDelegate next)
         {
-            if (_aroundAttribute != null)
+            Exception exception = null;
+            try
             {
-                await _aroundAttribute.OnInvocation(aspectContext, next);
-                return;
+                if (_aroundAttribute != null)
+                {
+                    await _aroundAttribute.OnInvocation(aspectContext, next);
+                    return;
+                }
+
+                var rt = AutoConfigurationHelper.InvokeInstanceMethod(
+                    _pointCutMethod.Instance,
+                    _pointCutMethod.MethodInfo,
+                    _pointCutMethod.MethodParameters,
+                    aspectContext.ComponentContext,
+                    aspectContext,
+                    next,
+                    injectAnotation: _pointCutMethod.PointcutInjectAnotation);
+
+                if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
+                {
+                    await ((Task) rt).ConfigureAwait(false);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+            finally
+            {
+                if(exception == null && _aspectAfter!=null)await _aspectAfter.OnInvocation(aspectContext, next);
             }
             
-            var rt = AutoConfigurationHelper.InvokeInstanceMethod(
-                _pointCutMethod.Instance,
-                _pointCutMethod.MethodInfo,
-                _pointCutMethod.MethodParameters,
-                aspectContext.ComponentContext,
-                aspectContext,
-                next,
-                injectAnotation:_pointCutMethod.PointcutInjectAnotation);
-
-            if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
+            try
             {
-                await ((Task) rt).ConfigureAwait(false);
+                if (exception != null && _aspectAfter!=null)
+                {
+                    await _aspectAfter.OnInvocation(aspectContext, next);
+                }
+                
+                if (exception != null && _aspectThrows != null)
+                {
+                    await _aspectThrows.OnInvocation(aspectContext, next);
+                }
+            }
+            finally
+            {
+                if (exception != null) throw exception;
             }
             
         }

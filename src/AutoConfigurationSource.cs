@@ -412,7 +412,7 @@ namespace Autofac.Annotation
         protected override async ValueTask InterceptAsync(IAsyncInvocation invocation)
         {
             //单例的
-            if (_instanceCache.TryGetValue(invocation.Method, out var instance))
+            if (_instanceCache.TryGetValue(invocation.TargetMethod, out var instance))
             {
                 invocation.Result = instance;
                 return;
@@ -420,7 +420,7 @@ namespace Autofac.Annotation
 
             await invocation.ProceedAsync();
 
-            _instanceCache.TryAdd(invocation.Method, invocation.Result);
+            _instanceCache.TryAdd(invocation.TargetMethod, invocation.Result);
         }
     }
     

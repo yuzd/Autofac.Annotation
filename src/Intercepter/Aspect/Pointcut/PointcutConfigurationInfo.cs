@@ -32,7 +32,12 @@ namespace Autofac.Aspect.Pointcut
         public Tuple<Before,MethodInfo> BeforeMethod { get; set; }
         
         /// <summary>
-        /// 切面配置对应的后置方法
+        /// 切面配置对应的后置方法 (正常)
+        /// </summary>
+        public Tuple<AfterReturn,MethodInfo> AfterReturnMethod { get; set; }
+        
+        /// <summary>
+        ///  切面配置对应的后置方法(不管正常还是异常)
         /// </summary>
         public Tuple<After,MethodInfo> AfterMethod { get; set; }
         
@@ -42,9 +47,9 @@ namespace Autofac.Aspect.Pointcut
         public Tuple<Around,MethodInfo> AroundMethod { get; set; }
         
         /// <summary>
-        /// 切面配置对应的错误拦截方法
+        /// 切面配置对应的错误拦截方法 (异常)
         /// </summary>
-        public Tuple<Throws,MethodInfo> ThrowingMethod { get; set; }
+        public Tuple<AfterThrows,MethodInfo> AfterThrows { get; set; }
 
     }
 }

@@ -6,12 +6,12 @@ namespace Autofac.Annotation
     /// 配合pointCut的错误拦截器
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class Throws : PointcutBasicAttribute
+    public sealed class AfterThrows : PointcutBasicAttribute
     {
         /// <summary>
         /// 
         /// </summary>
-        public Throws()
+        public AfterThrows()
         {
             
         }
@@ -19,7 +19,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 
         /// </summary>
-        public Throws(string groupName)
+        public AfterThrows(string groupName)
         {
             this.GroupName = groupName;
         }
@@ -27,7 +27,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 
         /// </summary>
-        public Throws(Type exceptionType)
+        public AfterThrows(Type exceptionType)
         {
             this.ExceptionType = exceptionType;
         }
@@ -35,7 +35,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 
         /// </summary>
-        public Throws(string groupName,Type exceptionType)
+        public AfterThrows(string groupName,Type exceptionType)
         {
             this.GroupName = groupName;
             this.ExceptionType = exceptionType;

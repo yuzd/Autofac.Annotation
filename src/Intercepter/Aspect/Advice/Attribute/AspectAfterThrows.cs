@@ -9,9 +9,9 @@ namespace Autofac.Aspect.Advice
     using System.Text;
 
     /// <summary>
-    /// 异常通知
+    /// 异常通知 在方法抛出异常退出时执行的通知。
     /// </summary>
-    public abstract class AspectThrows : AspectInvokeAttribute
+    public abstract class AspectAfterThrows : AspectInvokeAttribute
     {
       
         /// <summary>
@@ -24,7 +24,7 @@ namespace Autofac.Aspect.Advice
         /// </summary>
         /// <param name="aspectContext"></param>
         /// <param name="exception"></param>
-        public abstract Task Throwing(AspectContext aspectContext,Exception exception) ;
+        public abstract Task AfterThrows(AspectContext aspectContext,Exception exception) ;
 
     }
 

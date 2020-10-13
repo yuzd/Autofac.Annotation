@@ -32,15 +32,24 @@ namespace Autofac.Annotation.Test.test6
             
         }
         
-        [After(Returing = "value1")]
-        public void After(object value1)
+        [After]
+        public void After()
         {
             Pointcut1Controller.testResult.Add("PointcutTest1.After");
             Pointcut2Controller.testResult.Add("PointcutTest1.After");
             PointcutAnotationTest1.testResult.Add("PointcutTest1.After");
+            
         }
         
-        [Throws(Throwing = "ex1")]
+        [AfterReturn(Returing = "value1")]
+        public void AfterReturn(object value1)
+        {
+            Pointcut1Controller.testResult.Add("PointcutTest1.AfterReturn");
+            Pointcut2Controller.testResult.Add("PointcutTest1.AfterReturn");
+            PointcutAnotationTest1.testResult.Add("PointcutTest1.AfterReturn");
+        }
+        
+        [AfterThrows(Throwing = "ex1")]
         public void Throwing(Exception ex1)
         {
             Pointcut1Controller.testResult.Add("PointcutTest1.Throwing");
@@ -75,15 +84,23 @@ namespace Autofac.Annotation.Test.test6
             PointcutAnotationTest1.testResult.Add("PointcutTest2.Before");
         }
         
-        [After(Returing = "value")]
-        public void After(object value)
+        [After]
+        public void After()
         {
             Pointcut1Controller.testResult.Add("PointcutTest2.After");
             Pointcut2Controller.testResult.Add("PointcutTest2.After");
             PointcutAnotationTest1.testResult.Add("PointcutTest2.After");
         }
         
-        [Throws(Throwing = "ex")]
+        [AfterReturn(Returing = "value")]
+        public void AfterReturn(object value)
+        {
+            Pointcut1Controller.testResult.Add("PointcutTest2.AfterReturn");
+            Pointcut2Controller.testResult.Add("PointcutTest2.AfterReturn");
+            PointcutAnotationTest1.testResult.Add("PointcutTest2.AfterReturn");
+        }
+        
+        [AfterThrows(Throwing = "ex")]
         public void Throwing(Exception ex)
         {
             Pointcut1Controller.testResult.Add("PointcutTest2.Throwing");

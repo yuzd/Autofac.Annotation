@@ -1297,16 +1297,18 @@ namespace Autofac.Annotation
 
                     //一个point标签下 class里面 最多一组 
                     Dictionary<string, Tuple<Before,MethodInfo>> beforeMethodInfos = new Dictionary<string, Tuple<Before,MethodInfo>>();
+                    Dictionary<string, Tuple<AfterReturn,MethodInfo>> afterReturnMethodInfos = new Dictionary<string, Tuple<AfterReturn,MethodInfo>>();
                     Dictionary<string, Tuple<After,MethodInfo>> afterMethodInfos = new Dictionary<string, Tuple<After,MethodInfo>>();
                     Dictionary<string, Tuple<Around,MethodInfo>> aroundMethodInfos = new Dictionary<string, Tuple<Around,MethodInfo>>();
-                    Dictionary<string, Tuple<Throws,MethodInfo>> throwMethodInfos = new Dictionary<string, Tuple<Throws,MethodInfo>>();
+                    Dictionary<string, Tuple<AfterThrows,MethodInfo>> throwMethodInfos = new Dictionary<string, Tuple<AfterThrows,MethodInfo>>();
                     foreach (var beanTypeMethod in beanTypeMethodList)
                     {
                         var beforeAttribute = beanTypeMethod.GetCustomAttribute<Before>();
+                        var afterReturnAttribute = beanTypeMethod.GetCustomAttribute<AfterReturn>();
                         var afterAttribute = beanTypeMethod.GetCustomAttribute<After>();
                         var aroundAttribute = beanTypeMethod.GetCustomAttribute<Around>();
-                        var throwAttribute = beanTypeMethod.GetCustomAttribute<Throws>();
-                        if (beforeAttribute == null && afterAttribute == null && aroundAttribute == null && throwAttribute == null) continue;
+                        var throwAttribute = beanTypeMethod.GetCustomAttribute<AfterThrows>();
+                        if (beforeAttribute == null && afterReturnAttribute == null && aroundAttribute == null && throwAttribute == null && afterAttribute == null) continue;
 
                         if (aroundAttribute != null)
                         {
@@ -1357,7 +1359,7 @@ namespace Autofac.Annotation
                             beforeMethodInfos.Add(key,  new Tuple<Before, MethodInfo>(beforeAttribute,beanTypeMethod));
                          
                         }
-
+                        
                         if (afterAttribute != null)
                         {
                             var key = afterAttribute.GroupName ?? "";
@@ -1372,13 +1374,37 @@ namespace Autofac.Annotation
                                         $"The Pointcut class `{configuration.Type.FullName}` after method `{beanTypeMethod.Name}` can not be register without special parameter of `{afterAttribute.Returing}`!");
                                 }
                             }
+                            
                             if (afterMethodInfos.ContainsKey(key))
                             {
                                 throw new InvalidOperationException(
                                     $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
                             }
 
-                            afterMethodInfos.Add(key, new Tuple<After, MethodInfo>(afterAttribute,beanTypeMethod));
+                            afterMethodInfos.Add(key,  new Tuple<After, MethodInfo>(afterAttribute,beanTypeMethod));
+                        }
+
+                        if (afterReturnAttribute != null)
+                        {
+                            var key = afterReturnAttribute.GroupName ?? "";
+                            if (!string.IsNullOrEmpty(afterReturnAttribute.Returing))
+                            {
+                                //查看这个指定的参数有没有在这个方法里面
+                                var parameters = beanTypeMethod.GetParameters();
+                                var returnIngParam = parameters.FirstOrDefault(r => r.Name == afterReturnAttribute.Returing);
+                                if (returnIngParam == null)
+                                {
+                                    throw new InvalidOperationException(
+                                        $"The Pointcut class `{configuration.Type.FullName}` after method `{beanTypeMethod.Name}` can not be register without special parameter of `{afterReturnAttribute.Returing}`!");
+                                }
+                            }
+                            if (afterReturnMethodInfos.ContainsKey(key))
+                            {
+                                throw new InvalidOperationException(
+                                    $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                            }
+
+                            afterReturnMethodInfos.Add(key, new Tuple<AfterReturn, MethodInfo>(afterReturnAttribute,beanTypeMethod));
                         
                         }
                         
@@ -1402,7 +1428,7 @@ namespace Autofac.Annotation
                                     $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
                             }
 
-                            throwMethodInfos.Add(key, new Tuple<Throws, MethodInfo>(throwAttribute,beanTypeMethod));
+                            throwMethodInfos.Add(key, new Tuple<AfterThrows, MethodInfo>(throwAttribute,beanTypeMethod));
                         }
                     }
 
@@ -1410,9 +1436,10 @@ namespace Autofac.Annotation
                     foreach (var pc in configuration.Bean)
                     {
                         if (!beforeMethodInfos.ContainsKey(pc.GroupName)
-                            && !afterMethodInfos.ContainsKey(pc.GroupName)
+                            && !afterReturnMethodInfos.ContainsKey(pc.GroupName)
                             && !aroundMethodInfos.ContainsKey(pc.GroupName)
                             && !throwMethodInfos.ContainsKey(pc.GroupName)
+                            && !afterMethodInfos.ContainsKey(pc.GroupName)
                         )
                         {
                             continue;
@@ -1428,10 +1455,13 @@ namespace Autofac.Annotation
                         {
                             rr.BeforeMethod = be;
                         }
-
-                        if (afterMethodInfos.TryGetValue(pc.GroupName, out var af))
+                        if (afterMethodInfos.TryGetValue(pc.GroupName, out var af1))
                         {
-                            rr.AfterMethod = af;
+                            rr.AfterMethod = af1;
+                        }
+                        if (afterReturnMethodInfos.TryGetValue(pc.GroupName, out var af))
+                        {
+                            rr.AfterReturnMethod = af;
                         }
 
                         if (aroundMethodInfos.TryGetValue(pc.GroupName, out var ar))
@@ -1440,7 +1470,7 @@ namespace Autofac.Annotation
                         }
                         if (throwMethodInfos.TryGetValue(pc.GroupName, out var trr))
                         {
-                            rr.ThrowingMethod = trr;
+                            rr.AfterThrows = trr;
                         }
                         result.Add(rr);
                     }

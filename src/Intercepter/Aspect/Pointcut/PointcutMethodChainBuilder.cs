@@ -26,9 +26,15 @@ namespace Autofac.Aspect.Pointcut
         public RunTimePointcutMethod<Before> BeforeMethod { get; set; }
 
         /// <summary>
-        /// 切面配置对应的后置方法
+        /// 切面配置对应的后置方法(只是正常)
+        /// </summary>
+        public RunTimePointcutMethod<AfterReturn> AfterReturnMethod { get; set; }
+
+        /// <summary>
+        /// 切面配置对应的后置方法(不管正常还是异常)
         /// </summary>
         public RunTimePointcutMethod<After> AfterMethod { get; set; }
+
 
         /// <summary>
         /// 切面配置对应的环绕方法
@@ -36,9 +42,9 @@ namespace Autofac.Aspect.Pointcut
         public RunTimePointcutMethod<Around> AroundMethod { get; set; }
 
         /// <summary>
-        /// 切面配置对应的错误拦截方法
+        /// 切面配置对应的错误拦截方法(只是异常)
         /// </summary>
-        public RunTimePointcutMethod<Throws> ThrowingMethod { get; set; }
+        public RunTimePointcutMethod<AfterThrows> AfterThrowsMethod { get; set; }
     }
 
     internal class RunTimePointcutMethod<T>
@@ -47,12 +53,12 @@ namespace Autofac.Aspect.Pointcut
         /// 对应的是哪种pointcut方法标签 有 After Before Around Throws
         /// </summary>
         public T PointcutBasicAttribute { get; set; }
-        
+
         /// <summary>
         /// 被拦截实例
         /// </summary>
         public object Instance { get; set; }
-        
+
         /// <summary>
         /// 被拦截方法
         /// </summary>
@@ -67,14 +73,13 @@ namespace Autofac.Aspect.Pointcut
         /// 方法参数
         /// </summary>
         public ParameterInfo[] MethodParameters { get; set; }
-        
+
         /// <summary>
         /// 被拦截方法上的指定的切面注解
         /// </summary>
         public Attribute PointcutInjectAnotation { get; set; }
     }
-    
-    
+
 
     /// <summary>
     /// 构建拦截器链
@@ -95,32 +100,40 @@ namespace Autofac.Aspect.Pointcut
             AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
 
             var aroundIndex = 0;
-            var throwsIndex = 0;
-            var throwingMethodCount = PointcutMethodChainList.Count(r => r.ThrowingMethod!=null);
             foreach (var chain in PointcutMethodChainList)
             {
                 var isLast = aroundIndex == PointcutMethodChainList.Count - 1;
 
-                if (chain.AfterMethod != null)
+                if (chain.AfterReturnMethod != null)
                 {
-                    var after = new AspectAfterInterceptor(chain.AfterMethod);
+                    var after = new AspectAfterReturnInterceptor(chain.AfterReturnMethod);
                     //After 后加进去先执行
                     builder.Use(next => async ctx => await after.OnInvocation(ctx, next));
                 }
 
+
                 if (chain.AroundMethod != null)
                 {
-                    var around = new AspectAroundInterceptor(chain.AroundMethod);
+                    var around = new AspectAroundInterceptor(chain.AroundMethod,
+                        chain.AfterMethod != null? new AspectAfterInterceptor(chain.AfterMethod,true):null,
+                        chain.AfterThrowsMethod != null? new AspectAfterThrowsInterceptor(chain.AfterThrowsMethod,true):null);
                     //Arround 先加进去先执行 后续执行权脚在了Arround的实际运行方法
                     builder.Use(next => async ctx => await around.OnInvocation(ctx, next));
                 }
-                
-                if (chain.ThrowingMethod != null)
+
+
+                if (chain.AroundMethod == null && chain.AfterThrowsMethod != null)
                 {
-                    throwsIndex++;
-                    var aspectThrowingInterceptor = new AspectThrowingInterceptor(chain.ThrowingMethod, throwsIndex == throwingMethodCount);
+                    var aspectThrowingInterceptor = new AspectAfterThrowsInterceptor(chain.AfterThrowsMethod);
                     builder.Use(next => async ctx => { await aspectThrowingInterceptor.OnInvocation(ctx, next); });
                 }
+
+                if (chain.AroundMethod == null && chain.AfterMethod != null)
+                {
+                    var after = new AspectAfterInterceptor(chain.AfterMethod);
+                    builder.Use(next => async ctx => await after.OnInvocation(ctx, next));
+                }
+
 
                 if (chain.BeforeMethod != null)
                 {
@@ -133,17 +146,6 @@ namespace Autofac.Aspect.Pointcut
 
                 if (!isLast) continue;
 
-                if (throwingMethodCount<1)
-                {
-                    //真正的方法
-                    builder.Use(next => async ctx =>
-                    {
-                        await ctx.Proceed();
-                        await next(ctx);
-                    });
-                    continue;
-                }
-                
                 //真正的方法
                 builder.Use(next => async ctx =>
                 {
@@ -156,14 +158,13 @@ namespace Autofac.Aspect.Pointcut
                         ctx.Exception = ex; // 只有这里会设置值 到错误增强器里面去处理并 在最后一个错误处理器里面throw
                         throw;
                     }
+
                     await next(ctx);
                 });
-           
             }
 
             var aspectfunc = builder.Build();
             return aspectfunc;
         }
-
     }
 }

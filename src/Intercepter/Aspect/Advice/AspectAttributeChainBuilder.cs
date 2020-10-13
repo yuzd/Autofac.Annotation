@@ -25,7 +25,8 @@ namespace Autofac.Aspect.Advice
 
         public AspectBefore AspectBefore { get; set; }
         public AspectAfter AspectAfter { get; set; }
-        public AspectThrows AspectThrowing { get; set; }
+        public AspectAfterReturn AspectAfterReturn { get; set; }
+        public AspectAfterThrows AspectAfterThrows { get; set; }
         public AspectArround AspectArround { get; set; }
     }
 
@@ -48,33 +49,39 @@ namespace Autofac.Aspect.Advice
             AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
 
             var aroundIndex = 0;
-            var throwsIndex = 0;
-            var throwingMethodCount = AdviceMethod.Count(r => r.AspectThrowing!=null);
             foreach (var chain in AdviceMethod)
             {
                 var isLast = aroundIndex == AdviceMethod.Count - 1;
 
-                if (chain.AspectAfter != null)
+                if (chain.AspectAfterReturn != null)
                 {
-                    var after = new AspectAfterInterceptor(chain.AspectAfter);
+                    var after = new AspectAfterReturnInterceptor(chain.AspectAfterReturn);
                     //After 后加进去先执行
                     builder.Use(next => async ctx => await after.OnInvocation(ctx, next));
                 }
-
+                
                 if (chain.AspectArround != null)
                 {
-                    var around = new AspectAroundInterceptor(chain.AspectArround);
+                    var around = new AspectAroundInterceptor(chain.AspectArround,chain.AspectAfter,chain.AspectAfterThrows);
                     //Arround 先加进去先执行 后续执行权脚在了Arround的实际运行方法
-                    builder.Use(next => async ctx => await around.OnInvocation(ctx, next));
-                }
-                
-                if (chain.AspectThrowing != null)
-                {
-                    throwsIndex++;
-                    var aspectThrowingInterceptor = new AspectThrowingInterceptor(chain.AspectThrowing, throwsIndex ==throwingMethodCount );
-                    builder.Use(next => async ctx => { await aspectThrowingInterceptor.OnInvocation(ctx, next); });
+                    builder.Use(next => async ctx =>
+                    {
+                        await around.OnInvocation(ctx, next);
+                    });
                 }
 
+                if (chain.AspectArround == null && chain.AspectAfterThrows != null)
+                {
+                    var aspectThrowingInterceptor = new AspectAfterThrowsInterceptor(chain.AspectAfterThrows);
+                    builder.Use(next => async ctx => { await aspectThrowingInterceptor.OnInvocation(ctx, next); });
+                }
+                
+                if (chain.AspectArround == null && chain.AspectAfter != null)
+                {
+                    var after = new AspectAfterInterceptor(chain.AspectAfter);
+                    builder.Use(next => async ctx => await after.OnInvocation(ctx, next));
+                }
+                
                 if (chain.AspectBefore != null)
                 {
                     //Before先加进去先执行
@@ -84,17 +91,6 @@ namespace Autofac.Aspect.Advice
 
                 aroundIndex++;
                 if (!isLast) continue;
-
-                if (throwingMethodCount < 1)
-                {
-                    //真正的方法
-                    builder.Use(next => async ctx =>
-                    {
-                        await ctx.Proceed();
-                        await next(ctx);
-                    });
-                    continue;
-                }
                 
                 //真正的方法
                 builder.Use(next => async ctx =>

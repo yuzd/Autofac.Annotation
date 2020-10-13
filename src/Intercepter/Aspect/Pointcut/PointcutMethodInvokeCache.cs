@@ -73,6 +73,19 @@ namespace Autofac.Aspect.Pointcut
                         };
                     }
 
+                    if (pointcut.AfterReturnMethod != null)
+                    {
+                        pointCutMethod.AfterReturnMethod = new RunTimePointcutMethod<AfterReturn>
+                        {
+                            Instance = instance,
+                            MethodInfo = pointcut.AfterReturnMethod.Item2.GetReflector(),
+                            MethodReturnType = pointcut.AfterReturnMethod.Item2.ReturnType,
+                            MethodParameters = pointcut.AfterReturnMethod.Item2.GetParameters(),
+                            PointcutBasicAttribute = pointcut.AfterReturnMethod.Item1,
+                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        };
+                    }
+
                     if (pointcut.AroundMethod != null)
                     {
                         pointCutMethod.AroundMethod = new RunTimePointcutMethod<Around>
@@ -86,15 +99,15 @@ namespace Autofac.Aspect.Pointcut
                         };
                     }
 
-                    if (pointcut.ThrowingMethod != null)
+                    if (pointcut.AfterThrows != null)
                     {
-                        pointCutMethod.ThrowingMethod = new RunTimePointcutMethod<Throws>
+                        pointCutMethod.AfterThrowsMethod = new RunTimePointcutMethod<AfterThrows>
                         {
                             Instance = instance,
-                            MethodInfo = pointcut.ThrowingMethod.Item2.GetReflector(),
-                            MethodReturnType = pointcut.ThrowingMethod.Item2.ReturnType,
-                            MethodParameters = pointcut.ThrowingMethod.Item2.GetParameters(),
-                            PointcutBasicAttribute = pointcut.ThrowingMethod.Item1,
+                            MethodInfo = pointcut.AfterThrows.Item2.GetReflector(),
+                            MethodReturnType = pointcut.AfterThrows.Item2.ReturnType,
+                            MethodParameters = pointcut.AfterThrows.Item2.GetParameters(),
+                            PointcutBasicAttribute = pointcut.AfterThrows.Item1,
                             PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
                         };
                     }
@@ -126,7 +139,7 @@ namespace Autofac.Aspect.Pointcut
                     //每个切换先拿到对应的实例 重复拿也没关系 因为是单例的
                     var instance = context.Resolve(pointcut.PointClass);
 
-                      if (pointcut.BeforeMethod != null)
+                    if (pointcut.BeforeMethod != null)
                     {
                         pointCutMethod.BeforeMethod = new RunTimePointcutMethod<Before>
                         {
@@ -152,6 +165,19 @@ namespace Autofac.Aspect.Pointcut
                         };
                     }
 
+                    if (pointcut.AfterReturnMethod != null)
+                    {
+                        pointCutMethod.AfterReturnMethod = new RunTimePointcutMethod<AfterReturn>
+                        {
+                            Instance = instance,
+                            MethodInfo = pointcut.AfterReturnMethod.Item2.GetReflector(),
+                            MethodReturnType = pointcut.AfterReturnMethod.Item2.ReturnType,
+                            MethodParameters = pointcut.AfterReturnMethod.Item2.GetParameters(),
+                            PointcutBasicAttribute = pointcut.AfterReturnMethod.Item1,
+                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        };
+                    }
+
                     if (pointcut.AroundMethod != null)
                     {
                         pointCutMethod.AroundMethod = new RunTimePointcutMethod<Around>
@@ -165,15 +191,15 @@ namespace Autofac.Aspect.Pointcut
                         };
                     }
 
-                    if (pointcut.ThrowingMethod != null)
+                    if (pointcut.AfterThrows != null)
                     {
-                        pointCutMethod.ThrowingMethod = new RunTimePointcutMethod<Throws>
+                        pointCutMethod.AfterThrowsMethod = new RunTimePointcutMethod<AfterThrows>
                         {
                             Instance = instance,
-                            MethodInfo = pointcut.ThrowingMethod.Item2.GetReflector(),
-                            MethodReturnType = pointcut.ThrowingMethod.Item2.ReturnType,
-                            MethodParameters = pointcut.ThrowingMethod.Item2.GetParameters(),
-                            PointcutBasicAttribute = pointcut.ThrowingMethod.Item1,
+                            MethodInfo = pointcut.AfterThrows.Item2.GetReflector(),
+                            MethodReturnType = pointcut.AfterThrows.Item2.ReturnType,
+                            MethodParameters = pointcut.AfterThrows.Item2.GetParameters(),
+                            PointcutBasicAttribute = pointcut.AfterThrows.Item1,
                             PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
                         };
                     }

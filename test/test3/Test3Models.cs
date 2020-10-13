@@ -188,9 +188,9 @@ namespace Autofac.Configuration.Test.test3
         }
     }
 
-    public class TestHelloAfter : AspectAfter
+    public class TestHelloAfter : AspectAfterReturn
     {
-        public override Task After(AspectContext aspectContext, object result)
+        public override Task AfterReturn(AspectContext aspectContext, object result)
         {
             TestModel91.testResult.Add("TestHelloAfter");
             TestModel911.testResult.Add("TestHelloAfter");
@@ -200,7 +200,7 @@ namespace Autofac.Configuration.Test.test3
         }
     }
 
-    public class TestHelloAfterThrowing : AspectThrows
+    public class TestHelloAfterThrowing : AspectAfterThrows
     {
         /// <summary>
         /// 
@@ -221,7 +221,7 @@ namespace Autofac.Configuration.Test.test3
         
         public override Type ExceptionType { get; } 
 
-        public override Task Throwing(AspectContext aspectContext, Exception exception)
+        public override Task AfterThrows(AspectContext aspectContext, Exception exception)
         {
             TestModel911.testResult.Add("TestHelloAfterThrowing");
             var ex = exception as ArgumentException;
@@ -447,10 +447,29 @@ namespace Autofac.Configuration.Test.test3
     }
     public class AdviceAfterTest1:AspectAfter
     {
-
-        public override Task After(AspectContext aspectContext, object result)
+        public override Task After(AspectContext aspectContext,object returnValue)
         {
             AdviseModel1.testModel.Add("After1");
+            Console.WriteLine("After1");
+            return Task.CompletedTask;
+        }
+    }
+    
+    public class AdviceAfterTest2:AspectAfter
+    {
+        public override Task After(AspectContext aspectContext,object returnValue)
+        {
+            AdviseModel1.testModel.Add("After2");
+            Console.WriteLine("After2");
+            return Task.CompletedTask;
+        }
+    }
+    public class AdviceAfterReturnTest1:AspectAfterReturn
+    {
+
+        public override Task AfterReturn(AspectContext aspectContext, object result)
+        {
+            AdviseModel1.testModel.Add("AfterReturn1");
             Console.WriteLine("AdviceAfterTest1");
             return Task.CompletedTask;
         }
@@ -465,28 +484,28 @@ namespace Autofac.Configuration.Test.test3
             return Task.CompletedTask;
         }
     }
-    public class AdviceAfterTest2:AspectAfter
+    public class AdviceAfterReturnTest2:AspectAfterReturn
     {
 
-        public override Task After(AspectContext aspectContext, object result)
+        public override Task AfterReturn(AspectContext aspectContext, object result)
         {
-            AdviseModel1.testModel.Add("After2");
+            AdviseModel1.testModel.Add("AfterReturn2");
             Console.WriteLine("AdviceAfterTest2");
             return Task.CompletedTask;
         }
     }
-    public class AdviceExceptionTest1:AspectThrows
+    public class AdviceAfterThrowsTest1:AspectAfterThrows
     {
-        public override Task Throwing(AspectContext aspectContext, Exception exception)
+        public override Task AfterThrows(AspectContext aspectContext, Exception exception)
         {
             AdviseModel1.testModel.Add("throw1");
             Console.WriteLine(exception.Message);
             return Task.CompletedTask;
         }
     }
-    public class AdviceExceptionTest2:AspectThrows
+    public class AdviceAfterThrowsTest2:AspectAfterThrows
     {
-        public override Task Throwing(AspectContext aspectContext, Exception exception)
+        public override Task AfterThrows(AspectContext aspectContext, Exception exception)
         {
             AdviseModel1.testModel.Add("throw2");
             Console.WriteLine(exception.Message);
@@ -500,7 +519,7 @@ namespace Autofac.Configuration.Test.test3
     {
         public static List<string> testModel = new List<string>();
         
-        [AdviceArroundTest1,AdviceBeforeTest1,AdviceAfterTest1,AdviceExceptionTest1]
+        [AdviceArroundTest1,AdviceBeforeTest1,AdviceAfterReturnTest1,AdviceAfterThrowsTest1]
         public virtual void TestArroundBeforeAfter()
         {
             AdviseModel1.testModel.Add("TestArroundBeforeAfter");
@@ -509,7 +528,8 @@ namespace Autofac.Configuration.Test.test3
         [AdviceArroundTest1]
         [AdviceBeforeTest1]
         [AdviceAfterTest1]
-        [AdviceExceptionTest1]
+        [AdviceAfterReturnTest1]
+        [AdviceAfterThrowsTest1]
         public virtual void TestArroundBeforeThrows()
         {
             AdviseModel1.testModel.Add("TestArroundBeforeThrows");
@@ -524,15 +544,15 @@ namespace Autofac.Configuration.Test.test3
             AdviseModel1.testModel.Add("TestMuiltBefore");
         }
         
-        [AdviceAfterTest1(GroupName = "a1")]
-        [AdviceAfterTest2(GroupName = "a2")]
+        [AdviceAfterReturnTest1(GroupName = "a1")]
+        [AdviceAfterReturnTest2(GroupName = "a2")]
         public virtual void TestMuiltAfter()
         {
             AdviseModel1.testModel.Add("TestMuiltAfter");
         }
         
-        [AdviceExceptionTest1(GroupName = "a1")]
-        [AdviceExceptionTest2(GroupName = "a2")]
+        [AdviceAfterThrowsTest1(GroupName = "a1")]
+        [AdviceAfterThrowsTest2(GroupName = "a2")]
         public virtual void TestMuiltThrows()
         {
             AdviseModel1.testModel.Add("TestMuiltThrows");
@@ -540,10 +560,12 @@ namespace Autofac.Configuration.Test.test3
         }
         
         [AdviceArroundTest1(GroupName = "a1")]
+        [AdviceAfterReturnTest1(GroupName = "a1")]
         [AdviceAfterTest1(GroupName = "a1")]
         [AdviceBeforeTest1(GroupName = "a1")]
         [AdviceArroundTest2(GroupName = "a2")]
         [AdviceBeforeTest2(GroupName = "a2")]
+        [AdviceAfterReturnTest2(GroupName = "a2")]
         [AdviceAfterTest2(GroupName = "a2")]
         public virtual void TestMuiltBeforeAfter()
         {

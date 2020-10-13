@@ -26,10 +26,10 @@ namespace Autofac.Annotation.Test.test6
             Console.WriteLine("Before");
         }
         
-        [After]
-        public void After()
+        [AfterReturn]
+        public void AfterReturn()
         {
-            Console.WriteLine("After");
+            Console.WriteLine("AfterReturn");
         }
         
         [Before("name1")]
@@ -38,10 +38,10 @@ namespace Autofac.Annotation.Test.test6
             Console.WriteLine("Before1");
         }
         
-        [After("name1")]
-        public void After1()
+        [AfterReturn("name1")]
+        public void AfterReturn1()
         {
-            Console.WriteLine("After1");
+            Console.WriteLine("AfterReturn1");
         }
         
         
@@ -51,10 +51,10 @@ namespace Autofac.Annotation.Test.test6
             Console.WriteLine("Before2");
         }
         
-        [After("name2")]
-        public void After2()
+        [AfterReturn("name2")]
+        public void AfterReturn2()
         {
-            Console.WriteLine("After2");
+            Console.WriteLine("AfterReturn2");
         }
 
         [Around("name3")]
@@ -73,11 +73,11 @@ namespace Autofac.Annotation.Test.test6
             Console.WriteLine("Before4");
         }
         
-        [After("name4")]
-        public async Task After4()
+        [AfterReturn("name4")]
+        public async Task AfterReturn4()
         {
             await Task.Delay(1000);
-            Console.WriteLine("After4");
+            Console.WriteLine("AfterReturn4");
         }
         
         [Before("name5")]
@@ -87,11 +87,11 @@ namespace Autofac.Annotation.Test.test6
             Console.WriteLine("Before5");
         }
         
-        [After("name5")]
-        public async Task After5()
+        [AfterReturn("name5")]
+        public async Task AfterReturn5()
         {
             await Task.Delay(1000);
-            Console.WriteLine("After5");
+            Console.WriteLine("AfterReturn5");
         }
     }
 
@@ -224,8 +224,8 @@ namespace Autofac.Annotation.Test.test6
         /// <summary>
         /// 打上After标签 代表满足匹配的方法 在执行之前会执行下面的After()方法
         /// </summary>
-        [After]
-        public void After()
+        [AfterReturn]
+        public void AfterReturn()
         {
             Console.WriteLine("after");
         }

@@ -59,7 +59,8 @@ namespace Autofac.Aspect.Advice
                     var allGroupNameList = new Dictionary<string,string>();
                     Dictionary<string,AspectBefore> beforeCache = new Dictionary<string, AspectBefore>();
                     Dictionary<string,AspectAfter> afterCache = new Dictionary<string, AspectAfter>();
-                    Dictionary<string,AspectThrows> afterThrow = new Dictionary<string, AspectThrows>();
+                    Dictionary<string,AspectAfterReturn> afterReturnCache = new Dictionary<string, AspectAfterReturn>();
+                    Dictionary<string,AspectAfterThrows> afterThrow = new Dictionary<string, AspectAfterThrows>();
                     Dictionary<string,AspectArround> arround = new Dictionary<string, AspectArround>();
                     
                     foreach (var attribute in attributes)
@@ -85,7 +86,7 @@ namespace Autofac.Aspect.Advice
                                 beforeCache.Add(key,aspectBeforeAttribute);
                                 if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);
                                 break;
-                            case AspectAfter aspectAfterAttribute:
+                            case AspectAfter aspectAfter:
                                 if (afterCache.ContainsKey(key))
                                 {
                                     //当默认的添加满的时候 自动分组
@@ -100,10 +101,28 @@ namespace Autofac.Aspect.Advice
                                             $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectAfter]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
                                     }
                                 }
-                                afterCache.Add(key,aspectAfterAttribute);
+                                afterCache.Add(key,aspectAfter);
                                 if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);
                                 break;
-                            case AspectThrows aspectAfterThrowing:
+                            case AspectAfterReturn aspectAfterAttribute:
+                                if (afterReturnCache.ContainsKey(key))
+                                {
+                                    //当默认的添加满的时候 自动分组
+                                    if (string.IsNullOrEmpty(key))
+                                    {
+                                        key = attribute.GetType().FullName;
+                                    }
+
+                                    if (afterReturnCache.ContainsKey(key))
+                                    {
+                                        throw new InvalidOperationException(
+                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectAfterReturn]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                    }
+                                }
+                                afterReturnCache.Add(key,aspectAfterAttribute);
+                                if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);
+                                break;
+                            case AspectAfterThrows aspectAfterThrowing:
                                 if (afterThrow.ContainsKey(key))
                                 {
                                     //当默认的添加满的时候 自动分组
@@ -115,7 +134,7 @@ namespace Autofac.Aspect.Advice
                                     if (afterThrow.ContainsKey(key))
                                     {
                                         throw new InvalidOperationException(
-                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectThrowing]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectAfterThrows]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
                                     }
                                 }
                                 afterThrow.Add(key,aspectAfterThrowing);
@@ -175,16 +194,28 @@ namespace Autofac.Aspect.Advice
                             adviceMethod.OrderIndex = adviceMethod.AspectAfter.OrderIndex;
                         }
                         
-                        if (afterThrow.ContainsKey(groupName))
+                        if (afterReturnCache.ContainsKey(groupName))
                         {
-                            adviceMethod.AspectThrowing = afterThrow[groupName];
+                            adviceMethod.AspectAfterReturn = afterReturnCache[groupName];
                             //同一个groupName 设置的 OrderIndex 不一样报错
-                            if (adviceMethod.OrderIndex > 0 &&  adviceMethod.AspectThrowing.OrderIndex > 0 && adviceMethod.OrderIndex != adviceMethod.AspectThrowing.OrderIndex)
+                            if (adviceMethod.OrderIndex > 0 &&  adviceMethod.AspectAfterReturn.OrderIndex > 0 && adviceMethod.OrderIndex != adviceMethod.AspectAfterReturn.OrderIndex)
                             {
                                 throw new InvalidOperationException(
                                     $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` with same groupName=`${groupName}` but OrderIndex is different !");
                             }
-                            adviceMethod.OrderIndex = adviceMethod.AspectThrowing.OrderIndex;
+                            adviceMethod.OrderIndex = adviceMethod.AspectAfterReturn.OrderIndex;
+                        }
+                        
+                        if (afterThrow.ContainsKey(groupName))
+                        {
+                            adviceMethod.AspectAfterThrows = afterThrow[groupName];
+                            //同一个groupName 设置的 OrderIndex 不一样报错
+                            if (adviceMethod.OrderIndex > 0 &&  adviceMethod.AspectAfterThrows.OrderIndex > 0 && adviceMethod.OrderIndex != adviceMethod.AspectAfterThrows.OrderIndex)
+                            {
+                                throw new InvalidOperationException(
+                                    $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` with same groupName=`${groupName}` but OrderIndex is different !");
+                            }
+                            adviceMethod.OrderIndex = adviceMethod.AspectAfterThrows.OrderIndex;
                         }
                         
                         if (arround.ContainsKey(groupName))

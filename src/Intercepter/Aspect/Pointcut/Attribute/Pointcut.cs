@@ -115,11 +115,11 @@ namespace Autofac.Annotation
             {typeof(Aspect), false},
             {typeof(InterfaceInterceptor), false},
             {typeof(ClassInterceptor), false},
-            {typeof(After), false},
+            {typeof(AfterReturn), false},
             {typeof(Around), false},
             {typeof(Before), false},
             {typeof(Pointcut), false},
-            {typeof(Throws), false},
+            {typeof(AfterThrows), false},
         };
 
         /// <summary>

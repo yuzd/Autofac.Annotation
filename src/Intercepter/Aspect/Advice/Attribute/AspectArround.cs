@@ -9,7 +9,7 @@ namespace Autofac.Aspect.Advice
     using System.Text;
 
     /// <summary>
-    /// 环绕通知
+    /// 环绕通知 包围一个连接点的通知
     /// </summary>
     public abstract class AspectArround : AspectInvokeAttribute
     {

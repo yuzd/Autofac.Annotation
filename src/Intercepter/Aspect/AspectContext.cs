@@ -31,6 +31,7 @@ namespace Autofac.Aspect
             this.ComponentContext = context;
             this.InvocationContext = invocation;
         }
+
         /// <summary>
         /// 构造方法
         /// </summary>
@@ -40,9 +41,8 @@ namespace Autofac.Aspect
         {
             this.ComponentContext = context;
             this.IAsyncnvocationContext = invocation;
-            
         }
-        
+
         /// <summary>
         /// autofac容器
         /// </summary>
@@ -54,7 +54,7 @@ namespace Autofac.Aspect
         /// </summary>
 
         internal IInvocation InvocationContext { get; set; }
-        
+
         /// <summary>
         /// 异步执行环节上下文
         /// </summary>
@@ -64,7 +64,8 @@ namespace Autofac.Aspect
         /// <summary>
         /// 被拦截的目标方法的参数
         /// </summary>
-       public IReadOnlyList<object> Arguments {
+        public IReadOnlyList<object> Arguments
+        {
             get
             {
                 if (InvocationContext != null)
@@ -75,11 +76,12 @@ namespace Autofac.Aspect
                 return IAsyncnvocationContext.Arguments;
             }
         }
-        
+
         /// <summary>
         /// 被拦截的目标方法
         /// </summary>
-       public  MethodInfo TargetMethod {
+        public MethodInfo TargetMethod
+        {
             get
             {
                 if (InvocationContext != null)
@@ -87,20 +89,36 @@ namespace Autofac.Aspect
                     return InvocationContext.MethodInvocationTarget;
                 }
 
-                return IAsyncnvocationContext.Method;
+                return IAsyncnvocationContext.TargetMethod;
             }
         }
 
-
         /// <summary>
-        /// 设置返回值或者获取返回值
+        /// 被拦截的目标方法的proxy方法
         /// </summary>
-        public object ReturnValue {
+        public MethodInfo Method
+        {
             get
             {
                 if (InvocationContext != null)
                 {
-                    return InvocationContext.ReturnValue ;
+                    return InvocationContext.Method;
+                }
+
+                return IAsyncnvocationContext.Method;
+            }
+        }
+
+        /// <summary>
+        /// 设置返回值或者获取返回值
+        /// </summary>
+        public object ReturnValue
+        {
+            get
+            {
+                if (InvocationContext != null)
+                {
+                    return InvocationContext.ReturnValue;
                 }
 
                 return IAsyncnvocationContext?.Result;
@@ -121,14 +139,12 @@ namespace Autofac.Aspect
         }
 
 
-
-
         /// <summary>
         /// 实际真正的方法用在拦截器链的执行过程中
         /// </summary>
         internal Func<ValueTask> Proceed { get; set; }
 
-        
+
         /// <summary>
         /// 有返回Exception
         /// </summary>

@@ -1008,6 +1008,7 @@ namespace Autofac.Annotation
                 //从assembly里面解析打了Compoment标签的 或者 自定义设置了 ComponentDetector的采用ComponentDetector的方式去解析生产的Compoment
                 foreach (var assembly in _assemblyList)
                 {
+                    if (assembly.IsDynamic) continue;
                     var types = assembly.GetExportedTypes();
                     //找到类型中含有 Component 标签的类 排除掉抽象类
                     var assemblBeanTypeList = (from type in types
@@ -1238,6 +1239,7 @@ namespace Autofac.Annotation
             var result = new List<AutofacConfigurationInfo>();
             foreach (var assembly in _assemblyList)
             {
+                if (assembly.IsDynamic) continue;
                 var types = assembly.GetExportedTypes();
                 //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
                 var typeList = (from type in types
@@ -1279,6 +1281,7 @@ namespace Autofac.Annotation
             var result = new List<PointcutConfigurationInfo>();
             foreach (var assembly in _assemblyList)
             {
+                if (assembly.IsDynamic) continue;
                 var types = assembly.GetExportedTypes();
                 //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
                 var typeList = (from type in types

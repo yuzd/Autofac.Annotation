@@ -120,7 +120,12 @@ namespace Autofac.Annotation
         /// <summary>
         /// 拦截器类型
         /// </summary>
-        public InterceptorType InterceptorType { get; set; } = InterceptorType.Interface;
+        public InterceptorType InterceptorType { get; set; } = InterceptorType.Class;
+
+        /// <summary>
+        /// 开启拦截器代理
+        /// </summary>
+        public bool EnableAspect { get; set; }
 
         /// <summary>
         /// 如果同一个类型的拦截器有多个 可以指定Key
@@ -144,11 +149,11 @@ namespace Autofac.Annotation
     public enum InterceptorType
     {
         /// <summary>
-        /// 使用接口模式
+        /// 使用接口模式 自己指定拦截器
         /// </summary>
         Interface,
         /// <summary>
-        /// 使用class的虚方法模式
+        /// 使用class的虚方法模式 自己指定拦截器
         /// </summary>
         Class
     }

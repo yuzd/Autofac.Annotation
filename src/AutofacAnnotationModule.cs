@@ -10,8 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Autofac.Aspect;
-using Autofac.Aspect.Pointcut;
+using Autofac.AspectIntercepter;
+using Autofac.AspectIntercepter.Pointcut;
 using Autofac.Core.Resolving;
 using Autofac.Core.Resolving.Pipeline;
 using Autofac.Features.AttributeFilters;
@@ -460,13 +460,10 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(registrar));
             }
 
-       
-
-            var aspAttribute = component.CurrentType.GetCustomAttribute<Aspect>();
-            if (aspAttribute != null && component.Interceptor != null)
+            if (component.EnableAspect && component.Interceptor != null)
             {
                 throw new InvalidOperationException(
-                    $"'{component.CurrentType.FullName}' can not interceptor by both AspectAttribute:'{aspAttribute.GetType().FullName}' and Interceptor:'{component.Interceptor.FullName}' ");
+                    $"'{component.CurrentType.FullName}' can not interceptor by both EnableAspect and Interceptor:'{component.Interceptor.FullName}' ");
             }
             else if (component.Interceptor != null)
             {
@@ -491,9 +488,13 @@ namespace Autofac.Annotation
 
                         registrar.EnableClassInterceptors().InterceptedBy(component.Interceptor);
                         return;
+                    default:
+                        throw new InvalidOperationException(
+                            $"'{component.CurrentType.FullName}' can not interceptor by both EnableAspect and Interceptor:'{component.Interceptor.FullName}' ");
+
                 }
             }
-            else if (aspAttribute != null)
+            else if (component.EnableAspect)
             {
                 if (component.isDynamicGeneric)
                 {
@@ -505,7 +506,7 @@ namespace Autofac.Annotation
                     //打了[InterfaceInterceptor]标签
                     registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept));
                 }
-                else if (aspAttribute.AspectType == InterceptorType.Interface)
+                else if (component.InterceptorType == InterceptorType.Interface)
                 {
                     //指定了 interface 拦截器 或
                     registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept));
@@ -1022,6 +1023,7 @@ namespace Autofac.Annotation
                         }).ToList();
                     beanTypeList.AddRange(assemblBeanTypeList);
                     
+                    
                     //找到类型中含有 Import 标签的类 排除掉抽象类
                     var importBeanTypeList = (from type in types
                         let bean = type.GetCustomAttribute<Import>()
@@ -1037,7 +1039,6 @@ namespace Autofac.Annotation
                 {
                     var component = EnumerateComponentServices(bean.Bean, bean.Type);
                     component.MetaSourceList = new List<MetaSourceData>();
-                    component.AspectAttribute = bean.Type.GetCustomAttribute<Aspect>();
                     EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
                     result.Add(component);
                     if (component.isDynamicGeneric)
@@ -1300,16 +1301,18 @@ namespace Autofac.Annotation
 
                     //一个point标签下 class里面 最多一组 
                     Dictionary<string, Tuple<Before,MethodInfo>> beforeMethodInfos = new Dictionary<string, Tuple<Before,MethodInfo>>();
+                    Dictionary<string, Tuple<AfterReturn,MethodInfo>> afterReturnMethodInfos = new Dictionary<string, Tuple<AfterReturn,MethodInfo>>();
                     Dictionary<string, Tuple<After,MethodInfo>> afterMethodInfos = new Dictionary<string, Tuple<After,MethodInfo>>();
                     Dictionary<string, Tuple<Around,MethodInfo>> aroundMethodInfos = new Dictionary<string, Tuple<Around,MethodInfo>>();
-                    Dictionary<string, Tuple<Throws,MethodInfo>> throwMethodInfos = new Dictionary<string, Tuple<Throws,MethodInfo>>();
+                    Dictionary<string, Tuple<AfterThrows,MethodInfo>> throwMethodInfos = new Dictionary<string, Tuple<AfterThrows,MethodInfo>>();
                     foreach (var beanTypeMethod in beanTypeMethodList)
                     {
                         var beforeAttribute = beanTypeMethod.GetCustomAttribute<Before>();
+                        var afterReturnAttribute = beanTypeMethod.GetCustomAttribute<AfterReturn>();
                         var afterAttribute = beanTypeMethod.GetCustomAttribute<After>();
                         var aroundAttribute = beanTypeMethod.GetCustomAttribute<Around>();
-                        var throwAttribute = beanTypeMethod.GetCustomAttribute<Throws>();
-                        if (beforeAttribute == null && afterAttribute == null && aroundAttribute == null && throwAttribute == null) continue;
+                        var throwAttribute = beanTypeMethod.GetCustomAttribute<AfterThrows>();
+                        if (beforeAttribute == null && afterReturnAttribute == null && aroundAttribute == null && throwAttribute == null && afterAttribute == null) continue;
 
                         if (aroundAttribute != null)
                         {
@@ -1360,7 +1363,7 @@ namespace Autofac.Annotation
                             beforeMethodInfos.Add(key,  new Tuple<Before, MethodInfo>(beforeAttribute,beanTypeMethod));
                          
                         }
-
+                        
                         if (afterAttribute != null)
                         {
                             var key = afterAttribute.GroupName ?? "";
@@ -1375,13 +1378,37 @@ namespace Autofac.Annotation
                                         $"The Pointcut class `{configuration.Type.FullName}` after method `{beanTypeMethod.Name}` can not be register without special parameter of `{afterAttribute.Returing}`!");
                                 }
                             }
+                            
                             if (afterMethodInfos.ContainsKey(key))
                             {
                                 throw new InvalidOperationException(
                                     $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
                             }
 
-                            afterMethodInfos.Add(key, new Tuple<After, MethodInfo>(afterAttribute,beanTypeMethod));
+                            afterMethodInfos.Add(key,  new Tuple<After, MethodInfo>(afterAttribute,beanTypeMethod));
+                        }
+
+                        if (afterReturnAttribute != null)
+                        {
+                            var key = afterReturnAttribute.GroupName ?? "";
+                            if (!string.IsNullOrEmpty(afterReturnAttribute.Returing))
+                            {
+                                //查看这个指定的参数有没有在这个方法里面
+                                var parameters = beanTypeMethod.GetParameters();
+                                var returnIngParam = parameters.FirstOrDefault(r => r.Name == afterReturnAttribute.Returing);
+                                if (returnIngParam == null)
+                                {
+                                    throw new InvalidOperationException(
+                                        $"The Pointcut class `{configuration.Type.FullName}` after method `{beanTypeMethod.Name}` can not be register without special parameter of `{afterReturnAttribute.Returing}`!");
+                                }
+                            }
+                            if (afterReturnMethodInfos.ContainsKey(key))
+                            {
+                                throw new InvalidOperationException(
+                                    $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                            }
+
+                            afterReturnMethodInfos.Add(key, new Tuple<AfterReturn, MethodInfo>(afterReturnAttribute,beanTypeMethod));
                         
                         }
                         
@@ -1405,7 +1432,7 @@ namespace Autofac.Annotation
                                     $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
                             }
 
-                            throwMethodInfos.Add(key, new Tuple<Throws, MethodInfo>(throwAttribute,beanTypeMethod));
+                            throwMethodInfos.Add(key, new Tuple<AfterThrows, MethodInfo>(throwAttribute,beanTypeMethod));
                         }
                     }
 
@@ -1413,9 +1440,10 @@ namespace Autofac.Annotation
                     foreach (var pc in configuration.Bean)
                     {
                         if (!beforeMethodInfos.ContainsKey(pc.GroupName)
-                            && !afterMethodInfos.ContainsKey(pc.GroupName)
+                            && !afterReturnMethodInfos.ContainsKey(pc.GroupName)
                             && !aroundMethodInfos.ContainsKey(pc.GroupName)
                             && !throwMethodInfos.ContainsKey(pc.GroupName)
+                            && !afterMethodInfos.ContainsKey(pc.GroupName)
                         )
                         {
                             continue;
@@ -1431,10 +1459,13 @@ namespace Autofac.Annotation
                         {
                             rr.BeforeMethod = be;
                         }
-
-                        if (afterMethodInfos.TryGetValue(pc.GroupName, out var af))
+                        if (afterMethodInfos.TryGetValue(pc.GroupName, out var af1))
                         {
-                            rr.AfterMethod = af;
+                            rr.AfterMethod = af1;
+                        }
+                        if (afterReturnMethodInfos.TryGetValue(pc.GroupName, out var af))
+                        {
+                            rr.AfterReturnMethod = af;
                         }
 
                         if (aroundMethodInfos.TryGetValue(pc.GroupName, out var ar))
@@ -1443,7 +1474,7 @@ namespace Autofac.Annotation
                         }
                         if (throwMethodInfos.TryGetValue(pc.GroupName, out var trr))
                         {
-                            rr.ThrowingMethod = trr;
+                            rr.AfterThrows = trr;
                         }
                         result.Add(rr);
                     }
@@ -1480,6 +1511,7 @@ namespace Autofac.Annotation
                 DestroyMethod = bean.DestroyMethod,
                 OrderIndex = bean.OrderIndex,
                 NotUseProxy = bean.NotUseProxy,
+                EnableAspect = bean.EnableAspect,
                 CurrentClassTypeAttributes = Enumerable.OfType<Attribute>(currentType.GetCustomAttributes()).ToList()
             };
 

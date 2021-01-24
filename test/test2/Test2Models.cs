@@ -86,7 +86,7 @@ namespace Autofac.Configuration.Test.test2
         Task<string> hello();
     }
 
-    [Component(Interceptor = typeof(Test2Interceptor))]
+    [Component(Interceptor = typeof(Test2Interceptor),InterceptorType = InterceptorType.Interface)]
     public class Model5 : Imodel3
     {
         public async Task<string> hello()
@@ -96,7 +96,7 @@ namespace Autofac.Configuration.Test.test2
         }
     }
 
-    [Component(Interceptor = typeof(Test2Interceptor),InterceptorType = InterceptorType.Class)]
+    [Component(Interceptor = typeof(Test2Interceptor))]
     public class Model55
     {
         public virtual async Task<string> hello()
@@ -106,7 +106,7 @@ namespace Autofac.Configuration.Test.test2
     }
 
 
-    [Component(Interceptor = typeof(Test2Interceptor2), InterceptorType = InterceptorType.Class)]
+    [Component(Interceptor = typeof(Test2Interceptor2))]
     public class Model6
     {
         public virtual async Task<string> hello()
@@ -115,7 +115,7 @@ namespace Autofac.Configuration.Test.test2
         }
     }
 
-    [Component(Interceptor = typeof(AsyncInterceptor), InterceptorType = InterceptorType.Class,InterceptorKey = nameof(Test2Interceptor2))]
+    [Component(Interceptor = typeof(AsyncInterceptor),InterceptorKey = nameof(Test2Interceptor2))]
     public class Model61
     {
         public virtual async Task<string> hello()

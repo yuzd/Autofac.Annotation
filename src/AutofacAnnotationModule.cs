@@ -26,7 +26,7 @@ namespace Autofac.Annotation
     public class AutofacAnnotationModule : Module
     {
         private readonly List<Assembly> _assemblyList;
-
+        private ILifetimeScope autofacGlobalScope;
         /// <summary>
         /// 当前默认的Scope
         /// </summary>
@@ -974,6 +974,8 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(_assemblyList));
             }
 
+            builder.RegisterBuildCallback(r => this.autofacGlobalScope = r);
+            
             ComponentModelCacheSingleton singleton = new ComponentModelCacheSingleton
             {
                 ComponentModelCache = new ConcurrentDictionary<Type, ComponentModel>(),
@@ -1655,10 +1657,63 @@ namespace Autofac.Annotation
                     {
                         Origin = metaSourceAttribute.Path,
                         Embedded = metaSourceAttribute.Embedded,
+                        DynamicSource = metaSourceAttribute.Dynamic,
                         MetaSourceType = metaSourceAttribute.MetaSourceType,
                         Order = metaSourceAttribute.OrderIndex,
                         Reload = metaSourceAttribute._reload ?? EnableValueResourceReloadOnchange
                     };
+
+                    if (metaSource.DynamicSource != null)
+                    {
+                        //校验必须实现接口IDynamicSourceProvider
+                        if(!typeof(IConfigurationProvider).IsAssignableFrom(metaSource.DynamicSource) )
+                        {
+                            throw new InvalidOperationException(
+                                $"'{classType.FullName}' can not load DynamicSource:'{metaSource.DynamicSource.FullName}',Must implement interface:IConfigurationProvider");
+                        }
+                        metaSource.MetaSourceType = MetaSourceType.Dynamic;
+                        metaSource.ConfigurationLazy = new Lazy<IConfiguration>(() =>
+                        {
+                            //单例还是多例交给外面自己控制
+                            object sourceProvider = null;
+                            if (!string.IsNullOrEmpty(metaSourceAttribute.Key))
+                            {
+                                autofacGlobalScope?.TryResolveService(new KeyedService(metaSourceAttribute.Key,metaSource.DynamicSource), out sourceProvider);
+                            }
+                            else
+                            {
+                                autofacGlobalScope?.TryResolveService(new TypedService(metaSource.DynamicSource), out sourceProvider);
+                            }
+                           
+                            if (sourceProvider == null)
+                            {
+                                //如果没有配置那么只能是多例
+                                sourceProvider = Activator.CreateInstance(metaSource.DynamicSource);
+                            }
+                            if (sourceProvider == null)
+                            {
+                                throw new InvalidOperationException(
+                                    $"'{classType.FullName}' can not load DynamicSource:'{metaSource.DynamicSource.FullName}',Must implement interface:IConfigurationProvider");
+                            }
+
+                            if (sourceProvider is IDynamicSourceProvider dynamicSource)
+                            {
+                                dynamicSource.setPropertySource(metaSourceAttribute);
+                            }
+
+                            if (sourceProvider is IConfigurationProvider configurationProvider)
+                            {
+                                var config = new ConfigurationRoot(new List<IConfigurationProvider> { configurationProvider });
+                                return config;
+                            }
+
+                            throw new InvalidOperationException(
+                                $"'{classType.FullName}' can not load DynamicSource:'{metaSource.DynamicSource.FullName}',Must implement interface:IConfigurationProvider");
+                        });
+
+                        MetaSourceList.Add(metaSource);
+                        continue;
+                    }
 
                     if (string.IsNullOrEmpty(metaSourceAttribute.Path))
                     {

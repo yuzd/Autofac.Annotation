@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Extensions.Configuration;
 
 namespace Autofac.Annotation
 {
@@ -42,6 +43,15 @@ namespace Autofac.Annotation
         /// 是否是内嵌资源
         /// </summary>
         public bool Embedded { get; set; }
+        
+        /// <summary>
+        /// 动态数据源类型 必须继承接口：IDynamicSourceProvider
+        /// </summary>
+        public Type Dynamic { get; set; }
+        /// <summary>
+        /// 当动态数据源类型有多个注册的时候根据key来获取唯一
+        /// </summary>
+        public string Key { get; set; }
 
         /// <summary>
         /// 
@@ -59,5 +69,17 @@ namespace Autofac.Annotation
         /// 资源格式类型
         /// </summary>
         public MetaSourceType MetaSourceType { get; set; } = MetaSourceType.Auto;
+    }
+
+    /// <summary>
+    /// 动态数据源
+    /// </summary>
+    public interface IDynamicSourceProvider:IConfigurationProvider
+    {
+        /// <summary>
+        /// 配置信息传递
+        /// </summary>
+        /// <param name="source"></param>
+        void setPropertySource(PropertySource source);
     }
 }

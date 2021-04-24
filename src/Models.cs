@@ -168,6 +168,11 @@ namespace Autofac.Annotation
         /// 是否是内嵌资源
         /// </summary>
         public bool Embedded { get; set; }
+        
+        /// <summary>
+        /// 当类型为Dynamic的时候使用
+        /// </summary>
+        public Type DynamicSource { get; set; }
 
         /// <summary>
         /// 排序
@@ -212,7 +217,11 @@ namespace Autofac.Annotation
         /// <summary>
         /// xml格式
         /// </summary>
-        XML
+        XML,
+        /// <summary>
+        /// 动态自定义类型
+        /// </summary>
+        Dynamic
     }
 
 

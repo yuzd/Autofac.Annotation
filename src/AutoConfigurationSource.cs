@@ -79,7 +79,7 @@ namespace Autofac.Annotation
                         }
                         return instance;
                     }));
-                    
+                    rb.WithMetadata("autofac_spring", true);
                     if (!string.IsNullOrEmpty(beanMethod.Item1.Key))
                     {
                         rb.Keyed(beanMethod.Item1.Key, instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);

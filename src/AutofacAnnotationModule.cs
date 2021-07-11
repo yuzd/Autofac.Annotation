@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using Autofac.AspectIntercepter;
 using Autofac.AspectIntercepter.Pointcut;
 using Autofac.Core.Registration;
-using Autofac.Core.Resolving;
 using Autofac.Core.Resolving.Pipeline;
 using Autofac.Features.AttributeFilters;
 using Microsoft.Extensions.Configuration;
@@ -26,9 +25,11 @@ namespace Autofac.Annotation
     /// </summary>
     public class AutofacAnnotationModule : Module
     {
-        private readonly List<Assembly> _assemblyList;
+        private List<Assembly> _assemblyList = new List<Assembly>();
         private ILifetimeScope autofacGlobalScope;
         private const string _ALL_COMPOMENT = "_ALL_COMPOMENT";
+        internal static string _AUTOFAC_SPRING = "autofac_spring";
+
 
         /// <summary>
         /// 当前默认的Scope
@@ -69,7 +70,7 @@ namespace Autofac.Annotation
         /// 自动注册的时候如果父类是抽象class是否忽略
         /// </summary>
         public bool IgnoreAutoRegisterAbstractClass { get; private set; } = false;
-        
+
         /// <summary>
         /// 当調用autofac自帶的註冊方式也能识别Autowired和Value的注入
         /// </summary>
@@ -85,6 +86,9 @@ namespace Autofac.Annotation
         /// </summary>
         internal IComponentDetector ComponentDetector { get; private set; } = null;
 
+
+        #region 构造方法
+
         /// <summary>
         /// 根据程序集来实例化
         /// </summary>
@@ -96,8 +100,7 @@ namespace Autofac.Annotation
                 throw new ArgumentException(nameof(assemblyList));
             }
 
-            _assemblyList = assemblyList.Distinct().ToList();
-            _assemblyList.Add(typeof(AutofacAnnotationModule).Assembly);
+            _assemblyList = assemblyList.ToList();
         }
 
         /// <summary>
@@ -106,13 +109,11 @@ namespace Autofac.Annotation
         /// <param name="assemblyNameList"></param>
         public AutofacAnnotationModule(params string[] assemblyNameList)
         {
-            if (assemblyNameList != null && assemblyNameList.Length > 0)
+            if (assemblyNameList == null || assemblyNameList.Length == 0)
             {
-                _assemblyList = getCurrentDomainAssemblies().Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).Distinct().ToList();
-                return;
+                throw new ArgumentException(nameof(assemblyNameList));
             }
-
-            _assemblyList = getCurrentDomainAssemblies().Distinct().ToList();
+            _assemblyList = getCurrentDomainAssemblies().Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).ToList();
         }
 
 
@@ -121,7 +122,21 @@ namespace Autofac.Annotation
         /// </summary>
         public AutofacAnnotationModule()
         {
-            _assemblyList = getCurrentDomainAssemblies().Distinct().ToList();
+           
+        }
+
+        #endregion
+        
+
+        /// <summary>
+        /// 添加assembly自动被扫描
+        /// </summary>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        public AutofacAnnotationModule RegisterAssembly(Assembly assembly)
+        {
+            this._assemblyList.Add(assembly);
+            return this;
         }
 
         /// <summary>
@@ -149,7 +164,18 @@ namespace Autofac.Annotation
             this.AutofacConfigurationKey = key ?? throw new ArgumentException(nameof(key));
             return this;
         }
-
+        
+        /// <summary>
+        /// 当調用autofac自帶的註冊方式也能识别Autowired和Value的注入
+        /// </summary>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        public AutofacAnnotationModule SetAutoAttachFromAutofacRegister(bool flag)
+        {
+            this.AutoAttachFromAutofacRegister = flag;
+            return this;
+        }
+        
         /// <summary>
         /// 设置是否自动注册父类
         /// </summary>
@@ -264,45 +290,68 @@ namespace Autofac.Annotation
         {
             //开关
             if (!AutoAttachFromAutofacRegister) return;
+            Console.WriteLine(registration.Activator.LimitType.FullName);
+            //明确要求不需要被扫描
+            if (registration.Metadata.ContainsKey(AutofacSpring.DISABLE_AUTO_INCLUE_INTO_COMPOMENT))
+            {
+                return;
+            }
             
             var currentType = registration.Activator.LimitType;
+            
+            if (typeof(Castle.DynamicProxy.IProxyTargetAccessor).IsAssignableFrom(currentType) && currentType.BaseType!=null)
+            {
+                currentType = currentType.BaseType;
+            }
+            
             //过滤掉框架类
             if (currentType.Assembly == this.GetType().Assembly || currentType.Assembly == typeof(Autofac.Core.Lifetime.LifetimeScope).Assembly)
             {
                 return;
             }
 
-            if (componentRegistry.Properties == null || !componentRegistry.Properties.ContainsKey(_ALL_COMPOMENT))
-            {
-                return;
-            }
-            
-            var all = componentRegistry.Properties[_ALL_COMPOMENT];
-            if (all == null)
+            if (!componentRegistry.Properties.Any() || !componentRegistry.Properties.ContainsKey(_ALL_COMPOMENT))
             {
                 return;
             }
 
-            var allCompoment = (ComponentModelCacheSingleton) all;
+            var allCompoment = componentRegistry.Properties[_ALL_COMPOMENT] as ComponentModelCacheSingleton;
+            if (allCompoment == null)
+            {
+                return;
+            }
+
             //过滤掉框架已经注册的类
-            if (allCompoment.ComponentModelCache.ContainsKey(registration.Activator.LimitType))
+            if (allCompoment.ComponentModelCache.ContainsKey(currentType))
+            {
+                return;
+            }
+
+            bool isGeneric = (currentType.IsGenericType || currentType.GetTypeInfo().IsGenericTypeDefinition) ;
+            if (isGeneric && allCompoment.DynamicComponentModelCache.ContainsKey(currentType.Namespace + currentType.Name))
             {
                 return;
             }
 
             //过滤掉框架的AutoConfiguration注册的类
-            if (registration.Metadata.ContainsKey("autofac_spring"))
+            if (registration.Metadata.ContainsKey(_AUTOFAC_SPRING))
             {
                 return;
             }
-
+            
             //剩下的就是自己注册的
             //检测自己注册的是否存在有Autowired 和 Value
             var component = CreateCompomentFromAutofac(currentType, registration);
 
-            allCompoment.ComponentModelCache.TryAdd(component.CurrentType, component);
+            if (isGeneric)
+            {
+                allCompoment.DynamicComponentModelCache.TryAdd(currentType.Namespace + currentType.Name, component);
+            }
+            else
+            {
+                allCompoment.ComponentModelCache.TryAdd(component.CurrentType, component);
+            }
 
-            componentRegistry.Properties.Remove(_ALL_COMPOMENT);
         }
 
         /// <summary>
@@ -316,6 +365,14 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(builder));
             }
 
+            if (this._assemblyList == null || !this._assemblyList.Any())
+            {
+                this._assemblyList = getCurrentDomainAssemblies().ToList();
+            }
+            
+            _assemblyList.Add(typeof(AutofacAnnotationModule).Assembly);
+            _assemblyList = _assemblyList.Distinct().ToList();
+            
             if (EnableAutofacEventBus)
             {
                 builder.RegisterSource(new Autofac.Features.Variance.ContravariantRegistrationSource());
@@ -529,21 +586,21 @@ namespace Autofac.Annotation
                         if (!string.IsNullOrEmpty(component.InterceptorKey))
                         {
                             registrar.EnableInterfaceInterceptors().InterceptedBy(new KeyedService(component.InterceptorKey, component.Interceptor))
-                                .WithMetadata("autofac_spring", true);
+                                .WithMetadata(_AUTOFAC_SPRING, true);
                             return;
                         }
 
-                        registrar.EnableInterfaceInterceptors().InterceptedBy(component.Interceptor).WithMetadata("autofac_spring", true);
+                        registrar.EnableInterfaceInterceptors().InterceptedBy(component.Interceptor).WithMetadata(_AUTOFAC_SPRING, true);
                         return;
                     case InterceptorType.Class:
                         if (!string.IsNullOrEmpty(component.InterceptorKey))
                         {
                             registrar.EnableClassInterceptors().InterceptedBy(new KeyedService(component.InterceptorKey, component.Interceptor))
-                                .WithMetadata("autofac_spring", true);
+                                .WithMetadata(_AUTOFAC_SPRING, true);
                             return;
                         }
 
-                        registrar.EnableClassInterceptors().InterceptedBy(component.Interceptor).WithMetadata("autofac_spring", true);
+                        registrar.EnableClassInterceptors().InterceptedBy(component.Interceptor).WithMetadata(_AUTOFAC_SPRING, true);
                         return;
                     default:
                         throw new InvalidOperationException(
@@ -555,22 +612,22 @@ namespace Autofac.Annotation
                 if (component.isDynamicGeneric)
                 {
                     //动态泛型类的话 只能用 interface拦截器 
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata("autofac_spring", true);
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
                 }
                 else if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
                 {
                     //打了[InterfaceInterceptor]标签
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata("autofac_spring", true);
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
                 }
                 else if (component.InterceptorType == InterceptorType.Interface)
                 {
                     //指定了 interface 拦截器 或
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata("autofac_spring", true);
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
                 }
                 else
                 {
                     //默认是class + virtual 拦截器
-                    registrar.EnableClassInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata("autofac_spring", true);
+                    registrar.EnableClassInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
                 }
             }
             else
@@ -600,13 +657,13 @@ namespace Autofac.Annotation
 
                 if (component.CurrentType.GetCustomAttribute<ClassInterceptor>() != null)
                 {
-                    registrar.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata("autofac_spring", true);
+                    registrar.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
                 if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
                 {
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata("autofac_spring", true);
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
@@ -614,11 +671,11 @@ namespace Autofac.Annotation
                 if (component.CurrentType.GetTypeInfo().ImplementedInterfaces
                     .Any(r => r.Assembly.Equals(component.CurrentType.Assembly)))
                 {
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata("autofac_spring", true);
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
-                registrar.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata("autofac_spring", true);
+                registrar.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
             }
         }
 
@@ -734,146 +791,6 @@ namespace Autofac.Annotation
         }
 
         /// <summary>
-        /// 设置属性自动注入
-        /// </summary>
-        /// <typeparam name="TReflectionActivatorData"></typeparam>
-        /// <param name="component"></param>
-        /// <param name="registrar"></param>
-        private void SetInjectProperties<TReflectionActivatorData>(ComponentModel component,
-            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
-            where TReflectionActivatorData : ReflectionActivatorData
-        {
-            if (registrar == null)
-            {
-                throw new ArgumentNullException(nameof(registrar));
-            }
-
-            if (!component.InjectProperties) return;
-
-            if (component.InjectPropertyType.Equals(InjectPropertyType.ALL))
-            {
-                //保留autofac原本的方式
-                registrar.PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies);
-                return;
-            }
-
-            component.AutowiredPropertyInfoList = (from p in component.CurrentType.GetAllProperties()
-                    let propertyType = p.GetType()
-                    let typeInfo = p.GetType().GetTypeInfo()
-                    let va = p.GetCustomAttribute<Autowired>()
-                    where va != null && !typeInfo.IsValueType && !typeInfo.IsEnum
-                          && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
-                          && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
-                    select new Tuple<PropertyInfo, Autowired, PropertyReflector>(p, va, p.GetReflector()))
-                .ToList();
-
-
-            component.AutowiredFieldInfoList = (from p in component.CurrentType.GetAllFields()
-                    let propertyType = p.GetType()
-                    let typeInfo = p.GetType().GetTypeInfo()
-                    let va = p.GetCustomAttribute<Autowired>()
-                    where va != null && !typeInfo.IsValueType && !typeInfo.IsEnum
-                          && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
-                          && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
-                    select new Tuple<FieldInfo, Autowired, FieldReflector>(p, va, p.GetReflector()))
-                .ToList();
-
-            if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any())
-            {
-                return;
-            }
-
-            //初始化 AllowCircularDependencies 参数
-            component.AutowiredPropertyInfoList.ForEach(r =>
-            {
-                if (r.Item2.AllowCircularDependencies == null) //如果自己指定了的话 就不管了
-                {
-                    r.Item2.AllowCircularDependencies = this.AllowCircularDependencies;
-                }
-            });
-
-            component.AutowiredFieldInfoList.ForEach(r =>
-            {
-                if (r.Item2.AllowCircularDependencies == null) //如果自己指定了的话 就不管了
-                {
-                    r.Item2.AllowCircularDependencies = this.AllowCircularDependencies;
-                }
-            });
-
-            //支持循环
-            registrar.ConfigurePipeline(p =>
-                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
-                {
-                    next(ctxt);
-                    DoAutoWired(ctxt, ctxt.Parameters.ToList(), ctxt.Instance);
-                }));
-        }
-
-        private void SetInjectProperties(ComponentModel component,
-            IComponentRegistration registrar)
-        {
-            if (registrar == null)
-            {
-                throw new ArgumentNullException(nameof(registrar));
-            }
-
-            if (!component.InjectProperties) return;
-
-
-            component.AutowiredPropertyInfoList = (from p in component.CurrentType.GetAllProperties()
-                    let propertyType = p.GetType()
-                    let typeInfo = p.GetType().GetTypeInfo()
-                    let va = p.GetCustomAttribute<Autowired>()
-                    where va != null && !typeInfo.IsValueType && !typeInfo.IsEnum
-                          && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
-                          && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
-                    select new Tuple<PropertyInfo, Autowired, PropertyReflector>(p, va, p.GetReflector()))
-                .ToList();
-
-
-            component.AutowiredFieldInfoList = (from p in component.CurrentType.GetAllFields()
-                    let propertyType = p.GetType()
-                    let typeInfo = p.GetType().GetTypeInfo()
-                    let va = p.GetCustomAttribute<Autowired>()
-                    where va != null && !typeInfo.IsValueType && !typeInfo.IsEnum
-                          && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
-                          && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
-                    select new Tuple<FieldInfo, Autowired, FieldReflector>(p, va, p.GetReflector()))
-                .ToList();
-
-            if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any())
-            {
-                return;
-            }
-
-            //初始化 AllowCircularDependencies 参数
-            component.AutowiredPropertyInfoList.ForEach(r =>
-            {
-                if (r.Item2.AllowCircularDependencies == null) //如果自己指定了的话 就不管了
-                {
-                    r.Item2.AllowCircularDependencies = this.AllowCircularDependencies;
-                }
-            });
-
-            component.AutowiredFieldInfoList.ForEach(r =>
-            {
-                if (r.Item2.AllowCircularDependencies == null) //如果自己指定了的话 就不管了
-                {
-                    r.Item2.AllowCircularDependencies = this.AllowCircularDependencies;
-                }
-            });
-
-            //支持循环
-            registrar.ConfigurePipeline(p =>
-                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
-                {
-                    next(ctxt);
-                    DoAutoWired(ctxt, ctxt.Parameters.ToList(), ctxt.Instance);
-                }));
-        }
-
-
-        /// <summary>
         /// 设置Ownership
         /// </summary>
         /// <typeparam name="TReflectionActivatorData"></typeparam>
@@ -936,114 +853,6 @@ namespace Autofac.Annotation
 
 
         /// <summary>
-        /// 动态注入打了value标签的值
-        /// </summary>
-        /// <typeparam name="TReflectionActivatorData"></typeparam>
-        /// <param name="component"></param>
-        /// <param name="registrar"></param>
-        private void RegisterComponentValues<TReflectionActivatorData>(ComponentModel component,
-            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
-            where TReflectionActivatorData : ReflectionActivatorData
-        {
-            if (component == null)
-            {
-                throw new ArgumentNullException(nameof(component));
-            }
-
-            if (registrar == null)
-            {
-                throw new ArgumentNullException(nameof(registrar));
-            }
-
-            component.ValuePropertyInfoList = (from p in component.CurrentType.GetAllProperties()
-                let va = p.GetCustomAttribute<Value>()
-                where va != null
-                select new Tuple<PropertyInfo, Value, PropertyReflector>(p, va, p.GetReflector())).ToList();
-
-            component.ValueFieldInfoList = (from p in component.CurrentType.GetAllFields()
-                let va = p.GetCustomAttribute<Value>()
-                where va != null
-                select new Tuple<FieldInfo, Value, FieldReflector>(p, va, p.GetReflector())).ToList();
-
-            if (!component.ValueFieldInfoList.Any() && !component.ValuePropertyInfoList.Any())
-            {
-                return;
-            }
-
-            //创建对象之后调用
-            registrar.OnActivated(e =>
-            {
-                var instance = e.Instance;
-                if (instance == null) return;
-                Type instanceType = instance.GetType();
-                object RealInstance = instance;
-                if (ProxyUtil.IsProxy(instance))
-                {
-                    RealInstance = ProxyUtil.GetUnproxiedInstance(instance);
-                    instanceType = ProxyUtil.GetUnproxiedType(instance);
-                }
-
-                if (RealInstance == null) return;
-                var componentModelCacheSingleton = e.Context.Resolve<ComponentModelCacheSingleton>();
-                if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(instanceType, out ComponentModel model))
-                {
-                    if (!componentModelCacheSingleton.DynamicComponentModelCache.TryGetValue(instanceType.Namespace + instanceType.Name,
-                        out ComponentModel mode1))
-                    {
-                        return;
-                    }
-
-                    model = mode1;
-                }
-
-                foreach (var field in model.ValueFieldInfoList)
-                {
-                    var value = field.Item2.ResolveFiled(field.Item1, e.Context);
-                    if (value == null) continue;
-                    try
-                    {
-                        if (model.isDynamicGeneric) //如果是动态泛型的话
-                        {
-                            instanceType.GetTypeInfo().GetField(field.Item1.Name).GetReflector().SetValue(RealInstance, value);
-                            continue;
-                        }
-
-                        field.Item3.SetValue(RealInstance, value);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new DependencyResolutionException($"Value set error,can not resolve class type:{instanceType.FullName} =====>" +
-                                                                $" ,fail resolve field value:{field.Item1.Name} "
-                                                                + (!string.IsNullOrEmpty(field.Item2.value) ? $",with value:[{field.Item2.value}]" : ""), ex);
-                    }
-                }
-
-                foreach (var property in model.ValuePropertyInfoList)
-                {
-                    var value = property.Item2.ResolveProperty(property.Item1, e.Context);
-                    if (value == null) continue;
-                    try
-                    {
-                        if (model.isDynamicGeneric) //如果是动态泛型的话
-                        {
-                            instanceType.GetTypeInfo().GetProperty(property.Item1.Name).GetReflector().SetValue(RealInstance, value);
-                            continue;
-                        }
-
-                        property.Item3.SetValue(RealInstance, value);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new DependencyResolutionException($"Value set error,can not resolve class type:{instanceType.FullName} =====>" +
-                                                                $" ,fail resolve property value:{property.Item1.Name} "
-                                                                + (!string.IsNullOrEmpty(property.Item2.value) ? $",with value:[{property.Item2.value}]" : ""),
-                            ex);
-                    }
-                }
-            });
-        }
-
-        /// <summary>
         /// 注册Component
         /// </summary>
         /// <typeparam name="TReflectionActivatorData"></typeparam>
@@ -1101,7 +910,10 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(_assemblyList));
             }
 
-            builder.RegisterBuildCallback(r => this.autofacGlobalScope = r);
+            builder.RegisterBuildCallback(r =>
+            {
+                this.autofacGlobalScope = r;
+            });
 
             ComponentModelCacheSingleton singleton = new ComponentModelCacheSingleton
             {
@@ -1315,7 +1127,7 @@ namespace Autofac.Annotation
 
                     //注册为代理类
                     builder.RegisterType(configuration.Type).EnableClassInterceptors().InterceptedBy(typeof(AutoConfigurationIntercept))
-                        .SingleInstance().WithMetadata("autofac_spring", true); //注册为单例模式
+                        .SingleInstance().WithMetadata(_AUTOFAC_SPRING, true); //注册为单例模式
                     list.AutoConfigurationDetailList.Add(bean);
 
                     EnumerateMetaSourceAttributes(bean.AutoConfigurationClassType, bean.MetaSourceDataList);
@@ -1895,51 +1707,9 @@ namespace Autofac.Annotation
         /// <returns></returns>
         private string GetAssemblyLocation()
         {
-            //var entry = Assembly.GetEntryAssembly();
-            //if (entry != null)
-            //{
-            //    return new FileInfo(entry.Location)?.Directory?.Parent?.FullName;
-            //}
-
             return AppDomain.CurrentDomain.BaseDirectory;
         }
 
-        /// <summary>
-        /// 获取当前Domain所有的程序集
-        /// </summary>
-        /// <returns></returns>
-        private IEnumerable<Assembly> GetAssemblies()
-        {
-            var list = new Dictionary<string, bool>();
-            var stack = new Stack<Assembly>();
-
-            stack.Push(Assembly.GetEntryAssembly());
-
-            do
-            {
-                var asm = stack.Pop();
-
-                yield return asm;
-
-                foreach (var reference in asm.GetReferencedAssemblies())
-                {
-                    if (!list.ContainsKey(reference.FullName))
-                    {
-                        try
-                        {
-                            var ass = Assembly.Load(reference);
-                            if (ass.IsDynamic) continue;
-                            stack.Push(ass);
-                            list.Add(reference.FullName, true);
-                        }
-                        catch (Exception)
-                        {
-                            //ignore
-                        }
-                    }
-                }
-            } while (stack.Count > 0);
-        }
 
         /// <summary>
         /// 获取当前工程下所有要用到的dll
@@ -1984,6 +1754,143 @@ namespace Autofac.Annotation
 
             return loadedAssemblies;
         }
+
+
+        /// <summary>
+        ///  自己注册的 不是用注解来注入的 也能识别 Autowire 和 Value注入
+        /// </summary>
+        /// <returns></returns>
+        private ComponentModel CreateCompomentFromAutofac(Type currentType, IComponentRegistration registration)
+        {
+            var component = new ComponentModel
+            {
+                AutoActivate = false,
+                CurrentType = currentType,
+                InjectProperties = true,
+                InjectPropertyType = InjectPropertyType.Autowired,
+                CurrentClassTypeAttributes = Enumerable.OfType<Attribute>(currentType.GetCustomAttributes()).ToList()
+            };
+
+            component.MetaSourceList = new List<MetaSourceData>();
+            EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
+
+            RegisterComponentValues(component, registration);
+            SetInjectProperties(component, registration);
+
+            return component;
+        }
+
+        
+        #region Autowired
+
+        /// <summary>
+        /// 设置属性自动注入
+        /// </summary>
+        /// <typeparam name="TReflectionActivatorData"></typeparam>
+        /// <param name="component"></param>
+        /// <param name="registrar"></param>
+        private void SetInjectProperties<TReflectionActivatorData>(ComponentModel component,
+            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
+            where TReflectionActivatorData : ReflectionActivatorData
+        {
+            if (registrar == null)
+            {
+                throw new ArgumentNullException(nameof(registrar));
+            }
+
+            if (!component.InjectProperties) return;
+
+            if (component.InjectPropertyType.Equals(InjectPropertyType.ALL))
+            {
+                //保留autofac原本的方式
+                registrar.PropertiesAutowired(PropertyWiringOptions.AllowCircularDependencies);
+                return;
+            }
+
+            if (!prepareSetInjectProperties(component))
+            {
+                return;
+            }
+
+            //支持循环
+            registrar.ConfigurePipeline(p =>
+                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
+                {
+                    next(ctxt);
+                    DoAutoWired(ctxt, ctxt.Parameters.ToList(), ctxt.Instance);
+                }));
+        }
+
+        private bool prepareSetInjectProperties(ComponentModel component)
+        {
+            if (!component.InjectProperties) return false;
+
+            component.AutowiredPropertyInfoList = (from p in component.CurrentType.GetAllProperties()
+                    let propertyType = p.GetType()
+                    let typeInfo = p.GetType().GetTypeInfo()
+                    let va = p.GetCustomAttribute<Autowired>()
+                    where va != null && !typeInfo.IsValueType && !typeInfo.IsEnum
+                          && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
+                          && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
+                    select new Tuple<PropertyInfo, Autowired, PropertyReflector>(p, va, p.GetReflector()))
+                .ToList();
+
+            component.AutowiredFieldInfoList = (from p in component.CurrentType.GetAllFields()
+                    let propertyType = p.GetType()
+                    let typeInfo = p.GetType().GetTypeInfo()
+                    let va = p.GetCustomAttribute<Autowired>()
+                    where va != null && !typeInfo.IsValueType && !typeInfo.IsEnum
+                          && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
+                          && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
+                    select new Tuple<FieldInfo, Autowired, FieldReflector>(p, va, p.GetReflector()))
+                .ToList();
+
+            if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any())
+            {
+                return false;
+            }
+
+            //初始化 AllowCircularDependencies 参数
+            component.AutowiredPropertyInfoList.ForEach(r =>
+            {
+                if (r.Item2.AllowCircularDependencies == null) //如果自己指定了的话 就不管了
+                {
+                    r.Item2.AllowCircularDependencies = this.AllowCircularDependencies;
+                }
+            });
+
+            component.AutowiredFieldInfoList.ForEach(r =>
+            {
+                if (r.Item2.AllowCircularDependencies == null) //如果自己指定了的话 就不管了
+                {
+                    r.Item2.AllowCircularDependencies = this.AllowCircularDependencies;
+                }
+            });
+            return true;
+        }
+
+        private void SetInjectProperties(ComponentModel component,
+            IComponentRegistration registrar)
+        {
+            if (registrar == null)
+            {
+                throw new ArgumentNullException(nameof(registrar));
+            }
+
+            if (!prepareSetInjectProperties(component))
+            {
+                return;
+            }
+
+            //支持循环
+            registrar.ConfigurePipeline(p =>
+                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
+                {
+                    next(ctxt);
+                    DoAutoWired(ctxt, ctxt.Parameters.ToList(), ctxt.Instance);
+                }));
+        }
+
 
         /// <summary>
         /// 属性注入
@@ -2108,40 +2015,20 @@ namespace Autofac.Annotation
             }
         }
 
+        #endregion
 
-        /// <summary>
-        ///  自己注册的 不是用注解来注入的 也能识别 Autowire 和 Value注入
-        /// </summary>
-        /// <returns></returns>
-        private ComponentModel CreateCompomentFromAutofac(Type currentType, IComponentRegistration registration)
-        {
-            var component = new ComponentModel
-            {
-                AutoActivate = false,
-                CurrentType = currentType,
-                InjectProperties = true,
-                InjectPropertyType = InjectPropertyType.Autowired,
-                CurrentClassTypeAttributes = Enumerable.OfType<Attribute>(currentType.GetCustomAttributes()).ToList()
-            };
-
-            component.MetaSourceList = new List<MetaSourceData>();
-            EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
-
-            RegisterComponentValues(component, registration);
-            SetInjectProperties(component, registration);
-
-            return component;
-        }
         
+        #region Value
+
         /// <summary>
-        /// 自己注册的 不是用注解来注入的 也能识别 Autowire 和 Value注入
+        /// 动态注入打了value标签的值
         /// </summary>
+        /// <typeparam name="TReflectionActivatorData"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="DependencyResolutionException"></exception>
-         private void RegisterComponentValues(ComponentModel component,
-             IComponentRegistration registrar)
+        private void RegisterComponentValues<TReflectionActivatorData>(ComponentModel component,
+            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
+            where TReflectionActivatorData : ReflectionActivatorData
         {
             if (component == null)
             {
@@ -2153,6 +2040,127 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(registrar));
             }
 
+            if (!prepareSetInjectValue(component))
+            {
+                return;
+            }
+
+            //创建对象之后调用
+            registrar.ConfigurePipeline(p =>
+                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
+                {
+                    next(ctxt);
+                    DoValueInject(ctxt);
+                }));
+        }
+
+        /// <summary>
+        /// 自己注册的 不是用注解来注入的 也能识别 Autowire 和 Value注入
+        /// </summary>
+        /// <param name="component"></param>
+        /// <param name="registrar"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="DependencyResolutionException"></exception>
+        private void RegisterComponentValues(ComponentModel component,
+            IComponentRegistration registrar)
+        {
+            if (component == null)
+            {
+                throw new ArgumentNullException(nameof(component));
+            }
+
+            if (registrar == null)
+            {
+                throw new ArgumentNullException(nameof(registrar));
+            }
+
+            if (!prepareSetInjectValue(component))
+            {
+                return;
+            }
+
+            //创建对象之后调用
+            registrar.ConfigurePipeline(p =>
+                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
+                {
+                    next(ctxt);
+                    DoValueInject(ctxt);
+                }));
+        }
+
+        private void DoValueInject(ResolveRequestContext e)
+        {
+            var instance = e.Instance;
+            if (instance == null) return;
+            Type instanceType = instance.GetType();
+            object RealInstance = instance;
+            if (ProxyUtil.IsProxy(instance))
+            {
+                RealInstance = ProxyUtil.GetUnproxiedInstance(instance);
+                instanceType = ProxyUtil.GetUnproxiedType(instance);
+            }
+
+            if (RealInstance == null) return;
+            var componentModelCacheSingleton = e.Resolve<ComponentModelCacheSingleton>();
+            if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(instanceType, out ComponentModel model))
+            {
+                if (!componentModelCacheSingleton.DynamicComponentModelCache.TryGetValue(instanceType.Namespace + instanceType.Name,
+                    out ComponentModel mode1))
+                {
+                    return;
+                }
+
+                model = mode1;
+            }
+
+            foreach (var field in model.ValueFieldInfoList)
+            {
+                var value = field.Item2.ResolveFiled(field.Item1, e);
+                if (value == null) continue;
+                try
+                {
+                    if (model.isDynamicGeneric) //如果是动态泛型的话
+                    {
+                        instanceType.GetTypeInfo().GetField(field.Item1.Name).GetReflector().SetValue(RealInstance, value);
+                        continue;
+                    }
+
+                    field.Item3.SetValue(RealInstance, value);
+                }
+                catch (Exception ex)
+                {
+                    throw new DependencyResolutionException(
+                        $"Value set error,can not resolve class type:{instanceType.FullName} =====>" + $" ,fail resolve field value:{field.Item1.Name} " +
+                        (!string.IsNullOrEmpty(field.Item2.value) ? $",with value:[{field.Item2.value}]" : ""), ex);
+                }
+            }
+
+            foreach (var property in model.ValuePropertyInfoList)
+            {
+                var value = property.Item2.ResolveProperty(property.Item1, e);
+                if (value == null) continue;
+                try
+                {
+                    if (model.isDynamicGeneric) //如果是动态泛型的话
+                    {
+                        instanceType.GetTypeInfo().GetProperty(property.Item1.Name).GetReflector().SetValue(RealInstance, value);
+                        continue;
+                    }
+
+                    property.Item3.SetValue(RealInstance, value);
+                }
+                catch (Exception ex)
+                {
+                    throw new DependencyResolutionException(
+                        $"Value set error,can not resolve class type:{instanceType.FullName} =====>" +
+                        $" ,fail resolve property value:{property.Item1.Name} " +
+                        (!string.IsNullOrEmpty(property.Item2.value) ? $",with value:[{property.Item2.value}]" : ""), ex);
+                }
+            }
+        }
+
+        private bool prepareSetInjectValue(ComponentModel component)
+        {
             component.ValuePropertyInfoList = (from p in component.CurrentType.GetAllProperties()
                 let va = p.GetCustomAttribute<Value>()
                 where va != null
@@ -2165,82 +2173,12 @@ namespace Autofac.Annotation
 
             if (!component.ValueFieldInfoList.Any() && !component.ValuePropertyInfoList.Any())
             {
-                return;
+                return false;
             }
 
-            //创建对象之后调用
-            void OnActivated(ResolveRequestContext e)
-            {
-                var instance = e.Instance;
-                if (instance == null) return;
-                Type instanceType = instance.GetType();
-                object RealInstance = instance;
-                if (ProxyUtil.IsProxy(instance))
-                {
-                    RealInstance = ProxyUtil.GetUnproxiedInstance(instance);
-                    instanceType = ProxyUtil.GetUnproxiedType(instance);
-                }
-
-                if (RealInstance == null) return;
-                var componentModelCacheSingleton = e.Resolve<ComponentModelCacheSingleton>();
-                if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(instanceType, out ComponentModel model))
-                {
-                    if (!componentModelCacheSingleton.DynamicComponentModelCache.TryGetValue(instanceType.Namespace + instanceType.Name, out ComponentModel mode1))
-                    {
-                        return;
-                    }
-
-                    model = mode1;
-                }
-
-                foreach (var field in model.ValueFieldInfoList)
-                {
-                    var value = field.Item2.ResolveFiled(field.Item1, e);
-                    if (value == null) continue;
-                    try
-                    {
-                        if (model.isDynamicGeneric) //如果是动态泛型的话
-                        {
-                            instanceType.GetTypeInfo().GetField(field.Item1.Name).GetReflector().SetValue(RealInstance, value);
-                            continue;
-                        }
-
-                        field.Item3.SetValue(RealInstance, value);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new DependencyResolutionException($"Value set error,can not resolve class type:{instanceType.FullName} =====>" + $" ,fail resolve field value:{field.Item1.Name} " + (!string.IsNullOrEmpty(field.Item2.value) ? $",with value:[{field.Item2.value}]" : ""), ex);
-                    }
-                }
-
-                foreach (var property in model.ValuePropertyInfoList)
-                {
-                    var value = property.Item2.ResolveProperty(property.Item1, e);
-                    if (value == null) continue;
-                    try
-                    {
-                        if (model.isDynamicGeneric) //如果是动态泛型的话
-                        {
-                            instanceType.GetTypeInfo().GetProperty(property.Item1.Name).GetReflector().SetValue(RealInstance, value);
-                            continue;
-                        }
-
-                        property.Item3.SetValue(RealInstance, value);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new DependencyResolutionException($"Value set error,can not resolve class type:{instanceType.FullName} =====>" + $" ,fail resolve property value:{property.Item1.Name} " + (!string.IsNullOrEmpty(property.Item2.value) ? $",with value:[{property.Item2.value}]" : ""), ex);
-                    }
-                }
-            }
-
-            registrar.ConfigurePipeline(p =>
-                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
-                {
-                    next(ctxt);
-                    OnActivated(ctxt);
-                }));
-          
+            return true;
         }
+
+        #endregion
     }
 }

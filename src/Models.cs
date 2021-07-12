@@ -300,6 +300,15 @@ namespace Autofac.Annotation
         /// 按照从小到大的顺序注册 如果同一个Type被处理多次会被覆盖！
         /// </summary>
         internal int OrderIndex { get; set; }
+
+        /// <summary>
+        /// toString
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return this.Type.Namespace + "." + this.Type.Name + "(" + this.OrderIndex + ")";
+        }
     }
     
     /// <summary>

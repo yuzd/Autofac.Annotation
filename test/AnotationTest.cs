@@ -38,11 +38,12 @@ namespace Autofac.Annotation.Test
 
             var container = builder.Build();
 
+            //多个B 默认按照类的名称从小到大排序  A1 A ... A13 A2 A3 A31 A7
             var a1 = container.Resolve<B>();
 
             Assert.NotNull(a1);
 
-            Assert.Equal("A14", a1.GetSchool());
+            Assert.Equal("测试a7", a1.GetSchool());
         }
 
         [Fact]
@@ -190,7 +191,7 @@ namespace Autofac.Annotation.Test
             container.TryResolveKeyed("aa14", typeof(B), out object aa);
             Assert.Null(aa);
             Assert.Equal("A14", a2.GetSchool());
-            Assert.Equal("A14", a3.GetSchool());
+            Assert.Equal("测试a7", a3.GetSchool());
         }
 
         [Fact]

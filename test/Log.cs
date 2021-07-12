@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 namespace Autofac.Annotation.Test
 {
     [Component]
+    [Order(int.MaxValue)]
     public class Log : AsyncInterceptor
     {
 

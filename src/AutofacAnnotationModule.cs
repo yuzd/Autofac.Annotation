@@ -113,6 +113,7 @@ namespace Autofac.Annotation
             {
                 throw new ArgumentException(nameof(assemblyNameList));
             }
+
             _assemblyList = getCurrentDomainAssemblies().Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).ToList();
         }
 
@@ -122,11 +123,10 @@ namespace Autofac.Annotation
         /// </summary>
         public AutofacAnnotationModule()
         {
-           
         }
 
         #endregion
-        
+
 
         /// <summary>
         /// 添加assembly自动被扫描
@@ -164,7 +164,7 @@ namespace Autofac.Annotation
             this.AutofacConfigurationKey = key ?? throw new ArgumentException(nameof(key));
             return this;
         }
-        
+
         /// <summary>
         /// 当調用autofac自帶的註冊方式也能识别Autowired和Value的注入
         /// </summary>
@@ -175,7 +175,7 @@ namespace Autofac.Annotation
             this.AutoAttachFromAutofacRegister = flag;
             return this;
         }
-        
+
         /// <summary>
         /// 设置是否自动注册父类
         /// </summary>
@@ -290,20 +290,20 @@ namespace Autofac.Annotation
         {
             //开关
             if (!AutoAttachFromAutofacRegister) return;
-            
+
             //明确要求不需要被扫描
             if (registration.Metadata.ContainsKey(AutofacSpring.DISABLE_AUTO_INCLUE_INTO_COMPOMENT))
             {
                 return;
             }
-            
+
             var currentType = registration.Activator.LimitType;
-            
-            if (typeof(Castle.DynamicProxy.IProxyTargetAccessor).IsAssignableFrom(currentType) && currentType.BaseType!=null)
+
+            if (typeof(Castle.DynamicProxy.IProxyTargetAccessor).IsAssignableFrom(currentType) && currentType.BaseType != null)
             {
                 currentType = currentType.BaseType;
             }
-            
+
             //过滤掉框架类
             if (currentType.Assembly == this.GetType().Assembly || currentType.Assembly == typeof(Autofac.Core.Lifetime.LifetimeScope).Assembly)
             {
@@ -327,7 +327,7 @@ namespace Autofac.Annotation
                 return;
             }
 
-            bool isGeneric = (currentType.IsGenericType || currentType.GetTypeInfo().IsGenericTypeDefinition) ;
+            bool isGeneric = (currentType.IsGenericType || currentType.GetTypeInfo().IsGenericTypeDefinition);
             if (isGeneric && allCompoment.DynamicComponentModelCache.ContainsKey(currentType.Namespace + currentType.Name))
             {
                 return;
@@ -338,7 +338,7 @@ namespace Autofac.Annotation
             {
                 return;
             }
-            
+
             //剩下的就是自己注册的
             //检测自己注册的是否存在有Autowired 和 Value
             var component = CreateCompomentFromAutofac(currentType, registration);
@@ -351,7 +351,6 @@ namespace Autofac.Annotation
             {
                 allCompoment.ComponentModelCache.TryAdd(component.CurrentType, component);
             }
-
         }
 
         /// <summary>
@@ -369,10 +368,10 @@ namespace Autofac.Annotation
             {
                 this._assemblyList = getCurrentDomainAssemblies().ToList();
             }
-            
+
             _assemblyList.Add(typeof(AutofacAnnotationModule).Assembly);
             _assemblyList = _assemblyList.Distinct().ToList();
-            
+
             if (EnableAutofacEventBus)
             {
                 builder.RegisterSource(new Autofac.Features.Variance.ContravariantRegistrationSource());
@@ -913,10 +912,7 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(_assemblyList));
             }
 
-            builder.RegisterBuildCallback(r =>
-            {
-                this.autofacGlobalScope = r;
-            });
+            builder.RegisterBuildCallback(r => { this.autofacGlobalScope = r; });
 
             ComponentModelCacheSingleton singleton = new ComponentModelCacheSingleton
             {
@@ -958,12 +954,13 @@ namespace Autofac.Annotation
                     //找到类型中含有 Component 标签的类 排除掉抽象类
                     var assemblBeanTypeList = (from type in types
                         let bean = type.GetComponent(ComponentDetector)
+                        let order = type.GetCustomAttribute<Order>()
                         where type.IsClass && !type.IsAbstract && bean != null
                         select new BeanDefination
                         {
                             Type = type,
                             Bean = bean,
-                            OrderIndex = bean.OrderIndex
+                            OrderIndex = order?.Index ?? bean.OrderIndex
                         }).ToList();
                     beanTypeList.AddRange(assemblBeanTypeList);
 
@@ -980,7 +977,7 @@ namespace Autofac.Annotation
 
                 //拿到了所有的BenDefinition之后注册到DI容器里面去
                 //和Spring一致优先使用类名排序再按照从小到大的顺序注册 如果同一个Type被处理多次会被覆盖！
-                foreach (var bean in beanTypeList.OrderBy(r=>r.Type.Name).ThenBy(r => r.OrderIndex))
+                foreach (var bean in beanTypeList.OrderBy(r => r.OrderIndex).ThenBy(r => r.Type.Name))
                 {
                     var component = EnumerateComponentServices(bean.Bean, bean.Type);
                     component.MetaSourceList = new List<MetaSourceData>();
@@ -1083,7 +1080,7 @@ namespace Autofac.Annotation
                     {
                         var beanAttribute = beanTypeMethod.GetCustomAttribute<Bean>();
                         if (beanAttribute == null) continue;
-                        
+
                         var returnType = beanTypeMethod.ReturnType;
                         if (!beanTypeMethod.IsVirtual) //因为需要被代理 所以必须要求可重写
                         {
@@ -1195,11 +1192,13 @@ namespace Autofac.Annotation
                 //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
                 var typeList = (from type in types
                     let bean = type.GetCustomAttribute<AutoConfiguration>()
+                    let order = type.GetCustomAttribute<Order>()
                     where type.IsClass && !type.IsAbstract && bean != null
                     select new
                     {
                         Type = type,
-                        Bean = bean
+                        Bean = bean,
+                        Order = order
                     }).ToList();
 
                 foreach (var configuration in typeList)
@@ -1209,12 +1208,12 @@ namespace Autofac.Annotation
                         Type = configuration.Type,
                         AutofacConfiguration = configuration.Bean,
                         Key = configuration.Bean.Key,
-                        OrderIndex = configuration.Bean.OrderIndex
+                        OrderIndex = configuration.Order?.Index??configuration.Bean.OrderIndex
                     });
                 }
             }
 
-            return result.OrderBy(r=>r.Type.Name).ThenBy(r => r.OrderIndex).ToList();
+            return result.OrderBy(r => r.OrderIndex).ThenBy(r => r.Type.Name).ToList();
         }
 
         /// <summary>
@@ -1237,12 +1236,14 @@ namespace Autofac.Annotation
                 //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
                 var typeList = (from type in types
                     let bean = type.GetCustomAttributes<Pointcut>()
+                    let order = type.GetCustomAttribute<Order>()
                     where type.IsClass && !type.IsAbstract && bean != null && bean.Any()
                     select new
                     {
+                        Index = order?.Index,
                         Type = type,
                         Bean = bean.Where(r => (!string.IsNullOrEmpty(r.Class) || r.AttributeType != null)).ToList()
-                    }).OrderBy(r=>r.Type.Name).ToList();
+                    }).OrderBy(r => r.Index).ThenBy(r => r.Type.Name).ToList();
 
                 foreach (var configuration in typeList)
                 {
@@ -1606,7 +1607,7 @@ namespace Autofac.Annotation
             var metaSourceAttributes = classType.GetCustomAttributes<PropertySource>().ToList();
             if (metaSourceAttributes.Any())
             {
-                metaSourceAttributes = metaSourceAttributes.OrderByDescending(r => r.OrderIndex).ToList();
+                metaSourceAttributes = metaSourceAttributes.OrderBy(r => r.OrderIndex).ToList();
                 foreach (var metaSourceAttribute in metaSourceAttributes)
                 {
                     MetaSourceData metaSource = new MetaSourceData
@@ -1785,7 +1786,7 @@ namespace Autofac.Annotation
             return component;
         }
 
-        
+
         #region Autowired
 
         /// <summary>
@@ -2022,7 +2023,7 @@ namespace Autofac.Annotation
 
         #endregion
 
-        
+
         #region Value
 
         /// <summary>

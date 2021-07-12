@@ -35,7 +35,7 @@ namespace Autofac.Annotation
         public string Path { get; set; }
 
         /// <summary>
-        /// 排序 越大的越优先查找
+        /// 排序 越小的越优先加载
         /// </summary>
         public int OrderIndex { get; set; }
 

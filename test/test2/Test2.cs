@@ -36,8 +36,9 @@ namespace Autofac.Configuration.Test.test2
 
             var container = builder.Build();
 
+            //注册顺序
             var a1 = container.Resolve<Model1>();
-            Assert.Equal(typeof(Model1), a1.GetType());
+            Assert.Equal(typeof(Model2), a1.GetType());
 
         }
 

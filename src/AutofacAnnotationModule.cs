@@ -23,7 +23,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// autofac模块用注解的模式注册
     /// </summary>
-    public class AutofacAnnotationModule : Module
+    public partial class AutofacAnnotationModule : Module
     {
         private List<Assembly> _assemblyList = new List<Assembly>();
         private ILifetimeScope autofacGlobalScope;
@@ -290,7 +290,7 @@ namespace Autofac.Annotation
         {
             //开关
             if (!AutoAttachFromAutofacRegister) return;
-            Console.WriteLine(registration.Activator.LimitType.FullName);
+            
             //明确要求不需要被扫描
             if (registration.Metadata.ContainsKey(AutofacSpring.DISABLE_AUTO_INCLUE_INTO_COMPOMENT))
             {
@@ -379,10 +379,10 @@ namespace Autofac.Annotation
                 builder.RegisterEventing();
             }
 
+            //解析程序集PointCut标签类和方法
             var aspectJ = GetPointCutConfiguration(builder);
-
+            //解析程序集拿到打了pointcut的类 打了Compoment的类 解析Import的类
             var componetList = GetAllComponent(builder, aspectJ);
-
 
             foreach (var component in componetList)
             {
@@ -901,6 +901,9 @@ namespace Autofac.Annotation
 
         /// <summary>
         /// 解析程序集
+        /// 打了pointcut的类
+        /// 打了Compoment的类
+        /// 解析Import的类
         /// </summary>
         /// <returns></returns>
         private List<ComponentModel> GetAllComponent(ContainerBuilder builder, PointCutConfigurationList pointCutConfigurationList)
@@ -975,8 +978,9 @@ namespace Autofac.Annotation
 
                 beanTypeList.AddRange(DoImportComponent(importList));
 
-                //拿到了所有的BenDefinition之后注册到DI容器里面去 按照从小到大的顺序注册 如果同一个Type被处理多次会被覆盖！
-                foreach (var bean in beanTypeList.OrderBy(r => r.OrderIndex))
+                //拿到了所有的BenDefinition之后注册到DI容器里面去
+                //和Spring一致优先使用类名排序再按照从小到大的顺序注册 如果同一个Type被处理多次会被覆盖！
+                foreach (var bean in beanTypeList.OrderBy(r=>r.Type.Name).ThenBy(r => r.OrderIndex))
                 {
                     var component = EnumerateComponentServices(bean.Bean, bean.Type);
                     component.MetaSourceList = new List<MetaSourceData>();
@@ -1079,6 +1083,7 @@ namespace Autofac.Annotation
                     {
                         var beanAttribute = beanTypeMethod.GetCustomAttribute<Bean>();
                         if (beanAttribute == null) continue;
+                        
                         var returnType = beanTypeMethod.ReturnType;
                         if (!beanTypeMethod.IsVirtual) //因为需要被代理 所以必须要求可重写
                         {
@@ -1209,7 +1214,7 @@ namespace Autofac.Annotation
                 }
             }
 
-            return result.OrderByDescending(r => r.OrderIndex).ToList();
+            return result.OrderBy(r=>r.Type.Name).ThenBy(r => r.OrderIndex).ToList();
         }
 
         /// <summary>
@@ -1237,7 +1242,7 @@ namespace Autofac.Annotation
                     {
                         Type = type,
                         Bean = bean.Where(r => (!string.IsNullOrEmpty(r.Class) || r.AttributeType != null)).ToList()
-                    }).ToList();
+                    }).OrderBy(r=>r.Type.Name).ToList();
 
                 foreach (var configuration in typeList)
                 {

@@ -41,7 +41,7 @@ namespace Autofac.Annotation
         private static void RegisterConfiguration(ContainerBuilder builder,AutoConfigurationDetail autoConfigurationDetail)
         {
             //注册为工厂
-            foreach (var beanMethod in autoConfigurationDetail.BeanMethodInfoList)
+            foreach (var beanMethod in autoConfigurationDetail.BeanMethodInfoList.OrderBy(r=>r.Item3.Name))
             {
                 if (!beanMethod.Item2.IsVirtual)
                 {
@@ -67,7 +67,13 @@ namespace Autofac.Annotation
                 
                 builder.RegisterCallback(cr =>
                 {
+                    
                     var instanceType = beanMethod.Item3;//返回类型
+                    //Condition
+                    if (AutofacAnnotationModule.shouldSkip(cr, instanceType, beanMethod.Item2))
+                    {
+                        return;
+                    }
                     
                     var rb = RegistrationBuilder.ForDelegate(instanceType, ((context, parameters) =>
                     {

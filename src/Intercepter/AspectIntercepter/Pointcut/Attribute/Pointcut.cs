@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Autofac.Annotation.Condition;
 using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter.Advice;
 
@@ -109,6 +110,9 @@ namespace Autofac.Annotation
             {typeof(Autowired), false},
             {typeof(Bean), false},
             {typeof(Component), false},
+            {typeof(Conditional), false},
+            {typeof(ConditionOnBean), false},
+            {typeof(ConditionOnMissingBean), false},
             {typeof(Import), false},
             {typeof(Value), false},
             {typeof(InterfaceInterceptor), false},

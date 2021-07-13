@@ -145,7 +145,12 @@ namespace Autofac.Annotation
                 return false;
             } 
         }
-     
+
+        /// <summary>
+        /// 注册类型
+        /// </summary>
+        internal RegisterType RegisterType { get; set; } = RegisterType.Compoment;
+
     }
 
     /// <summary>
@@ -322,5 +327,17 @@ namespace Autofac.Annotation
         /// 存储动态泛型类
         /// </summary>
         public ConcurrentDictionary<string, ComponentModel> DynamicComponentModelCache { get; set; }
+    }
+
+    /// <summary>
+    /// 注册类型 内部维护
+    /// </summary>
+    internal enum RegisterType
+    {
+        Compoment,
+        Bean,
+        Import,
+        PointCut,
+        AutoConfiguration
     }
 }

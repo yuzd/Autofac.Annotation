@@ -141,6 +141,10 @@ namespace Autofac.Annotation
         public string DestroyMethod { get; set; }
        
 
+        /// <summary>
+        /// 注册类型
+        /// </summary>
+        internal RegisterType RegisterType { get; set; } = RegisterType.Compoment;
     }
 
     /// <summary>

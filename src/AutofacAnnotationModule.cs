@@ -27,8 +27,8 @@ namespace Autofac.Annotation
     {
         private List<Assembly> _assemblyList = new List<Assembly>();
         private ILifetimeScope autofacGlobalScope;
-        private const string _ALL_COMPOMENT = "_ALL_COMPOMENT";
-        internal static string _AUTOFAC_SPRING = "autofac_spring";
+        internal const string _ALL_COMPOMENT = "_ALL_COMPOMENT";
+        internal const string _AUTOFAC_SPRING = "autofac_spring";
 
 
         /// <summary>
@@ -382,9 +382,23 @@ namespace Autofac.Annotation
             var aspectJ = GetPointCutConfiguration(builder);
             //解析程序集拿到打了pointcut的类 打了Compoment的类 解析Import的类
             var componetList = GetAllComponent(builder, aspectJ);
-
+            var cache = builder.Properties[_ALL_COMPOMENT] as ComponentModelCacheSingleton;
             foreach (var component in componetList)
             {
+                //Conditional
+                if (shouldSkip(builder.ComponentRegistryBuilder, component.CurrentType))
+                {
+                    if (component.isDynamicGeneric)
+                    {
+                        cache?.ComponentModelCache?.TryRemove(component.CurrentType, out _);
+                    }
+                    else
+                    {
+                        cache?.DynamicComponentModelCache?.TryRemove(component.CurrentType.Namespace+component.CurrentType.Name, out _);
+                    }
+                    continue;
+                }
+                
                 //注册本身
                 IRegistrationBuilder<object, ReflectionActivatorData, object> registrar = null;
                 if (component.isDynamicGeneric)
@@ -938,7 +952,8 @@ namespace Autofac.Annotation
                         {
                             AutofacScope = AutofacScope.SingleInstance,
                             InitMethod = pointCutAtt.Pointcut.InitMethod,
-                            DestroyMethod = pointCutAtt.Pointcut.DestroyMethod
+                            DestroyMethod = pointCutAtt.Pointcut.DestroyMethod,
+                            RegisterType = RegisterType.PointCut
                         },
                         OrderIndex = int.MinValue,
                     });
@@ -1021,7 +1036,16 @@ namespace Autofac.Annotation
                 {
                     if ((Activator.CreateInstance(import.Item2) is ImportSelector importSelectorInstance))
                     {
-                        result.AddRange(importSelectorInstance.SelectImports());
+                        var temp = importSelectorInstance.SelectImports();
+                        if (temp == null || !temp.Any())
+                        {
+                            continue;
+                        }
+                        foreach (var beanDefination in temp)
+                        {
+                            beanDefination.Bean.RegisterType = RegisterType.Import;
+                        }
+                        result.AddRange(temp);
                     }
                 }
 
@@ -1035,10 +1059,23 @@ namespace Autofac.Annotation
                 {
                     if (typeof(ImportSelector).IsAssignableFrom(item))
                     {
-                        if ((Activator.CreateInstance(item) is ImportSelector importSelectorInstance))
+                        if ((!(Activator.CreateInstance(item) is ImportSelector importSelectorInstance))) continue;
+                        var temp = importSelectorInstance.SelectImports();
+                        if (temp == null || !temp.Any())
                         {
-                            result.AddRange(importSelectorInstance.SelectImports());
+                            continue;
                         }
+                        foreach (var beanDefination in temp)
+                        {
+                            beanDefination.Bean.RegisterType = RegisterType.Import;
+                        }
+                        result.AddRange(temp);
+                    }
+                    else
+                    {
+                        var temp = new BeanDefination(item);
+                        temp.Bean.RegisterType = RegisterType.Import;
+                        result.Add(temp);
                     }
                 }
             }
@@ -1058,6 +1095,7 @@ namespace Autofac.Annotation
             {
                 AutoConfigurationDetailList = new List<AutoConfigurationDetail>()
             };
+            var cache = builder.Properties[_ALL_COMPOMENT] as ComponentModelCacheSingleton;
             try
             {
                 var allConfiguration = GetAllAutofacConfiguration();
@@ -1069,6 +1107,12 @@ namespace Autofac.Annotation
 
                 foreach (var configuration in allConfiguration)
                 {
+                    if (configuration.GetType().IsGenericType)
+                    {
+                        throw new InvalidOperationException(
+                            $"The Configuration class `{configuration.Type.FullName}` must not be genericType!");
+                    }
+                    
                     var beanTypeMethodList = configuration.Type.GetAllInstanceMethod(false);
                     var bean = new AutoConfigurationDetail
                     {
@@ -1127,6 +1171,18 @@ namespace Autofac.Annotation
                         bean.BeanMethodInfoList.Add(new Tuple<Bean, MethodInfo, Type>(beanAttribute, beanTypeMethod, returnType));
                     }
 
+                    cache?.ComponentModelCache.TryAdd(configuration.Type, new ComponentModel
+                    {
+                        CurrentType = configuration.Type,
+                        InjectProperties =  true,
+                        InjectPropertyType = InjectPropertyType.Autowired,
+                        AutoActivate = true,
+                        EnableAspect = true,
+                        Interceptor = typeof(AutoConfigurationIntercept),
+                        AutofacScope = AutofacScope.SingleInstance,
+                        InterceptorType = InterceptorType.Class,
+                        RegisterType = RegisterType.AutoConfiguration
+                    });
                     //注册为代理类
                     builder.RegisterType(configuration.Type).EnableClassInterceptors().InterceptedBy(typeof(AutoConfigurationIntercept))
                         .SingleInstance().WithMetadata(_AUTOFAC_SPRING, true); //注册为单例模式

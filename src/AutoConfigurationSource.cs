@@ -40,6 +40,7 @@ namespace Autofac.Annotation
 
         private static void RegisterConfiguration(ContainerBuilder builder,AutoConfigurationDetail autoConfigurationDetail)
         {
+            var cache = builder.Properties[AutofacAnnotationModule._ALL_COMPOMENT] as ComponentModelCacheSingleton;
             //注册为工厂
             foreach (var beanMethod in autoConfigurationDetail.BeanMethodInfoList.OrderBy(r=>r.Item3.Name))
             {
@@ -64,16 +65,26 @@ namespace Autofac.Annotation
                 //包装这个方法成功工厂
                 //先拿到AutoConfiguration class的实例
                 //注册一个方法到容器 拿到并传入IComponentContext 
+               
                 
                 builder.RegisterCallback(cr =>
                 {
-                    
                     var instanceType = beanMethod.Item3;//返回类型
                     //Condition
-                    if (AutofacAnnotationModule.shouldSkip(cr, instanceType, beanMethod.Item2))
+                    if (AutofacAnnotationModule.shouldSkip(builder.ComponentRegistryBuilder, instanceType, beanMethod.Item2))
                     {
                         return;
                     }
+
+                    //注册到统一缓存
+                    cache?.ComponentModelCache?.TryAdd(beanMethod.Item3, new ComponentModel
+                    {
+                        CurrentType = beanMethod.Item3,
+                        InjectProperties = true,
+                        InjectPropertyType = InjectPropertyType.Autowired,
+                        AutofacScope = AutofacScope.SingleInstance,
+                        RegisterType = RegisterType.Bean
+                    });
                     
                     var rb = RegistrationBuilder.ForDelegate(instanceType, ((context, parameters) =>
                     {

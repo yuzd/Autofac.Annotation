@@ -17,6 +17,7 @@ namespace Autofac.Annotation.Util
             var component = type.GetCustomAttribute<Component>();
             if (component != null)
             {
+                component.RegisterType = RegisterType.Compoment;
                 return component;
             }
 

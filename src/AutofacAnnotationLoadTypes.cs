@@ -17,6 +17,49 @@ namespace Autofac.Annotation
     /// </summary>
     public partial class AutofacAnnotationModule
     {
+        
+        /// <summary>
+        /// 针对Compoment注解
+        /// </summary>
+        /// <returns></returns>
+        internal static bool shouldSkip(IComponentRegistryBuilder context, Type currentType)
+        {
+            //拿到打在method上的Conditianl标签
+            var conditionList = currentType.GetCustomAttributes<Conditional>().ToList();
+            if (!conditionList.Any())
+            {
+                return false;
+            }
+
+            Dictionary<Type, ICondition> cache = new Dictionary<Type, ICondition>();
+
+            foreach (var conditional in conditionList)
+            {
+                if (conditional.Type == null || typeof(Conditional).IsAssignableFrom(conditional.Type))
+                {
+                    throw new InvalidCastException(
+                        $"`{currentType.Namespace}.{currentType.Name}.` [conditional] load fail,`{conditional.Type?.FullName}` must be implements of `Condition`");
+                }
+
+                if (!cache.TryGetValue(conditional.Type, out var condition))
+                {
+                    condition = Activator.CreateInstance(conditional.Type) as ICondition;
+                    if (condition == null)
+                    {
+                        continue;
+                    }
+                    cache.Add(conditional.Type,condition);
+                }
+
+                if (condition.match(context, conditional))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        } 
+        
         /// <summary>
         /// 注册AutoConfiguration注解标识的类里面的Bean时候的过滤逻辑
         /// </summary>

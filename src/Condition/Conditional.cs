@@ -117,4 +117,51 @@ namespace Autofac.Annotation.Condition
         public Type type { get; set; }
     }
     
+    /// <summary>
+    /// 根据class的全路径(namespace.classname)如果没有找到对应的class就加载
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+    public class ConditionOnMissingClass : Conditional
+    {
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="classPath"></param>
+        public ConditionOnMissingClass(string classPath)
+        {
+            this.name = classPath;
+            this.Type = typeof(OnMissingClass);
+
+        }
+
+        /// <summary>
+        /// keyname
+        /// </summary>
+        public string name { get; set; }
+    }
+    
+    /// <summary>
+    /// 根据class的全路径(namespace.classname)如果找到对应的class就加载
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+    public class ConditionOnClass : Conditional
+    {
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="classPath"></param>
+        public ConditionOnClass(string classPath)
+        {
+            this.name = classPath;
+            this.Type = typeof(OnClass);
+
+        }
+
+        /// <summary>
+        /// keyname
+        /// </summary>
+        public string name { get; set; }
+    }
 }

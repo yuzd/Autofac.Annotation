@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Xunit;
 
@@ -82,6 +83,31 @@ namespace Autofac.Annotation.Test.test10
             var container = builder.Build();
             //mac系统下被注册
             var isRegisterd = container.TryResolve(out Test10Model5 model1);
+            Assert.True(isRegisterd);
+        }
+        
+        [Fact]
+        public void Test6()
+        {
+
+            var builder = new ContainerBuilder();
+            builder.RegisterSpring(r => r.RegisterAssembly(typeof(ConditionTest).Assembly));
+            var container = builder.Build();
+            var type = Type.GetType("Autofac.Annotation.Test.test10.Test10Model2,Autofac.Configuration.Test");
+            //mac系统下被注册
+            var isRegisterd = container.TryResolve(out Test10Model6 model1);
+            Assert.True(isRegisterd);
+        }
+        
+        [Fact]
+        public void Test7()
+        {
+
+            var builder = new ContainerBuilder();
+            builder.RegisterSpring(r => r.RegisterAssembly(typeof(ConditionTest).Assembly));
+            var container = builder.Build();
+            //mac系统下被注册
+            var isRegisterd = container.TryResolve(out Test10Model7 model1);
             Assert.True(isRegisterd);
         }
     }

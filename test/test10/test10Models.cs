@@ -51,6 +51,24 @@ namespace Autofac.Annotation.Test.test10
             Console.WriteLine("registered Test10Model5");
             return new Test10Model5();
         }
+        
+        [Bean]
+        [ConditionOnClass("Autofac.Annotation.Test.test10.Test10Model2,Autofac.Configuration.Test")]
+        public virtual Test10Model6 getTest10Model6()
+        {
+            //找的到class 所以可以注册Test10Model6
+            Console.WriteLine("registered Test10Model6");
+            return new Test10Model6();
+        }
+        
+        [Bean]
+        [ConditionOnMissingClass("Autofac.Annotation.Test.test10.Test10Model2,xxxx")]
+        public virtual Test10Model7 getTest10Model7()
+        {
+            //找不到class 所以注册Test10Model7
+            Console.WriteLine("registered Test10Model7");
+            return new Test10Model7();
+        }
     }
 
     public class Test10Condition : ICondition
@@ -119,6 +137,18 @@ namespace Autofac.Annotation.Test.test10
     public class Test10Model5
     {
         public string Hello { get; set; } = "Test10Model5";
+
+    }
+    
+    public class Test10Model6
+    {
+        public string Hello { get; set; } = "Test10Model6";
+
+    }
+    
+    public class Test10Model7
+    {
+        public string Hello { get; set; } = "Test10Model7";
 
     }
 }

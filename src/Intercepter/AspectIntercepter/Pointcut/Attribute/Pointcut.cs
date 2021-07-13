@@ -113,6 +113,8 @@ namespace Autofac.Annotation
             {typeof(Conditional), false},
             {typeof(ConditionOnBean), false},
             {typeof(ConditionOnMissingBean), false},
+            {typeof(ConditionOnClass), false},
+            {typeof(ConditionOnMissingBean), false},
             {typeof(Import), false},
             {typeof(Value), false},
             {typeof(InterfaceInterceptor), false},

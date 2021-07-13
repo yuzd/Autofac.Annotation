@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Autofac.Annotation.Condition;
@@ -29,6 +30,8 @@ namespace Autofac.Annotation
                 return false;
             }
 
+            Dictionary<Type, ICondition> cache = new Dictionary<Type, ICondition>();
+
             foreach (var conditional in conditionList)
             {
                 if (conditional.Type == null || typeof(Conditional).IsAssignableFrom(conditional.Type))
@@ -37,10 +40,14 @@ namespace Autofac.Annotation
                         $"`{currentType.Namespace}.{currentType.Name}.{beanMethod.Name}` [conditional] load fail,`{conditional.Type?.FullName}` must be implements of `Condition`");
                 }
 
-                var condition = Activator.CreateInstance(conditional.Type) as ICondition;
-                if (condition == null)
+                if (!cache.TryGetValue(conditional.Type, out var condition))
                 {
-                    continue;
+                    condition = Activator.CreateInstance(conditional.Type) as ICondition;
+                    if (condition == null)
+                    {
+                        continue;
+                    }
+                    cache.Add(conditional.Type,condition);
                 }
 
                 if (condition.match(context, conditional))

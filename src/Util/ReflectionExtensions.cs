@@ -10,6 +10,22 @@ namespace Autofac.Annotation.Util
     /// </summary>
     internal static class ReflectionExtensions
     {
+        /// <summary>
+        /// 判断是否存在class
+        /// </summary>
+        /// <param name="classPath"></param>
+        /// <returns></returns>
+        internal static bool FindClass(this string classPath)
+        {
+            try
+            {
+                return Type.GetType(classPath)!=null;
+            }
+            catch (Exception)
+            {
+                return false;
+            } 
+        }
            
         /// <summary>
         /// 获取方法的唯一string

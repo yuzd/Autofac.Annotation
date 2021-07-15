@@ -159,8 +159,10 @@ namespace Autofac.Annotation.Test.test10
             var container = builder.Build();
             var isRegisterd = container.TryResolve(out AutoConfTest1 model1);
             var isRegisterd2 = container.TryResolve(out AutoConfTest12 model12);
+            var isRegisterd3 = container.TryResolve(out Test10Model12 model13);
             Assert.False(isRegisterd);
             Assert.False(isRegisterd2);
+            Assert.False(isRegisterd3);
         }
     }
 }

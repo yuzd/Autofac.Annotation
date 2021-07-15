@@ -69,6 +69,37 @@ namespace Autofac.Annotation.Test.test10
             Console.WriteLine("registered Test10Model7");
             return new Test10Model7();
         }
+        
+        [Bean]
+        [ConditionalOnProperty("onproperty","on")]
+        public virtual Test10Model8 getTest10Model8()
+        {
+            Console.WriteLine("registered Test10Model8");
+            return new Test10Model8();
+        }
+        
+        [Bean]
+        [ConditionalOnProperty("onproperty","off")]
+        public virtual Test10Model9 getTest10Model9()
+        {
+            Console.WriteLine("registered Test10Model9");
+            return new Test10Model9();
+        }
+        
+        [Bean]
+        [ConditionalOnProperty("onproperty1",matchIfMissing = true)]
+        public virtual Test10Model10 getTest10Model10()
+        {
+            Console.WriteLine("registered Test10Model10");
+            return new Test10Model10();
+        }
+        [Bean]
+        [ConditionalOnProperty("onproperty",matchIfMissing = true)]
+        public virtual Test10Model11 getTest10Model11()
+        {
+            Console.WriteLine("registered Test10Model11");
+            return new Test10Model11();
+        }
     }
 
     public class Test10Condition : ICondition
@@ -150,5 +181,52 @@ namespace Autofac.Annotation.Test.test10
     {
         public string Hello { get; set; } = "Test10Model7";
 
+    }
+    public class Test10Model8
+    {
+        public string Hello { get; set; } = "Test10Model8";
+
+    }
+    
+    public class Test10Model9
+    {
+        public string Hello { get; set; } = "Test10Model9";
+
+    }
+    
+    public class Test10Model10
+    {
+        public string Hello { get; set; } = "Test10Model10";
+
+    }
+    
+    public class Test10Model11
+    {
+        public string Hello { get; set; } = "Test10Model11";
+
+    }
+
+    public class Test10Model12
+    {
+        public string Hello { get; set; } = "Test10Model12";
+
+    }
+    
+    [AutoConfiguration]
+    [ConditionalOnProperty("onproperty","fff")]
+    public class AutoConfTest1
+    {
+        [Bean]
+        public virtual Test10Model12 getTest10Model12()
+        {
+            Console.WriteLine("registered Test10Model12");
+            return new Test10Model12();
+        }
+    }
+    
+    [Component]
+    [ConditionalOnProperty("onproperty","fff")]
+    public class AutoConfTest12
+    {
     }
 }

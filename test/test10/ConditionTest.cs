@@ -110,5 +110,57 @@ namespace Autofac.Annotation.Test.test10
             var isRegisterd = container.TryResolve(out Test10Model7 model1);
             Assert.True(isRegisterd);
         }
+        
+        [Fact]
+        public void Test8()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterSpring(r => r.RegisterAssembly(typeof(ConditionTest).Assembly));
+            var container = builder.Build();
+            var isRegisterd = container.TryResolve(out Test10Model8 model1);
+            Assert.True(isRegisterd);
+        }
+        
+        [Fact]
+        public void Test9()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterSpring(r => r.RegisterAssembly(typeof(ConditionTest).Assembly));
+            var container = builder.Build();
+            var isRegisterd = container.TryResolve(out Test10Model9 model1);
+            Assert.False(isRegisterd);
+        }
+        
+        [Fact]
+        public void Test10()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterSpring(r => r.RegisterAssembly(typeof(ConditionTest).Assembly));
+            var container = builder.Build();
+            var isRegisterd = container.TryResolve(out Test10Model10 model1);
+            Assert.True(isRegisterd);
+        }
+        
+        [Fact]
+        public void Test11()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterSpring(r => r.RegisterAssembly(typeof(ConditionTest).Assembly));
+            var container = builder.Build();
+            var isRegisterd = container.TryResolve(out Test10Model11 model1);
+            Assert.False(isRegisterd);
+        }
+        
+        [Fact]
+        public void Test12()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterSpring(r => r.RegisterAssembly(typeof(ConditionTest).Assembly));
+            var container = builder.Build();
+            var isRegisterd = container.TryResolve(out AutoConfTest1 model1);
+            var isRegisterd2 = container.TryResolve(out AutoConfTest12 model12);
+            Assert.False(isRegisterd);
+            Assert.False(isRegisterd2);
+        }
     }
 }

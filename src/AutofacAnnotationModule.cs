@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Autofac.Annotation.Config;
 using Autofac.AspectIntercepter;
 using Autofac.AspectIntercepter.Pointcut;
 using Autofac.Core.Registration;
@@ -378,6 +379,8 @@ namespace Autofac.Annotation
                 builder.RegisterEventing();
             }
 
+            builder.RegisterBuildCallback(r => { this.autofacGlobalScope = r; });
+
             //解析程序集PointCut标签类和方法
             var aspectJ = GetPointCutConfiguration(builder);
             //解析程序集拿到打了pointcut的类 打了Compoment的类 解析Import的类
@@ -394,11 +397,12 @@ namespace Autofac.Annotation
                     }
                     else
                     {
-                        cache?.DynamicComponentModelCache?.TryRemove(component.CurrentType.Namespace+component.CurrentType.Name, out _);
+                        cache?.DynamicComponentModelCache?.TryRemove(component.CurrentType.Namespace + component.CurrentType.Name, out _);
                     }
+
                     continue;
                 }
-                
+
                 //注册本身
                 IRegistrationBuilder<object, ReflectionActivatorData, object> registrar = null;
                 if (component.isDynamicGeneric)
@@ -415,7 +419,9 @@ namespace Autofac.Annotation
                 //指定一个规则 像spring一样
                 // 1. 如果指定了类型 那么不仅要as 也要注册本身类型
                 // 2. 如果没有指定类型 那只需要注册本身类型
-
+                //後置處理器
+                RegisterBeforeBeanPostProcessor(component, registrar);
+                
                 //注册非本身类型 比如注册父类
                 RegisterComponentServices(component, registrar);
 
@@ -441,6 +447,9 @@ namespace Autofac.Annotation
 
                 //方法注册
                 RegisterMethods(component, registrar);
+
+                //後置處理器
+                RegisterAfterBeanPostProcessor(component, registrar);
             }
 
             DoAutofacConfiguration(builder);
@@ -926,8 +935,6 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(_assemblyList));
             }
 
-            builder.RegisterBuildCallback(r => { this.autofacGlobalScope = r; });
-
             ComponentModelCacheSingleton singleton = new ComponentModelCacheSingleton
             {
                 ComponentModelCache = new ConcurrentDictionary<Type, ComponentModel>(),
@@ -955,7 +962,7 @@ namespace Autofac.Annotation
                             DestroyMethod = pointCutAtt.Pointcut.DestroyMethod,
                             RegisterType = RegisterType.PointCut
                         },
-                        OrderIndex = int.MinValue,
+                        OrderIndex = -1147483648,
                     });
                 }
 
@@ -1041,10 +1048,12 @@ namespace Autofac.Annotation
                         {
                             continue;
                         }
+
                         foreach (var beanDefination in temp)
                         {
                             beanDefination.Bean.RegisterType = RegisterType.Import;
                         }
+
                         result.AddRange(temp);
                     }
                 }
@@ -1065,10 +1074,12 @@ namespace Autofac.Annotation
                         {
                             continue;
                         }
+
                         foreach (var beanDefination in temp)
                         {
                             beanDefination.Bean.RegisterType = RegisterType.Import;
                         }
+
                         result.AddRange(temp);
                     }
                     else
@@ -1112,13 +1123,13 @@ namespace Autofac.Annotation
                         throw new InvalidOperationException(
                             $"The Configuration class `{configuration.Type.FullName}` must not be genericType!");
                     }
-                    
+
                     //Conditional
                     if (shouldSkip(builder.ComponentRegistryBuilder, configuration.Type))
                     {
                         continue;
                     }
-                    
+
                     var beanTypeMethodList = configuration.Type.GetAllInstanceMethod(false);
                     var bean = new AutoConfigurationDetail
                     {
@@ -1180,7 +1191,7 @@ namespace Autofac.Annotation
                     cache?.ComponentModelCache.TryAdd(configuration.Type, new ComponentModel
                     {
                         CurrentType = configuration.Type,
-                        InjectProperties =  true,
+                        InjectProperties = true,
                         InjectPropertyType = InjectPropertyType.Autowired,
                         AutoActivate = true,
                         EnableAspect = true,
@@ -1270,7 +1281,7 @@ namespace Autofac.Annotation
                         Type = configuration.Type,
                         AutofacConfiguration = configuration.Bean,
                         Key = configuration.Bean.Key,
-                        OrderIndex = configuration.Order?.Index??configuration.Bean.OrderIndex
+                        OrderIndex = configuration.Order?.Index ?? configuration.Bean.OrderIndex
                     });
                 }
             }
@@ -1533,6 +1544,7 @@ namespace Autofac.Annotation
                 OrderIndex = bean.OrderIndex,
                 NotUseProxy = bean.NotUseProxy,
                 EnableAspect = bean.EnableAspect,
+                IsBenPostProcessor = typeof(BeanPostProcessor).IsAssignableFrom(currentType),
                 CurrentClassTypeAttributes = Enumerable.OfType<Attribute>(currentType.GetCustomAttributes()).ToList()
             };
 
@@ -1546,6 +1558,13 @@ namespace Autofac.Annotation
                 result.AutofacScope = bean.AutofacScope;
             }
 
+            if (result.IsBenPostProcessor)
+            {
+                result.AutoActivate = false;
+                result.Interceptor = null;
+                result.AutofacScope = AutofacScope.SingleInstance;
+                result.OrderIndex = int.MinValue;
+            }
 
             #region 解析注册对应的类的列表
 
@@ -1558,9 +1577,9 @@ namespace Autofac.Annotation
                 foreach (var iInterface in typeInterfaces)
                 {
                     //自动注册的时候如果父类是抽象class是否忽略
-                    if (iInterface.IsAbstract && this.IgnoreAutoRegisterAbstractClass) continue;
-                    //自动按实现的接口注册
-                    if (iInterface.IsInterface && !AutoRegisterInterface) continue;
+                    if (iInterface.IsAbstract && (this.IgnoreAutoRegisterAbstractClass)) continue;
+                    //自动按实现的接口注册 但保留对BeanPostProcessor的注册
+                    if (iInterface.IsInterface && (!result.IsBenPostProcessor && !AutoRegisterInterface)) continue;
                     //自动注册父类
                     if (iInterface.IsClass && !AutoRegisterParentClass) continue;
 
@@ -1836,15 +1855,16 @@ namespace Autofac.Annotation
                 CurrentType = currentType,
                 InjectProperties = true,
                 InjectPropertyType = InjectPropertyType.Autowired,
+                IsBenPostProcessor = typeof(BeanPostProcessor).IsAssignableFrom(currentType),
                 CurrentClassTypeAttributes = Enumerable.OfType<Attribute>(currentType.GetCustomAttributes()).ToList()
             };
 
             component.MetaSourceList = new List<MetaSourceData>();
             EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
-
+            RegisterBeforeBeanPostProcessor(component,registration);
             RegisterComponentValues(component, registration);
             SetInjectProperties(component, registration);
-
+            RegisterAfterBeanPostProcessor(component,registration);
             return component;
         }
 

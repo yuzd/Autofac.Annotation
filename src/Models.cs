@@ -130,6 +130,11 @@ namespace Autofac.Annotation
         /// </summary>
         internal bool NotUseProxy { get; set; }
         
+        /// <summary>
+        /// 是否要注册为后置处理器
+        /// </summary>
+        internal bool IsBenPostProcessor { get; set; }
+        
          
         /// <summary>
         /// 当前注册的类型是否是动态泛型 https://github.com/yuzd/Autofac.Annotation/issues/13

@@ -1,9 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using Autofac.Annotation.Condition;
+using Autofac.Annotation.Config;
+using Autofac.Builder;
+using Autofac.Core;
 using Autofac.Core.Registration;
+using Autofac.Core.Resolving.Pipeline;
 
 namespace Autofac.Annotation
 {
@@ -17,7 +22,128 @@ namespace Autofac.Annotation
     /// </summary>
     public partial class AutofacAnnotationModule
     {
+        /// <summary>
+        /// 註冊BeanPostProcessor處理器
+        /// </summary>
+        private void RegisterBeforeBeanPostProcessor<TReflectionActivatorData>(ComponentModel component,
+            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
+            where TReflectionActivatorData : ReflectionActivatorData
+        {
+            //过滤掉框架类
+            if (component.CurrentType.Assembly == this.GetType().Assembly || component.CurrentType.Assembly == typeof(Autofac.Core.Lifetime.LifetimeScope).Assembly)
+            {
+                return;
+            }
+
+            if (component.IsBenPostProcessor)
+            {
+                return;
+            }
+            
+            registrar.ConfigurePipeline(p =>
+                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
+                {
+                    next(ctxt);
+                    DoBeforeBeanPostProcessor(ctxt);
+                }));
+            
+     
+        }
+        private void RegisterAfterBeanPostProcessor<TReflectionActivatorData>(ComponentModel component,
+            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
+            where TReflectionActivatorData : ReflectionActivatorData
+        {
+            //过滤掉框架类
+            if (component.CurrentType.Assembly == this.GetType().Assembly || component.CurrentType.Assembly == typeof(Autofac.Core.Lifetime.LifetimeScope).Assembly)
+            {
+                return;
+            }
+            
+            if (component.IsBenPostProcessor)
+            {
+                return;
+            }
+            
+            registrar.ConfigurePipeline(p =>
+                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
+                {
+                    next(ctxt);
+                    DoAfterBeanPostProcessor(ctxt);
+                }));
+     
+        }
         
+        /// <summary>
+        /// 註冊BeanPostProcessor處理器
+        /// </summary>
+        private void RegisterBeforeBeanPostProcessor(ComponentModel component, IComponentRegistration registrar)
+        {
+            if (component.IsBenPostProcessor)
+            {
+                return;
+            }
+            
+            registrar.ConfigurePipeline(p =>
+                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
+                {
+                    next(ctxt);
+                    DoBeforeBeanPostProcessor(ctxt);
+                }));
+        }
+        private void RegisterAfterBeanPostProcessor(ComponentModel component, IComponentRegistration registrar)
+        {  
+            if (component.IsBenPostProcessor)
+            {
+                return;
+            }
+            registrar.ConfigurePipeline(p =>
+                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.EndOfPhase, (ctxt, next) =>
+                {
+                    next(ctxt);
+                    DoAfterBeanPostProcessor(ctxt);
+                }));
+        }
+
+        /// <summary>
+        /// BeanPostProcessor處理器
+        /// 该方法在bean实例化完毕（且已经注入完毕），在afterPropertiesSet或自定义init方法执行之前
+        /// </summary>
+        /// <param name="context"></param>
+        [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
+        private void DoBeforeBeanPostProcessor(ResolveRequestContext context)
+        {
+            context.TryResolve<IEnumerable<BeanPostProcessor>>(out var beanPostProcessors);
+            if (beanPostProcessors == null || !beanPostProcessors.Any())
+            {
+                return;
+            }
+
+            foreach (var beanPostProcessor in beanPostProcessors.ToList())
+            {
+                context.Instance = beanPostProcessor.PostProcessBeforeInitialization(context.Instance);
+            }
+        }
+        
+        /// <summary>
+        /// BeanPostProcessor處理器
+        /// 在afterPropertiesSet或自定义init方法执行之后
+        /// </summary>
+        /// <param name="context"></param>
+        [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
+        private void DoAfterBeanPostProcessor(ResolveRequestContext context)
+        {
+            context.TryResolve<IEnumerable<BeanPostProcessor>>(out var beanPostProcessors);
+            if (beanPostProcessors == null || !beanPostProcessors.Any())
+            {
+                return;
+            }
+
+            foreach (var beanPostProcessor in beanPostProcessors.ToList())
+            {
+                context.Instance = beanPostProcessor.PostProcessAfterInitialization(context.Instance);
+            }
+        }
+
         /// <summary>
         /// 针对Compoment注解
         /// </summary>
@@ -48,7 +174,8 @@ namespace Autofac.Annotation
                     {
                         continue;
                     }
-                    cache.Add(conditional.Type,condition);
+
+                    cache.Add(conditional.Type, condition);
                 }
 
                 if (condition.match(context, conditional))
@@ -58,8 +185,8 @@ namespace Autofac.Annotation
             }
 
             return false;
-        } 
-        
+        }
+
         /// <summary>
         /// 注册AutoConfiguration注解标识的类里面的Bean时候的过滤逻辑
         /// </summary>
@@ -90,7 +217,8 @@ namespace Autofac.Annotation
                     {
                         continue;
                     }
-                    cache.Add(conditional.Type,condition);
+
+                    cache.Add(conditional.Type, condition);
                 }
 
                 if (condition.match(context, conditional))

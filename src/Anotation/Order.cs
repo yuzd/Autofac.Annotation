@@ -14,7 +14,7 @@ namespace Autofac.Annotation
         /// </summary>
         public Order()
         {
-            Index = int.MinValue;
+            Index = 0;
         }
         /// <summary>
         /// 构造函数

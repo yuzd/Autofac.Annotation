@@ -1113,6 +1113,12 @@ namespace Autofac.Annotation
                             $"The Configuration class `{configuration.Type.FullName}` must not be genericType!");
                     }
                     
+                    //Conditional
+                    if (shouldSkip(builder.ComponentRegistryBuilder, configuration.Type))
+                    {
+                        continue;
+                    }
+                    
                     var beanTypeMethodList = configuration.Type.GetAllInstanceMethod(false);
                     var bean = new AutoConfigurationDetail
                     {

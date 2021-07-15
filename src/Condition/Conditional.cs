@@ -164,4 +164,101 @@ namespace Autofac.Annotation.Condition
         /// </summary>
         public string name { get; set; }
     }
+    
+    /// <summary>
+    /// 根据属性来配置
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+    public class ConditionalOnProperty : Conditional
+    {
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public ConditionalOnProperty()
+        {
+            this.Type = typeof(OnProperty);
+        }
+        
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public ConditionalOnProperty(string name):this()
+        {
+            this.name = name;
+        }
+        
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public ConditionalOnProperty(string name,string havingValue):this(name)
+        {
+            this.havingValue = havingValue;
+        }
+
+        /// <summary>
+        /// keyname
+        /// </summary>
+        public string name { get; set; }
+
+        /// <summary>
+        /// 是否有值
+        /// </summary>
+        public string havingValue { get; set; }
+        
+        /// <summary>
+        /// 表示如果没有在appsettings.json设置该属性，则默认为条件符合
+        /// </summary>
+        public bool matchIfMissing { get; set; }
+    }
+    
+    /// <summary>
+    /// 根据属性来配置
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+    public class ConditionalOnProperties : Conditional
+    {
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public ConditionalOnProperties()
+        {
+            this.Type = typeof(OnProperty);
+        }
+        
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public ConditionalOnProperties(string[] names):this()
+        {
+            this.names = names;
+        }
+        
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public ConditionalOnProperties(string[] names,string havingValue):this(names)
+        {
+            this.havingValue = havingValue;
+        }
+
+        /// <summary>
+        /// keyname
+        /// </summary>
+        public string[] names { get; set; }
+
+        /// <summary>
+        /// 是否有值
+        /// </summary>
+        public string havingValue { get; set; }
+        /// <summary>
+        /// 前缀
+        /// </summary>
+        public string prefix { get; set; }
+        /// <summary>
+        /// 表示如果没有在appsettings.json设置该属性，则默认为条件符合
+        /// </summary>
+        public bool matchIfMissing { get; set; }
+    }
 }

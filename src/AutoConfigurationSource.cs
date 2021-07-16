@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using AspectCore.Extensions.Reflection;
-using Autofac.Annotation.Util;
 using Autofac.Builder;
-using Autofac.Core;
-using Autofac.Core.Activators.ProvidedInstance;
-using Autofac.Core.Lifetime;
 using Castle.DynamicProxy;
 
 namespace Autofac.Annotation
@@ -27,49 +21,47 @@ namespace Autofac.Annotation
         /// </summary>
         /// <param name="builder"></param>
         /// <param name="list"></param>
-        public static void Register(ContainerBuilder builder,AutoConfigurationList list)
+        public static void Register(ContainerBuilder builder, AutoConfigurationList list)
         {
-
             //注册Configuration
             foreach (var configuration in list.AutoConfigurationDetailList)
             {
                 RegisterConfiguration(builder, configuration);
             }
-            
         }
 
-        private static void RegisterConfiguration(ContainerBuilder builder,AutoConfigurationDetail autoConfigurationDetail)
+        private static void RegisterConfiguration(ContainerBuilder builder, AutoConfigurationDetail autoConfigurationDetail)
         {
             var cache = builder.Properties[AutofacAnnotationModule._ALL_COMPOMENT] as ComponentModelCacheSingleton;
             //注册为工厂
-            foreach (var beanMethod in autoConfigurationDetail.BeanMethodInfoList.OrderBy(r=>r.Item3.Name))
+            foreach (var beanMethod in autoConfigurationDetail.BeanMethodInfoList.OrderBy(r => r.Item3.Name))
             {
                 if (!beanMethod.Item2.IsVirtual)
                 {
                     throw new InvalidOperationException(
                         $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` must be virtual!");
                 }
-                
+
                 if (!ProxyUtil.IsAccessible(beanMethod.Item2.ReturnType))
                 {
                     throw new InvalidOperationException(
                         $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` returnType is not accessible!");
                 }
-                
+
                 if (beanMethod.Item2.ReturnType.IsValueType || beanMethod.Item2.ReturnType.IsEnum)
                 {
                     throw new InvalidOperationException(
                         $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` returnType is invalid!");
                 }
-                
+
                 //包装这个方法成功工厂
                 //先拿到AutoConfiguration class的实例
                 //注册一个方法到容器 拿到并传入IComponentContext 
-               
-                
+
+
                 builder.RegisterCallback(cr =>
                 {
-                    var instanceType = beanMethod.Item3;//返回类型
+                    var instanceType = beanMethod.Item3; //返回类型
                     //Condition
                     if (AutofacAnnotationModule.shouldSkip(cr, instanceType, beanMethod.Item2))
                     {
@@ -85,15 +77,17 @@ namespace Autofac.Annotation
                         AutofacScope = AutofacScope.SingleInstance,
                         RegisterType = RegisterType.Bean
                     });
-                    
+
                     var rb = RegistrationBuilder.ForDelegate(instanceType, ((context, parameters) =>
                     {
                         var autoConfigurationInstance = context.Resolve(autoConfigurationDetail.AutoConfigurationClassType);
-                        var instance = AutoConfigurationHelper.InvokeInstanceMethod(context, autoConfigurationDetail, autoConfigurationInstance, beanMethod.Item2);
+                        var instance = AutoConfigurationHelper.InvokeInstanceMethod(context, autoConfigurationDetail, autoConfigurationInstance,
+                            beanMethod.Item2);
                         if (instance is Task)
                         {
-                             return typeof(Task<>).MakeGenericType(instanceType).GetProperty("Result")?.GetValue(instance);
+                            return typeof(Task<>).MakeGenericType(instanceType).GetProperty("Result")?.GetValue(instance);
                         }
+
                         return instance;
                     }));
                     rb.WithMetadata(AutofacAnnotationModule._AUTOFAC_SPRING, true);
@@ -105,11 +99,10 @@ namespace Autofac.Annotation
                     {
                         rb.As(instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
                     }
-                    
+
                     rb.SingleInstance();
                     RegistrationBuilder.RegisterSingleComponent(cr, rb);
                 });
-               
             }
         }
     }
@@ -130,8 +123,9 @@ namespace Autofac.Annotation
         /// <param name="returnParam"></param>
         /// <param name="injectAnotation"></param>
         /// <returns></returns>
-        public static object InvokeInstanceMethod(object instance, MethodReflector methodInfo,ParameterInfo[] parameters, IComponentContext context,
-          AspectContext invocation = null, AspectDelegate _next = null, object returnValue = null, string returnParam = null, Attribute injectAnotation = null)
+        public static object InvokeInstanceMethod(object instance, MethodReflector methodInfo, ParameterInfo[] parameters, IComponentContext context,
+            AspectContext invocation = null, AspectDelegate _next = null, object returnValue = null, string returnParam = null,
+            Attribute injectAnotation = null)
         {
             if (parameters == null || parameters.Length == 0)
             {
@@ -148,6 +142,7 @@ namespace Autofac.Annotation
                     parameterObj.Add(invocation);
                     continue;
                 }
+
                 if (_next != null && parameter.ParameterType == typeof(AspectDelegate))
                 {
                     parameterObj.Add(_next);
@@ -209,21 +204,21 @@ namespace Autofac.Annotation
                 //如果拿不到就默认
                 context.TryResolve(parameter.ParameterType, out var obj);
                 parameterObj.Add(obj);
-
             }
 
             return methodInfo.Invoke(instance, parameterObj.ToArray());
         }
 
 
-        public static object InvokeInstanceMethod(object instance, MethodInfo methodInfo,IComponentContext context,
-            AspectContext invocation = null,AspectDelegate _next = null,object returnValue = null,string returnParam = null,Attribute injectAnotation = null)
+        public static object InvokeInstanceMethod(object instance, MethodInfo methodInfo, IComponentContext context,
+            AspectContext invocation = null, AspectDelegate _next = null, object returnValue = null, string returnParam = null,
+            Attribute injectAnotation = null)
         {
             try
             {
                 var parameters = methodInfo.GetParameters();
                 if (parameters.Length == 0)
-                { 
+                {
                     return methodInfo.Invoke(instance, null);
                 }
 
@@ -237,6 +232,7 @@ namespace Autofac.Annotation
                         parameterObj.Add(invocation);
                         continue;
                     }
+
                     if (_next != null && parameter.ParameterType == typeof(AspectDelegate))
                     {
                         parameterObj.Add(_next);
@@ -255,7 +251,7 @@ namespace Autofac.Annotation
                         parameterObj.Add(returnValue);
                         continue;
                     }
-                    
+
                     var autowired = parameter.GetCustomAttribute<Autowired>();
                     if (autowired != null)
                     {
@@ -298,19 +294,18 @@ namespace Autofac.Annotation
                     //如果拿不到就默认
                     context.TryResolve(parameter.ParameterType, out var obj);
                     parameterObj.Add(obj);
-
                 }
-                
-                return methodInfo.Invoke(instance, parameterObj.ToArray());
 
+                return methodInfo.Invoke(instance, parameterObj.ToArray());
             }
             catch (Exception e)
             {
                 throw new InvalidOperationException($"The class `{methodInfo.DeclaringType.FullName}` method `{methodInfo.Name}` invoke fail!", e);
             }
         }
-    
-        public static object InvokeInstanceMethod(IComponentContext context, AutoConfigurationDetail autoConfigurationDetail, object autoConfigurationInstance, MethodInfo methodInfo)
+
+        public static object InvokeInstanceMethod(IComponentContext context, AutoConfigurationDetail autoConfigurationDetail, object autoConfigurationInstance,
+            MethodInfo methodInfo)
         {
             try
             {
@@ -335,7 +330,7 @@ namespace Autofac.Annotation
                     var value = parameter.GetCustomAttribute<Value>();
                     if (value != null)
                     {
-                        parameterObj.Add(value.ResolveParameterWithConfiguration(autoConfigurationDetail,parameter, context));
+                        parameterObj.Add(value.ResolveParameterWithConfiguration(autoConfigurationDetail, parameter, context));
                         continue;
                     }
 
@@ -365,32 +360,29 @@ namespace Autofac.Annotation
 
 
                     parameterObj.Add(context.Resolve(parameter.ParameterType));
-
                 }
 
                 return methodInfo.Invoke(autoConfigurationInstance, parameterObj.ToArray());
-
             }
             catch (Exception e)
             {
-                throw new InvalidOperationException($"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{methodInfo.Name}` invoke fail!", e);
+                throw new InvalidOperationException(
+                    $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{methodInfo.Name}` invoke fail!", e);
             }
-
         }
-
     }
 
     /// <summary>
     /// AutoConfiguration的类代理
     /// </summary>
-    [Component(typeof(AutoConfigurationIntercept),NotUseProxy = true)]
-    public class AutoConfigurationIntercept: AsyncInterceptor
+    [Component(typeof(AutoConfigurationIntercept), NotUseProxy = true)]
+    public class AutoConfigurationIntercept : AsyncInterceptor
     {
         /// <summary>
         /// 单例对象缓存
         /// </summary>
-        private ConcurrentDictionary<MethodInfo,object> _instanceCache = new ConcurrentDictionary<MethodInfo, object>();
-       
+        private ConcurrentDictionary<MethodInfo, object> _instanceCache = new ConcurrentDictionary<MethodInfo, object>();
+
 
         /// <summary>
         /// 
@@ -404,17 +396,17 @@ namespace Autofac.Annotation
                 invocation.Proceed();
                 return;
             }
-            
-            
+
+
             //单例的
             if (_instanceCache.TryGetValue(invocation.Method, out var instance))
             {
                 invocation.ReturnValue = instance;
                 return;
             }
-            
+
             invocation.Proceed();
-            
+
             _instanceCache.TryAdd(invocation.Method, invocation.ReturnValue);
         }
 
@@ -438,21 +430,18 @@ namespace Autofac.Annotation
             _instanceCache.TryAdd(invocation.TargetMethod, invocation.Result);
         }
     }
-    
+
     /// <summary>
     /// AutoConfiguration装配集合数据源
     /// </summary>
     internal class AutoConfigurationList
     {
-
         /// <summary>
         /// AutoConfiguration装配集合数据源
         /// </summary>
         public List<AutoConfigurationDetail> AutoConfigurationDetailList { get; set; }
-
     }
-    
-    
+
 
     /// <summary>
     /// AutoConfiguration装配集合数据源
@@ -467,13 +456,12 @@ namespace Autofac.Annotation
         /// <summary>
         /// Configuration 所在的类的里面有Bean标签的所有方法
         /// </summary>
-        public List<Tuple<Bean, MethodInfo,Type>> BeanMethodInfoList { get; set; }
+        public List<Tuple<Bean, MethodInfo, Type>> BeanMethodInfoList { get; set; }
 
 
         /// <summary>
         /// 数据源
         /// </summary>
         public List<MetaSourceData> MetaSourceDataList { get; set; }
-
     }
 }

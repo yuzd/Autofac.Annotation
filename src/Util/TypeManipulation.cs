@@ -28,7 +28,7 @@ namespace Autofac.Annotation.Util
         /// </exception>
         public static object ChangeToCompatibleType(object value, Type destinationType, ParameterInfo memberInfo)
         {
-            var attrib = (TypeConverterAttribute)null;
+            var attrib = (TypeConverterAttribute) null;
             if (memberInfo != null)
             {
                 attrib = memberInfo.GetCustomAttributes(typeof(TypeConverterAttribute), true).Cast<TypeConverterAttribute>().FirstOrDefault();
@@ -54,7 +54,7 @@ namespace Autofac.Annotation.Util
         /// </exception>
         public static object ChangeToCompatibleType(object value, Type destinationType, MemberInfo memberInfo)
         {
-            var attrib = (TypeConverterAttribute)null;
+            var attrib = (TypeConverterAttribute) null;
             if (memberInfo != null)
             {
                 attrib = memberInfo.GetCustomAttributes(typeof(TypeConverterAttribute), true).Cast<TypeConverterAttribute>().FirstOrDefault();
@@ -96,7 +96,7 @@ namespace Autofac.Annotation.Util
                 return value;
             }
 
-            var converter = (TypeConverter)null;
+            var converter = (TypeConverter) null;
 
             // Try to get custom type converter information.
             if (converterAttribute != null && !string.IsNullOrEmpty(converterAttribute.ConverterTypeName))
@@ -128,15 +128,16 @@ namespace Autofac.Annotation.Util
                 var parser = destinationType.GetMethod("TryParse", BindingFlags.Static | BindingFlags.Public);
                 if (parser != null)
                 {
-                    var parameters = new[] { value, null };
-                    if ((bool)parser.Invoke(null, parameters))
+                    var parameters = new[] {value, null};
+                    if ((bool) parser.Invoke(null, parameters))
                     {
                         return parameters[1];
                     }
                 }
             }
 
-            throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, "Unable to convert object of type '{0}' to type '{1}'.", value.GetType(), destinationType));
+            throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture, "Unable to convert object of type '{0}' to type '{1}'.",
+                value.GetType(), destinationType));
         }
 
         /// <summary>
@@ -158,7 +159,8 @@ namespace Autofac.Annotation.Util
             var converter = Activator.CreateInstance(converterType) as TypeConverter;
             if (converter == null)
             {
-                throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture,"The type '{0}' specified in the TypeConverterAttribute is not a TypeConverter.", converterTypeName));
+                throw new InvalidOperationException(string.Format(CultureInfo.CurrentCulture,
+                    "The type '{0}' specified in the TypeConverterAttribute is not a TypeConverter.", converterTypeName));
             }
 
             return converter;

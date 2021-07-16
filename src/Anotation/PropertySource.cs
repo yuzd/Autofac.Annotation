@@ -10,14 +10,13 @@ namespace Autofac.Annotation
     /// An array of metadata values to associate with the component. Each item specifies the name, type, and value.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-    public class PropertySource : System.Attribute
+    public class PropertySource : Attribute
     {
         /// <summary>
         /// 默认构造函数
         /// </summary>
         public PropertySource()
         {
-
         }
 
         /// <summary>
@@ -43,11 +42,12 @@ namespace Autofac.Annotation
         /// 是否是内嵌资源
         /// </summary>
         public bool Embedded { get; set; }
-        
+
         /// <summary>
         /// 动态数据源类型 必须继承接口：IDynamicSourceProvider
         /// </summary>
         public Type Dynamic { get; set; }
+
         /// <summary>
         /// 当动态数据源类型有多个注册的时候根据key来获取唯一
         /// </summary>
@@ -57,11 +57,13 @@ namespace Autofac.Annotation
         /// 
         /// </summary>
         internal bool? _reload;
-        
+
         /// <summary>
         /// 是否重新加载 只针对文件配置有效 对于Embedded=true的不生效
         /// </summary>
-        public bool ReloadOnChange  { get=>_reload??false;
+        public bool ReloadOnChange
+        {
+            get => _reload ?? false;
             set => _reload = value;
         }
 
@@ -74,7 +76,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// 动态数据源
     /// </summary>
-    public interface IDynamicSourceProvider:IConfigurationProvider
+    public interface IDynamicSourceProvider : IConfigurationProvider
     {
         /// <summary>
         /// 配置信息传递

@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 namespace Autofac.Events
 {
     /// <summary>
@@ -24,7 +19,7 @@ namespace Autofac.Events
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
     /// <typeparam name="T"></typeparam>
-    public interface IReturnEvent<in TEvent,out T>
+    public interface IReturnEvent<in TEvent, out T>
     {
         /// <summary>
         /// 接收消息 并处理返回值

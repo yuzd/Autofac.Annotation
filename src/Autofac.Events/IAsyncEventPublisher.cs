@@ -1,7 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Autofac.Events
@@ -17,7 +14,7 @@ namespace Autofac.Events
         /// <param name="event"></param>
         /// <returns></returns>
         Task PublishAsync(object @event);
-        
+
         /// <summary>
         /// 发布消息并且拿到返回值
         /// </summary>

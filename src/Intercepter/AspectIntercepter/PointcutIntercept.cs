@@ -1,26 +1,17 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Text;
+﻿using System.Reflection;
 using System.Threading.Tasks;
-using AspectCore.Extensions.Reflection;
 using Autofac.Annotation;
-using Castle.DynamicProxy;
 using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter.Pointcut;
+using Castle.DynamicProxy;
 using Castle.DynamicProxy.NoCoverage;
 
 namespace Autofac.AspectIntercepter
 {
-  
-
     /// <summary>
     /// AOP Pointcut拦截器
     /// </summary>
-    [Component(typeof(PointcutIntercept),NotUseProxy = true)]
+    [Component(typeof(PointcutIntercept), NotUseProxy = true)]
     public class PointcutIntercept : AsyncInterceptor
     {
         private readonly IComponentContext _component;
@@ -59,11 +50,12 @@ namespace Autofac.AspectIntercepter
 
             var catpture = invocation.CaptureProceedInfo();
             var aspectContext = new AspectContext(_component, invocation);
-            aspectContext.Proceed =  () => { 
+            aspectContext.Proceed = () =>
+            {
                 catpture.Invoke();
                 return new ValueTask();
             };
-            
+
             var runTask = pointCut.AspectFunc.Value;
             var task = runTask(aspectContext);
             // If the intercept task has yet to complete, wait for it.
@@ -74,10 +66,11 @@ namespace Autofac.AspectIntercepter
                 // See https://stackoverflow.com/a/17284612
                 Task.Run(() => task).GetAwaiter().GetResult();
             }
+
             task.RethrowIfFaulted();
         }
 
-       
+
         /// <summary>
         /// 
         /// </summary>
@@ -99,12 +92,9 @@ namespace Autofac.AspectIntercepter
                 pointCut = pointCutDynamic;
             }
 
-             
+
             var aspectContext = new AspectContext(_component, invocation);
-            aspectContext.Proceed = async () =>
-            {
-                await invocation.ProceedAsync();
-            };
+            aspectContext.Proceed = async () => { await invocation.ProceedAsync(); };
             var runTask = pointCut.AspectFunc.Value;
             await runTask(aspectContext);
         }

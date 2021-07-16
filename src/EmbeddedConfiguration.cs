@@ -71,7 +71,7 @@ namespace Autofac.Annotation
         /// <param name="isEmbedded"></param>
         /// <param name="isReload"></param>
         /// <returns></returns>
-        public static IConfiguration Load(Type type, string configFile, MetaSourceType sourceType, bool isEmbedded = false,bool isReload = true)
+        public static IConfiguration Load(Type type, string configFile, MetaSourceType sourceType, bool isEmbedded = false, bool isReload = true)
         {
             if (Configurations.TryGetValue(configFile, out var con))
             {
@@ -86,7 +86,7 @@ namespace Autofac.Annotation
 
             if (isEmbedded || !isReload)
             {
-                using (var stream = isEmbedded? GetEmbeddedFileStream(type, configFile):File.OpenRead(configFile))
+                using (var stream = isEmbedded ? GetEmbeddedFileStream(type, configFile) : File.OpenRead(configFile))
                 {
                     if (sourceType.Equals(MetaSourceType.Auto))
                     {
@@ -127,7 +127,7 @@ namespace Autofac.Annotation
                 }
             }
 
-            
+
             if (sourceType.Equals(MetaSourceType.Auto))
             {
                 if (configFile.ToLower().EndsWith(".json"))

@@ -421,7 +421,7 @@ namespace Autofac.Annotation
                 // 2. 如果没有指定类型 那只需要注册本身类型
                 //後置處理器
                 RegisterBeforeBeanPostProcessor(component, registrar);
-                
+
                 //注册非本身类型 比如注册父类
                 RegisterComponentServices(component, registrar);
 
@@ -1861,10 +1861,10 @@ namespace Autofac.Annotation
 
             component.MetaSourceList = new List<MetaSourceData>();
             EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
-            RegisterBeforeBeanPostProcessor(component,registration);
+            RegisterBeforeBeanPostProcessor(component, registration);
             RegisterComponentValues(component, registration);
             SetInjectProperties(component, registration);
-            RegisterAfterBeanPostProcessor(component,registration);
+            RegisterAfterBeanPostProcessor(component, registration);
             return component;
         }
 

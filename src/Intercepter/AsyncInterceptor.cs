@@ -3,7 +3,6 @@
 
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-
 using Castle.DynamicProxy;
 
 namespace Castle.DynamicProxy

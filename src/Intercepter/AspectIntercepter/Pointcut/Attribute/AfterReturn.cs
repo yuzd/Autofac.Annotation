@@ -13,7 +13,6 @@ namespace Autofac.Annotation
         /// </summary>
         public AfterReturn()
         {
-            
         }
 
         /// <summary>
@@ -29,5 +28,4 @@ namespace Autofac.Annotation
         /// </summary>
         public string Returing { get; set; }
     }
-
 }

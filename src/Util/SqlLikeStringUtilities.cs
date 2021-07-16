@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 
 namespace Autofac.Annotation.Util
-{ 
+{
     internal class SqlLikeStringUtilities
     {
-        
         /// <summary>
         /// 检查字符串匹配 和sql的like一样
         /// </summary>
@@ -37,10 +36,11 @@ namespace Autofac.Annotation.Util
                         lastWildCard = patternIndex;
                         isWildCardOn = true;
                         while (patternIndex < pattern.Length &&
-                            pattern[patternIndex] == '%')
+                               pattern[patternIndex] == '%')
                         {
                             patternIndex++;
                         }
+
                         if (patternIndex >= pattern.Length) p = '\0';
                         else p = pattern[patternIndex];
                     }
@@ -71,15 +71,17 @@ namespace Autofac.Annotation.Util
                                     set.Add(ci);
                                 }
                             }
+
                             patternIndex++;
                         }
 
                         while (patternIndex < pattern.Length &&
-                            pattern[patternIndex] != ']')
+                               pattern[patternIndex] != ']')
                         {
                             set.Add(pattern[patternIndex]);
                             patternIndex++;
                         }
+
                         patternIndex++;
                     }
                 }
@@ -108,6 +110,7 @@ namespace Autofac.Annotation.Util
                             break;
                         }
                     }
+
                     isNotCharSetOn = isCharSetOn = false;
                 }
                 else
@@ -127,6 +130,7 @@ namespace Autofac.Annotation.Util
                     }
                 }
             }
+
             endOfPattern = (patternIndex >= pattern.Length);
 
             if (isMatch && !endOfPattern)
@@ -140,8 +144,10 @@ namespace Autofac.Annotation.Util
                         break;
                     }
                 }
+
                 if (isOnlyWildCards) endOfPattern = true;
             }
+
             return isMatch && endOfPattern;
         }
     }

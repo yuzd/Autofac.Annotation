@@ -15,7 +15,7 @@ namespace Autofac.AspectIntercepter.Advice
     /// 在DI容器build的时候会触发这个实例new
     /// 然后解析所有打了Aspect标签的class进行解析打了有继承AspectInvokeAttribute的所有方法并且缓存起来
     /// </summary>
-    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true,NotUseProxy = true)]
+    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, NotUseProxy = true)]
     public class ApsectAdviceMethodInvokeCache
     {
         /// <summary>
@@ -50,19 +50,19 @@ namespace Autofac.AspectIntercepter.Advice
                         .Select(r => r.First().Attribute).ToList();
 
                     if (!attributes.Any()) continue;
-                    
+
                     var aspectAttributeInfo = new AspectAttributeChainBuilder
                     {
                         AdviceMethod = new List<AdviceMethod>()
                     };
-                    
-                    var allGroupNameList = new Dictionary<string,string>();
-                    Dictionary<string,AspectBefore> beforeCache = new Dictionary<string, AspectBefore>();
-                    Dictionary<string,AspectAfter> afterCache = new Dictionary<string, AspectAfter>();
-                    Dictionary<string,AspectAfterReturn> afterReturnCache = new Dictionary<string, AspectAfterReturn>();
-                    Dictionary<string,AspectAfterThrows> afterThrow = new Dictionary<string, AspectAfterThrows>();
-                    Dictionary<string,AspectArround> arround = new Dictionary<string, AspectArround>();
-                    
+
+                    var allGroupNameList = new Dictionary<string, string>();
+                    Dictionary<string, AspectBefore> beforeCache = new Dictionary<string, AspectBefore>();
+                    Dictionary<string, AspectAfter> afterCache = new Dictionary<string, AspectAfter>();
+                    Dictionary<string, AspectAfterReturn> afterReturnCache = new Dictionary<string, AspectAfterReturn>();
+                    Dictionary<string, AspectAfterThrows> afterThrow = new Dictionary<string, AspectAfterThrows>();
+                    Dictionary<string, AspectArround> arround = new Dictionary<string, AspectArround>();
+
                     foreach (var attribute in attributes)
                     {
                         var key = attribute.GroupName ?? "";
@@ -80,11 +80,12 @@ namespace Autofac.AspectIntercepter.Advice
                                     if (beforeCache.ContainsKey(key))
                                     {
                                         throw new InvalidOperationException(
-                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectBefore]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." + aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectBefore]${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
                                     }
                                 }
-                                beforeCache.Add(key,aspectBeforeAttribute);
-                                if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);
+
+                                beforeCache.Add(key, aspectBeforeAttribute);
+                                if (!allGroupNameList.ContainsKey(key)) allGroupNameList.Add(key, string.Empty);
                                 break;
                             case AspectAfter aspectAfter:
                                 if (afterCache.ContainsKey(key))
@@ -98,11 +99,12 @@ namespace Autofac.AspectIntercepter.Advice
                                     if (afterCache.ContainsKey(key))
                                     {
                                         throw new InvalidOperationException(
-                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectAfter]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." + aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectAfter]${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
                                     }
                                 }
-                                afterCache.Add(key,aspectAfter);
-                                if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);
+
+                                afterCache.Add(key, aspectAfter);
+                                if (!allGroupNameList.ContainsKey(key)) allGroupNameList.Add(key, string.Empty);
                                 break;
                             case AspectAfterReturn aspectAfterAttribute:
                                 if (afterReturnCache.ContainsKey(key))
@@ -116,11 +118,12 @@ namespace Autofac.AspectIntercepter.Advice
                                     if (afterReturnCache.ContainsKey(key))
                                     {
                                         throw new InvalidOperationException(
-                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectAfterReturn]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." + aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectAfterReturn]${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
                                     }
                                 }
-                                afterReturnCache.Add(key,aspectAfterAttribute);
-                                if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);
+
+                                afterReturnCache.Add(key, aspectAfterAttribute);
+                                if (!allGroupNameList.ContainsKey(key)) allGroupNameList.Add(key, string.Empty);
                                 break;
                             case AspectAfterThrows aspectAfterThrowing:
                                 if (afterThrow.ContainsKey(key))
@@ -134,11 +137,12 @@ namespace Autofac.AspectIntercepter.Advice
                                     if (afterThrow.ContainsKey(key))
                                     {
                                         throw new InvalidOperationException(
-                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectAfterThrows]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." + aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectAfterThrows]${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
                                     }
                                 }
-                                afterThrow.Add(key,aspectAfterThrowing);
-                                if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);
+
+                                afterThrow.Add(key, aspectAfterThrowing);
+                                if (!allGroupNameList.ContainsKey(key)) allGroupNameList.Add(key, string.Empty);
                                 break;
                             case AspectArround aspectPointAttribute:
                                 if (arround.ContainsKey(key))
@@ -152,95 +156,104 @@ namespace Autofac.AspectIntercepter.Advice
                                     if (arround.ContainsKey(key))
                                     {
                                         throw new InvalidOperationException(
-                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectArround]${(!string.IsNullOrEmpty(key)?" with key:`"+key+"`":"") }!");
+                                            $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." + aspectClass.CurrentType.Name}` method $`{method.Name}` can not be register multi [AspectArround]${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
                                     }
                                 }
-                                arround.Add(key,aspectPointAttribute);
-                                if(!allGroupNameList.ContainsKey(key))allGroupNameList.Add(key,string.Empty);
+
+                                arround.Add(key, aspectPointAttribute);
+                                if (!allGroupNameList.ContainsKey(key)) allGroupNameList.Add(key, string.Empty);
                                 break;
                         }
                     }
 
-                  
 
                     foreach (var groupName in allGroupNameList.Keys)
                     {
-                        
                         var adviceMethod = new AdviceMethod();
-                        
+
                         adviceMethod.GroupName = groupName;
-                        
+
                         if (beforeCache.ContainsKey(groupName))
                         {
                             adviceMethod.AspectBefore = beforeCache[groupName];
                             //同一个groupName 设置的 OrderIndex 不一样报错
-                            if (adviceMethod.OrderIndex > 0 &&  adviceMethod.AspectBefore.OrderIndex > 0 && adviceMethod.OrderIndex != adviceMethod.AspectBefore.OrderIndex)
+                            if (adviceMethod.OrderIndex > 0 && adviceMethod.AspectBefore.OrderIndex > 0 &&
+                                adviceMethod.OrderIndex != adviceMethod.AspectBefore.OrderIndex)
                             {
                                 throw new InvalidOperationException(
-                                    $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` with same groupName=`${groupName}` but OrderIndex is different !");
+                                    $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." + aspectClass.CurrentType.Name}` method $`{method.Name}` with same groupName=`${groupName}` but OrderIndex is different !");
                             }
+
                             adviceMethod.OrderIndex = adviceMethod.AspectBefore.OrderIndex;
                         }
-                        
+
                         if (afterCache.ContainsKey(groupName))
                         {
                             adviceMethod.AspectAfter = afterCache[groupName];
                             //同一个groupName 设置的 OrderIndex 不一样报错
-                            if (adviceMethod.OrderIndex > 0 &&  adviceMethod.AspectAfter.OrderIndex > 0 && adviceMethod.OrderIndex != adviceMethod.AspectAfter.OrderIndex)
+                            if (adviceMethod.OrderIndex > 0 && adviceMethod.AspectAfter.OrderIndex > 0 &&
+                                adviceMethod.OrderIndex != adviceMethod.AspectAfter.OrderIndex)
                             {
                                 throw new InvalidOperationException(
-                                    $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` with same groupName=`${groupName}` but OrderIndex is different !");
+                                    $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." + aspectClass.CurrentType.Name}` method $`{method.Name}` with same groupName=`${groupName}` but OrderIndex is different !");
                             }
+
                             adviceMethod.OrderIndex = adviceMethod.AspectAfter.OrderIndex;
                         }
-                        
+
                         if (afterReturnCache.ContainsKey(groupName))
                         {
                             adviceMethod.AspectAfterReturn = afterReturnCache[groupName];
                             //同一个groupName 设置的 OrderIndex 不一样报错
-                            if (adviceMethod.OrderIndex > 0 &&  adviceMethod.AspectAfterReturn.OrderIndex > 0 && adviceMethod.OrderIndex != adviceMethod.AspectAfterReturn.OrderIndex)
+                            if (adviceMethod.OrderIndex > 0 && adviceMethod.AspectAfterReturn.OrderIndex > 0 &&
+                                adviceMethod.OrderIndex != adviceMethod.AspectAfterReturn.OrderIndex)
                             {
                                 throw new InvalidOperationException(
-                                    $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` with same groupName=`${groupName}` but OrderIndex is different !");
+                                    $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." + aspectClass.CurrentType.Name}` method $`{method.Name}` with same groupName=`${groupName}` but OrderIndex is different !");
                             }
+
                             adviceMethod.OrderIndex = adviceMethod.AspectAfterReturn.OrderIndex;
                         }
-                        
+
                         if (afterThrow.ContainsKey(groupName))
                         {
                             adviceMethod.AspectAfterThrows = afterThrow[groupName];
                             //同一个groupName 设置的 OrderIndex 不一样报错
-                            if (adviceMethod.OrderIndex > 0 &&  adviceMethod.AspectAfterThrows.OrderIndex > 0 && adviceMethod.OrderIndex != adviceMethod.AspectAfterThrows.OrderIndex)
+                            if (adviceMethod.OrderIndex > 0 && adviceMethod.AspectAfterThrows.OrderIndex > 0 &&
+                                adviceMethod.OrderIndex != adviceMethod.AspectAfterThrows.OrderIndex)
                             {
                                 throw new InvalidOperationException(
-                                    $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` with same groupName=`${groupName}` but OrderIndex is different !");
+                                    $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." + aspectClass.CurrentType.Name}` method $`{method.Name}` with same groupName=`${groupName}` but OrderIndex is different !");
                             }
+
                             adviceMethod.OrderIndex = adviceMethod.AspectAfterThrows.OrderIndex;
                         }
-                        
+
                         if (arround.ContainsKey(groupName))
                         {
                             adviceMethod.AspectArround = arround[groupName];
                             //同一个groupName 设置的 OrderIndex 不一样报错
-                            if (adviceMethod.OrderIndex > 0 &&  adviceMethod.AspectArround.OrderIndex > 0 && adviceMethod.OrderIndex != adviceMethod.AspectArround.OrderIndex)
+                            if (adviceMethod.OrderIndex > 0 && adviceMethod.AspectArround.OrderIndex > 0 &&
+                                adviceMethod.OrderIndex != adviceMethod.AspectArround.OrderIndex)
                             {
                                 throw new InvalidOperationException(
-                                    $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." +  aspectClass.CurrentType.Name}` method $`{method.Name}` with same groupName=`${groupName}` but OrderIndex is different !");
+                                    $"The Aspect target class `{aspectClass.CurrentType.Namespace + "." + aspectClass.CurrentType.Name}` method $`{method.Name}` with same groupName=`${groupName}` but OrderIndex is different !");
                             }
+
                             adviceMethod.OrderIndex = adviceMethod.AspectArround.OrderIndex;
                         }
-                        
+
                         aspectAttributeInfo.AdviceMethod.Add(adviceMethod);
                     }
 
                     aspectAttributeInfo.AdviceMethod = aspectAttributeInfo.AdviceMethod.OrderBy(r => r.OrderIndex).ToList();
-                    
+
                     if (aspectClass.isDynamicGeneric)
                     {
                         DynamicCacheList.TryAdd(method.GetMethodInfoUniqueName(), aspectAttributeInfo);
                         continue;
                     }
-                    
+
                     CacheList.TryAdd(method, aspectAttributeInfo);
                 }
             }
@@ -256,5 +269,4 @@ namespace Autofac.AspectIntercepter.Advice
         /// </summary>
         internal ConcurrentDictionary<string, AspectAttributeChainBuilder> DynamicCacheList { get; set; }
     }
-
 }

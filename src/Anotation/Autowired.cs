@@ -1,12 +1,10 @@
-﻿using AspectCore.Extensions.Reflection;
-using Autofac.Core;
-using Autofac.Features.AttributeFilters;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Autofac.Annotation.Util;
-using Autofac.Core.Resolving;
+using Autofac.Core;
+using Autofac.Features.AttributeFilters;
 
 namespace Autofac.Annotation
 {
@@ -51,7 +49,7 @@ namespace Autofac.Annotation
         /// 默认装载失败会报错 设置为false装载失败不会报错
         /// </summary>
         public bool Required { get; set; } = true;
-        
+
         /// <summary>
         /// 默认是false
         /// </summary>
@@ -76,7 +74,7 @@ namespace Autofac.Annotation
         public override object ResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));
-            return Resolve(context, null, parameter.Member.DeclaringType, parameter.ParameterType,parameter.Name, null);
+            return Resolve(context, null, parameter.Member.DeclaringType, parameter.ParameterType, parameter.Name, null);
         }
 
         /// <summary>
@@ -92,6 +90,7 @@ namespace Autofac.Annotation
             {
                 return false;
             }
+
             return true;
         }
 
@@ -106,7 +105,7 @@ namespace Autofac.Annotation
         public object ResolveField(FieldInfo property, IComponentContext context, List<Parameter> Parameters, object instance)
         {
             if (property == null) throw new ArgumentNullException(nameof(property));
-            return Resolve(context, instance, property.DeclaringType, property.FieldType,property.Name, Parameters);
+            return Resolve(context, instance, property.DeclaringType, property.FieldType, property.Name, Parameters);
         }
 
         /// <summary>
@@ -120,21 +119,22 @@ namespace Autofac.Annotation
         public object ResolveProperty(PropertyInfo property, IComponentContext context, List<Parameter> Parameters, object instance)
         {
             if (property == null) throw new ArgumentNullException(nameof(property));
-            return Resolve(context, instance, property.DeclaringType, property.PropertyType,property.Name, Parameters);
+            return Resolve(context, instance, property.DeclaringType, property.PropertyType, property.Name, Parameters);
         }
 
-        internal object Resolve(IComponentContext context, object instance, Type classType, Type memberType,string fieldOrPropertyName, List<Parameter> Parameters)
+        internal object Resolve(IComponentContext context, object instance, Type classType, Type memberType, string fieldOrPropertyName,
+            List<Parameter> Parameters)
         {
             object returnObj = null;
-            
+
             //针对继承 IObjectFactory 的 需要动态创建
             if ((typeof(IObjectFactory).IsAssignableFrom(memberType)))
             {
-                return context.Resolve<ObjectBeanFactory>().CreateAutowiredFactory(this, memberType, classType,fieldOrPropertyName, instance, null);
+                return context.Resolve<ObjectBeanFactory>().CreateAutowiredFactory(this, memberType, classType, fieldOrPropertyName, instance, null);
             }
             else if (memberType.IsGenericType && memberType.GetGenericTypeDefinition() == typeof(Lazy<>))
             {
-                return context.Resolve<ObjectBeanFactory>().CreateLazyFactory(this, memberType, classType,fieldOrPropertyName, instance, null);
+                return context.Resolve<ObjectBeanFactory>().CreateLazyFactory(this, memberType, classType, fieldOrPropertyName, instance, null);
             }
             else if (string.IsNullOrEmpty(this.Name) && memberType.IsGenericEnumerableInterfaceType())
             {
@@ -143,17 +143,19 @@ namespace Autofac.Annotation
                 {
                     genericType = genericType.GenericTypeArguments[0];
                 }
+
                 context.TryResolveKeyed("`1System.Collections.Generic.IEnumerable`1" + genericType.FullName, memberType, out returnObj);
-                
+
                 if (returnObj == null && this.Required)
                 {
                     throw new DependencyResolutionException($"Autowire error,can not resolve class type:{classType.FullName}:{fieldOrPropertyName} "
                                                             + (!string.IsNullOrEmpty(this.Name) ? $",with key:[{this.Name}]" : ""));
                 }
+
                 return returnObj;
             }
-            
-           
+
+
             Service propertyService = null;
             if (!string.IsNullOrEmpty(this.Name))
             {
@@ -165,19 +167,18 @@ namespace Autofac.Annotation
                 propertyService = new TypedService(memberType);
             }
 
-            if (Parameters != null && Parameters.Any()  && ((Parameters.First() is AutowiredParmeterStack AutowiredParmeter)))
+            if (Parameters != null && Parameters.Any() && ((Parameters.First() is AutowiredParmeterStack AutowiredParmeter)))
             {
                 if (!AutowiredParmeter.AllowCircularDependencies && this.AllowCircularDependencies.HasValue && this.AllowCircularDependencies.Value)
                 {
                     AutowiredParmeter.AllowCircularDependencies = true;
                 }
-                
+
                 //先检查是否已注册过
                 if (AutowiredParmeter.CircularDetected(propertyService, out returnObj))
                 {
                     if (AutowiredParmeter.AllowCircularDependencies)
                     {
-                        
                     }
                     else if (this.AllowCircularDependencies == null || !this.AllowCircularDependencies.Value)
                     {
@@ -188,14 +189,13 @@ namespace Autofac.Annotation
                 {
                 }
                 //先判断根据Type来找是否能找得到 发现Type没有就尝试用当前的属性定义的名称去找
-                else if(string.IsNullOrEmpty(this.Name))
+                else if (string.IsNullOrEmpty(this.Name))
                 {
                     propertyService = new KeyedService(fieldOrPropertyName, memberType);
                     if (AutowiredParmeter.CircularDetected(propertyService, out returnObj))
                     {
                         if (AutowiredParmeter.AllowCircularDependencies)
                         {
-                        
                         }
                         else if (this.AllowCircularDependencies == null || !this.AllowCircularDependencies.Value)
                         {
@@ -210,24 +210,24 @@ namespace Autofac.Annotation
             else
             {
                 //构造方法注入的分支
-                if (context.TryResolveService(propertyService, new Parameter[] {}, out returnObj))
+                if (context.TryResolveService(propertyService, new Parameter[] { }, out returnObj))
                 {
                     //success
                 }
-                else if(string.IsNullOrEmpty(this.Name) && context.TryResolveService(new KeyedService(fieldOrPropertyName, memberType), new Parameter[] {}, out returnObj))
+                else if (string.IsNullOrEmpty(this.Name) &&
+                         context.TryResolveService(new KeyedService(fieldOrPropertyName, memberType), new Parameter[] { }, out returnObj))
                 {
                     //success
                 }
             }
-            
+
             if (returnObj == null && this.Required)
             {
                 throw new DependencyResolutionException($"Autowire error,can not resolve class type:{classType.FullName}.{fieldOrPropertyName} "
                                                         + (!string.IsNullOrEmpty(this.Name) ? $",with key:[{this.Name}]" : ""));
             }
+
             return returnObj;
         }
-
-
     }
 }

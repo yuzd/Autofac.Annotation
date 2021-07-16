@@ -1,16 +1,6 @@
-//-----------------------------------------------------------------------
-// <copyright file="ObjectFactory .cs" company="Company">
-// Copyright (C) Company. All Rights Reserved.
-// </copyright>
-// <author>nainaigu</author>
-// <create>$Date$</create>
-// <summary></summary>
-//-----------------------------------------------------------------------
-
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using AspectCore.Extensions.Reflection;
 using Autofac.Core;
@@ -79,7 +69,7 @@ namespace Autofac.Annotation
 
         public Lazy<T> CreateLazy()
         {
-            return new Lazy<T>(()=> (T) function());
+            return new Lazy<T>(() => (T) function());
         }
     }
 
@@ -132,7 +122,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// IValue工厂
     /// </summary>
-    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true,NotUseProxy = true)]
+    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, NotUseProxy = true)]
     public sealed class ObjectBeanFactory
     {
         private readonly IComponentContext _context;
@@ -141,7 +131,7 @@ namespace Autofac.Annotation
         /// 存储lazy的 CreateLazy 的方法缓存
         /// </summary>
         private readonly ConcurrentDictionary<Type, MethodReflector> _lazyMethodCache = new ConcurrentDictionary<Type, MethodReflector>();
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -198,15 +188,16 @@ namespace Autofac.Annotation
         /// <param name="instance"></param>
         /// <param name="Parameters"></param>
         /// <returns></returns>
-        internal object CreateAutowiredFactory(Autowired autowired, Type type, Type classType,string fieldOrPropertyName, object instance, List<Parameter> Parameters)
+        internal object CreateAutowiredFactory(Autowired autowired, Type type, Type classType, string fieldOrPropertyName, object instance,
+            List<Parameter> Parameters)
         {
             var targetType = type.GenericTypeArguments[0];
             var valueType = typeof(AutowiredObjectFactory<>);
             var valueFactoryType = valueType.MakeGenericType(targetType);
-            Func<object> function = () => autowired.Resolve(_context, instance, classType,targetType,fieldOrPropertyName,  Parameters);
+            Func<object> function = () => autowired.Resolve(_context, instance, classType, targetType, fieldOrPropertyName, Parameters);
             return Activator.CreateInstance(valueFactoryType, new object[] {function});
         }
-        
+
         /// <summary>
         /// 创建Lazy的包装器
         /// </summary>
@@ -217,18 +208,20 @@ namespace Autofac.Annotation
         /// <param name="instance"></param>
         /// <param name="Parameters"></param>
         /// <returns></returns>
-        internal object CreateLazyFactory(Autowired autowired, Type type, Type classType,string fieldOrPropertyName, object instance, List<Parameter> Parameters)
+        internal object CreateLazyFactory(Autowired autowired, Type type, Type classType, string fieldOrPropertyName, object instance,
+            List<Parameter> Parameters)
         {
             var targetType = type.GenericTypeArguments[0];
             var valueType = typeof(LazyAutowiredFactory<>);
             var valueFactoryType = valueType.MakeGenericType(targetType);
-            Func<object> function = () => autowired.Resolve(_context, instance, classType,targetType,fieldOrPropertyName,  Parameters);
+            Func<object> function = () => autowired.Resolve(_context, instance, classType, targetType, fieldOrPropertyName, Parameters);
             var lazyFactory = Activator.CreateInstance(valueFactoryType, new object[] {function});
             if (!this._lazyMethodCache.TryGetValue(valueFactoryType, out var _cache))
             {
                 _cache = lazyFactory.GetType().GetTypeInfo().GetMethod("CreateLazy").GetReflector();
                 this._lazyMethodCache.TryAdd(valueFactoryType, _cache);
             }
+
             return _cache.Invoke(lazyFactory);
         }
     }

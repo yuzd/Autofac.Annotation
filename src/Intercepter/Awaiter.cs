@@ -18,13 +18,13 @@ namespace Castle.DynamicProxy
         public static bool IsCompleted(this object awaiter)
         {
             var isCompletedProperty = awaiter.GetType().GetProperty("IsCompleted", BindingFlags.Public | BindingFlags.Instance);
-            return (bool)isCompletedProperty.GetValue(awaiter);
+            return (bool) isCompletedProperty.GetValue(awaiter);
         }
 
         public static void OnCompleted(this object awaiter, Action continuation)
         {
             var onCompletedMethod = awaiter.GetType().GetMethod("OnCompleted", BindingFlags.Public | BindingFlags.Instance);
-            onCompletedMethod.Invoke(awaiter, new object[] { continuation });
+            onCompletedMethod.Invoke(awaiter, new object[] {continuation});
         }
 
         public static object GetResult(this object awaiter)

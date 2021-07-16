@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Autofac.Events
@@ -19,7 +15,7 @@ namespace Autofac.Events
         /// <returns></returns>
         Task HandleAsync(TEvent @event);
     }
-    
+
     /// <summary>
     /// Handle an event and return with response of T
     /// </summary>

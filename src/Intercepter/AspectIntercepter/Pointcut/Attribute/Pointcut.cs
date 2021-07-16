@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -14,7 +13,7 @@ namespace Autofac.Annotation
     /// sql like的匹配模式 % 代表通配符 _代表匹配任意一个字符
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-    public sealed class Pointcut : System.Attribute
+    public sealed class Pointcut : Attribute
     {
         /// <summary>
         /// 构造方法
@@ -146,11 +145,11 @@ namespace Autofac.Annotation
         /// 是否当前class满足
         /// </summary>
         /// <returns></returns>
-        internal bool IsVaildClass(ComponentModel component,out Attribute pointCutClassInjectAnotation)
+        internal bool IsVaildClass(ComponentModel component, out Attribute pointCutClassInjectAnotation)
         {
             pointCutClassInjectAnotation = null;
             var classType = component.CurrentType;
-            
+
             //如果没有设定clasname的匹配  也没有设置标签拦截指定 就不继续往下了
             if ((string.IsNullOrEmpty(Class) && AttributeType == null))
             {
@@ -173,15 +172,17 @@ namespace Autofac.Annotation
                 //框架内部的不可
                 if (IgnoreAttributeType.ContainsKey(this.AttributeType))
                 {
-                    throw new InvalidOperationException($"PointCut:`{this.GetType().FullName}` -> `AttributeType` can not be set to special type: `${AttributeType.Name}` ! ");
+                    throw new InvalidOperationException(
+                        $"PointCut:`{this.GetType().FullName}` -> `AttributeType` can not be set to special type: `${AttributeType.Name}` ! ");
                 }
-                
+
                 //继承了AspectInvokeAttribute的不可
                 else if (typeof(AspectInvokeAttribute).IsAssignableFrom(this.AttributeType))
                 {
-                    throw new InvalidOperationException($"PointCut:`{this.GetType().FullName}` -> `AttributeType` can not be set to  instance of `AspectInvokeAttribute` ! ");
+                    throw new InvalidOperationException(
+                        $"PointCut:`{this.GetType().FullName}` -> `AttributeType` can not be set to  instance of `AspectInvokeAttribute` ! ");
                 }
-                
+
                 if (component.CurrentClassTypeAttributes != null && component.CurrentClassTypeAttributes.Any())
                 {
                     foreach (var classAttribute in component.CurrentClassTypeAttributes)
@@ -193,7 +194,6 @@ namespace Autofac.Annotation
                         }
                     }
                 }
-                
             }
 
             return true;
@@ -204,7 +204,8 @@ namespace Autofac.Annotation
         /// 是否可用
         /// </summary>
         /// <returns></returns>
-        internal bool IsVaild(ComponentModel component,KeyValuePair<MethodInfo,List<Attribute>> methodInfoCache,Attribute parentClassinjectPointcutAnnotationCache,out Attribute injectPointcutAnnotationCache)
+        internal bool IsVaild(ComponentModel component, KeyValuePair<MethodInfo, List<Attribute>> methodInfoCache,
+            Attribute parentClassinjectPointcutAnnotationCache, out Attribute injectPointcutAnnotationCache)
         {
             var methodInfo = methodInfoCache.Key;
             injectPointcutAnnotationCache = null;
@@ -232,7 +233,7 @@ namespace Autofac.Annotation
                     }
                 }
 
-                if (annotation==null && parentClassinjectPointcutAnnotationCache != null)
+                if (annotation == null && parentClassinjectPointcutAnnotationCache != null)
                 {
                     annotation = parentClassinjectPointcutAnnotationCache;
                 }
@@ -242,7 +243,7 @@ namespace Autofac.Annotation
                     injectPointcutAnnotationCache = annotation;
                     return true;
                 }
-                
+
                 return false;
             }
 

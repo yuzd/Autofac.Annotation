@@ -13,7 +13,6 @@ namespace Autofac.Annotation
         /// </summary>
         public Before()
         {
-            
         }
 
         /// <summary>
@@ -23,8 +22,5 @@ namespace Autofac.Annotation
         {
             this.GroupName = groupName;
         }
-        
-     
     }
-
 }

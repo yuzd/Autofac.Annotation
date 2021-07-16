@@ -7,7 +7,7 @@ namespace Autofac.Annotation
     /// 1. 值越小越排在前面加载
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public sealed class Order : System.Attribute
+    public sealed class Order : Attribute
     {
         /// <summary>
         /// 构造函数
@@ -16,6 +16,7 @@ namespace Autofac.Annotation
         {
             Index = 0;
         }
+
         /// <summary>
         /// 构造函数
         /// </summary>

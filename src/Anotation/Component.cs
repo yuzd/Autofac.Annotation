@@ -9,16 +9,17 @@ namespace Autofac.Annotation
     /// 打在父类上子类没打的话子类就获取不到
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public sealed class Component : System.Attribute
+    public sealed class Component : Attribute
     {
         #region Constructor
+
         /// <summary>
         /// 构造函数
         /// </summary>
         public Component()
         {
-
         }
+
         /// <summary>
         /// 构造函数
         /// </summary>
@@ -50,6 +51,7 @@ namespace Autofac.Annotation
         #endregion
 
         #region Services
+
         /// <summary>
         /// 注册的类型
         /// 如果为null则注册为本身类型
@@ -64,8 +66,8 @@ namespace Autofac.Annotation
         /// <summary>
         /// 注册单个的key
         /// </summary>
-        public string Key { get;}
-        
+        public string Key { get; }
+
         /// <summary>
         /// 是否不允许被代理 比如Pointcut的类就不能被代理
         /// </summary>
@@ -82,7 +84,6 @@ namespace Autofac.Annotation
         ///  注册key 在同一个类型注册多个的时候就需要用到key来做区分
         /// </summary>
         public string[] Keys { get; set; }
-
 
         #endregion
 
@@ -131,15 +132,17 @@ namespace Autofac.Annotation
         /// 如果同一个类型的拦截器有多个 可以指定Key
         /// </summary>
         public string InterceptorKey { get; set; }
+
         /// <summary>
         /// 被创建后执行的方法
         /// </summary>
         public string InitMethod { get; set; }
+
         /// <summary>
         /// 被Release时执行的方法
         /// </summary>
         public string DestroyMethod { get; set; }
-       
+
 
         /// <summary>
         /// 注册类型
@@ -156,6 +159,7 @@ namespace Autofac.Annotation
         /// 使用接口模式 自己指定拦截器
         /// </summary>
         Interface,
+
         /// <summary>
         /// 使用class的虚方法模式 自己指定拦截器
         /// </summary>
@@ -171,6 +175,7 @@ namespace Autofac.Annotation
         /// 代表打了Autowired标签的才会装配
         /// </summary>
         Autowired,
+
         /// <summary>
         /// 代表全部自动装配
         /// </summary>

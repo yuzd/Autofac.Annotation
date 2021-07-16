@@ -1,16 +1,12 @@
+using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using Autofac.Annotation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autofac.AspectIntercepter.Advice;
 using Autofac.AspectIntercepter.Pointcut;
 
 namespace Autofac.AspectIntercepter.Impl
 {
-
     /// <summary>
     /// 异常返回拦截处理器
     /// </summary>
@@ -36,7 +32,7 @@ namespace Autofac.AspectIntercepter.Impl
         {
             try
             {
-                if(!_isFromAround) await next.Invoke(aspectContext);
+                if (!_isFromAround) await next.Invoke(aspectContext);
             }
             finally
             {
@@ -58,17 +54,18 @@ namespace Autofac.AspectIntercepter.Impl
 
                     if (_pointcutThrowin != null)
                     {
-                        if (_pointcutThrowin.PointcutBasicAttribute.ExceptionType == null || _pointcutThrowin.PointcutBasicAttribute.ExceptionType == currentExType)
+                        if (_pointcutThrowin.PointcutBasicAttribute.ExceptionType == null ||
+                            _pointcutThrowin.PointcutBasicAttribute.ExceptionType == currentExType)
                         {
                             var rt = AutoConfigurationHelper.InvokeInstanceMethod(
                                 _pointcutThrowin.Instance,
                                 _pointcutThrowin.MethodInfo,
                                 _pointcutThrowin.MethodParameters,
                                 aspectContext.ComponentContext,
-                                aspectContext, 
-                                returnValue: ex, 
+                                aspectContext,
+                                returnValue: ex,
                                 returnParam: _pointcutThrowin.PointcutBasicAttribute.Throwing,
-                                injectAnotation:_pointcutThrowin.PointcutInjectAnotation);
+                                injectAnotation: _pointcutThrowin.PointcutInjectAnotation);
                             if (typeof(Task).IsAssignableFrom(_pointcutThrowin.MethodReturnType))
                             {
                                 await ((Task) rt).ConfigureAwait(false);
@@ -82,7 +79,6 @@ namespace Autofac.AspectIntercepter.Impl
                             await _aspectThrowing.AfterThrows(aspectContext, aspectContext.Exception);
                         }
                     }
-                 
                 }
             }
         }

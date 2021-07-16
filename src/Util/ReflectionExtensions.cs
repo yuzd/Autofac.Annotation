@@ -19,14 +19,14 @@ namespace Autofac.Annotation.Util
         {
             try
             {
-                return Type.GetType(classPath)!=null;
+                return Type.GetType(classPath) != null;
             }
             catch (Exception)
             {
                 return false;
-            } 
+            }
         }
-           
+
         /// <summary>
         /// 获取方法的唯一string
         /// </summary>
@@ -43,12 +43,12 @@ namespace Autofac.Annotation.Util
 
 
                 // returns a string like this: "Assembly.YourSolution.YourProject.YourClass:YourMethod(Param1TypeName,...,ParamNTypeName):ReturnTypeName
-                return $"{mi.DeclaringType.Namespace+mi.DeclaringType.Name}:{mi.Name}<{typeParamsString}>({signatureString}):{returnTypeName}";
+                return $"{mi.DeclaringType.Namespace + mi.DeclaringType.Name}:{mi.Name}<{typeParamsString}>({signatureString}):{returnTypeName}";
             }
 
-            return $"{mi.DeclaringType.Namespace+mi.DeclaringType.Name}:{mi.Name}({signatureString}):{returnTypeName}";
+            return $"{mi.DeclaringType.Namespace + mi.DeclaringType.Name}:{mi.Name}({signatureString}):{returnTypeName}";
         }
-        
+
         /// <summary>
         /// 获取IEnumerable泛型的类型
         /// </summary>
@@ -218,7 +218,7 @@ namespace Autofac.Annotation.Util
                    && @this.GetTypeInfo().IsGenericType
                    && @this.GetGenericTypeDefinition() == openGeneric;
         }
-        
+
         private static bool IsSelfEnumerable(this Type type)
         {
             bool isDirectly = type == typeof(IEnumerable<>);
@@ -227,7 +227,7 @@ namespace Autofac.Annotation.Util
 
         private static bool IsTypeDefinitionEnumerable(this Type type)
         {
-            bool isViaInterfaces = type.IsGenericType && 
+            bool isViaInterfaces = type.IsGenericType &&
                                    type.GetGenericTypeDefinition().IsSelfEnumerable();
             return isViaInterfaces;
         }

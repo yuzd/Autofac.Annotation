@@ -2,7 +2,6 @@ using System;
 
 namespace Autofac.Annotation
 {
-
     /// <summary>
     /// 配合pointCut的环绕拦截器
     /// </summary>
@@ -14,7 +13,6 @@ namespace Autofac.Annotation
         /// </summary>
         public Around()
         {
-            
         }
 
         /// <summary>
@@ -24,7 +22,5 @@ namespace Autofac.Annotation
         {
             this.GroupName = groupName;
         }
-
     }
-
 }

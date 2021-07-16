@@ -10,8 +10,6 @@ namespace Autofac.Annotation.Condition
         /// <summary>
         /// return true = skip Register
         /// </summary>
-        bool match(IComponentRegistryBuilder context,object metadata);
+        bool ShouldSkip(IComponentRegistryBuilder context, object metadata);
     }
-    
-    
 }

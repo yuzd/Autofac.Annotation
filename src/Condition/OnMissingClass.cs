@@ -15,12 +15,13 @@ namespace Autofac.Annotation.Condition
         /// <param name="context"></param>
         /// <param name="config"></param>
         /// <returns></returns>
-        public bool match(IComponentRegistryBuilder context, object config)
+        public bool ShouldSkip(IComponentRegistryBuilder context, object config)
         {
             if (!(config is ConditionOnMissingClass metaConfig))
             {
                 return false;
             }
+
             //匹配name
             return metaConfig.name.FindClass();
         }

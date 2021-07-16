@@ -10,16 +10,15 @@ using Autofac.AspectIntercepter.Pointcut;
 
 namespace Autofac.AspectIntercepter.Impl
 {
-   
-
     /// <summary>
     /// 后置返回拦截处理器
     /// </summary>
-    internal class AspectAfterReturnInterceptor:IAdvice
+    internal class AspectAfterReturnInterceptor : IAdvice
     {
         private readonly AspectAfterReturn _afterAttribute;
 
         private readonly RunTimePointcutMethod<AfterReturn> _pointCutMethod;
+
         public AspectAfterReturnInterceptor(AspectAfterReturn afterAttribute)
         {
             _afterAttribute = afterAttribute;
@@ -29,21 +28,22 @@ namespace Autofac.AspectIntercepter.Impl
         {
             _pointCutMethod = pointCutMethod;
         }
+
         public async Task OnInvocation(AspectContext aspectContext, AspectDelegate next)
         {
             await next.Invoke(aspectContext);
-            
-           
+
+
             //执行异常了不执行after 去执行Throw
             if (aspectContext.Exception != null)
             {
                 return;
             }
-            
-            
+
+
             if (_afterAttribute != null)
             {
-                await this._afterAttribute.AfterReturn(aspectContext,aspectContext.ReturnValue);
+                await this._afterAttribute.AfterReturn(aspectContext, aspectContext.ReturnValue);
             }
             else
             {
@@ -53,9 +53,9 @@ namespace Autofac.AspectIntercepter.Impl
                     _pointCutMethod.MethodParameters,
                     aspectContext.ComponentContext,
                     aspectContext,
-                    returnValue:aspectContext.ReturnValue,
-                    returnParam:_pointCutMethod.PointcutBasicAttribute.Returing,
-                    injectAnotation:_pointCutMethod.PointcutInjectAnotation);
+                    returnValue: aspectContext.ReturnValue,
+                    returnParam: _pointCutMethod.PointcutBasicAttribute.Returing,
+                    injectAnotation: _pointCutMethod.PointcutInjectAnotation);
 
                 if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
                 {
@@ -64,5 +64,4 @@ namespace Autofac.AspectIntercepter.Impl
             }
         }
     }
-
 }

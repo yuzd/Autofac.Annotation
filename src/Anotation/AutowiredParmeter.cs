@@ -1,23 +1,20 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Autofac.Core;
 using Autofac.Core.Resolving;
-using Autofac.Core.Resolving.Pipeline;
 
 namespace Autofac.Annotation
 {
     /// <summary>
     /// 
     /// </summary>
-    internal class AutowiredParmeterStack :Parameter
+    internal class AutowiredParmeterStack : Parameter
     {
         /// <summary>
         /// 集合
         /// </summary>
-        private readonly SegmentedStack<Tuple<Service,object>> chainList = new SegmentedStack<Tuple<Service,object>>();
+        private readonly SegmentedStack<Tuple<Service, object>> chainList = new SegmentedStack<Tuple<Service, object>>();
 
         /// <summary>
         /// 在autowire的过程中 父节点设置了开启循环引用 那么在引用到子节点的时候 默认是设置了 循环引用
@@ -31,15 +28,15 @@ namespace Autofac.Annotation
         /// <param name="instance"></param>
         public void Push(Service service, object instance)
         {
-            chainList.Push(new Tuple<Service, object>(service,instance));
+            chainList.Push(new Tuple<Service, object>(service, instance));
         }
-    
+
         /// <summary>
         /// 删除
         /// </summary>
         public void Dispose()
         {
-            while (this.chainList.Count>0)
+            while (this.chainList.Count > 0)
             {
                 chainList.Pop();
             }
@@ -66,7 +63,6 @@ namespace Autofac.Annotation
             return false;
         }
 
-      
 
         /// <summary>
         /// Circular component dependency detected
@@ -74,10 +70,10 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public string GetCircualrChains(Service service)
         {
-            var err =  "Circular component dependency detected:" + string.Join("->", (from obj in this.chainList
+            var err = "Circular component dependency detected:" + string.Join("->", (from obj in this.chainList
                     let ob = obj.Item2.GetType()
-                        select ob.Namespace+"."+ob.Name
-                    ).Reverse() )+ "->" + service?.Description;
+                    select ob.Namespace + "." + ob.Name
+                ).Reverse()) + "->" + service?.Description;
             return err;
         }
 

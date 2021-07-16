@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Autofac.Annotation
 {
@@ -10,7 +6,7 @@ namespace Autofac.Annotation
     /// Bean标签
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
-    public sealed class Bean : System.Attribute
+    public sealed class Bean : Attribute
     {
         /// <summary>
         /// 构造函数
@@ -32,8 +28,5 @@ namespace Autofac.Annotation
         /// 注册单个的key
         /// </summary>
         public string Key { get; private set; }
-
-
-
     }
 }

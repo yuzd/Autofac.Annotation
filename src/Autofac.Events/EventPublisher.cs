@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Autofac.Events
@@ -20,16 +18,16 @@ namespace Autofac.Events
         }
 
         private readonly ILifetimeScope _scope;
+
         /// <summary>
         /// 发布消息
         /// </summary>
         /// <param name="event"></param>
-
         public void Publish(object @event)
         {
             _scope.PublishEvent(@event);
         }
-        
+
         /// <summary>
         /// 发布消息并且拿到返回值
         /// </summary>
@@ -40,7 +38,7 @@ namespace Autofac.Events
         {
             return _scope.SendEvent<T>(@event);
         }
-        
+
         /// <summary>
         /// 发布消息
         /// </summary>

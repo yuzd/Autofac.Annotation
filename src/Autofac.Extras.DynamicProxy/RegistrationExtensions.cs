@@ -51,7 +51,6 @@ namespace Autofac.Annotation
 
         private static readonly ProxyGenerator ProxyGenerator = new ProxyGenerator();
 
-       
 
         /// <summary>
         /// Enable class interception on the target type. Interceptors will be determined
@@ -63,7 +62,8 @@ namespace Autofac.Annotation
         /// <typeparam name="TRegistrationStyle">Registration style.</typeparam>
         /// <param name="registration">Registration to apply interception to.</param>
         /// <returns>Registration builder allowing the registration to be configured.</returns>
-        public static IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> EnableClassInterceptors<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle>(
+        public static IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> EnableClassInterceptors<TLimit,
+            TConcreteReflectionActivatorData, TRegistrationStyle>(
             this IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> registration)
             where TConcreteReflectionActivatorData : ReflectionActivatorData
         {
@@ -79,12 +79,14 @@ namespace Autofac.Annotation
         /// <param name="registration"></param>
         /// <param name="additionalInterfaces"></param>
         /// <returns></returns>
-        public static IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> EnableClassInterceptors<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle>(
-            this IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> registration,params Type[] additionalInterfaces)
+        public static IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> EnableClassInterceptors<TLimit,
+            TConcreteReflectionActivatorData, TRegistrationStyle>(
+            this IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> registration, params Type[] additionalInterfaces)
             where TConcreteReflectionActivatorData : ReflectionActivatorData
         {
             return EnableClassInterceptors(registration, ProxyGenerationOptions.Default, additionalInterfaces);
         }
+
         /// <summary>
         /// Enable class interception on the target type. Interceptors will be determined
         /// via Intercept attributes on the class or added with InterceptedBy().
@@ -122,7 +124,8 @@ namespace Autofac.Annotation
         /// <param name="options">Proxy generation options to apply.</param>
         /// <param name="additionalInterfaces">Additional interface types. Calls to their members will be proxied as well.</param>
         /// <returns>Registration builder allowing the registration to be configured.</returns>
-        public static IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> EnableClassInterceptors<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle>(
+        public static IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> EnableClassInterceptors<TLimit,
+            TConcreteReflectionActivatorData, TRegistrationStyle>(
             this IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, TRegistrationStyle> registration,
             ProxyGenerationOptions options,
             params Type[] additionalInterfaces)
@@ -180,7 +183,8 @@ namespace Autofac.Annotation
         /// <typeparam name="TSingleRegistrationStyle">Registration style.</typeparam>
         /// <param name="registration">Registration to apply interception to.</param>
         /// <returns>Registration builder allowing the registration to be configured.</returns>
-        public static IRegistrationBuilder<TLimit, TActivatorData, TSingleRegistrationStyle> EnableInterfaceInterceptors<TLimit, TActivatorData, TSingleRegistrationStyle>(
+        public static IRegistrationBuilder<TLimit, TActivatorData, TSingleRegistrationStyle> EnableInterfaceInterceptors<TLimit, TActivatorData,
+            TSingleRegistrationStyle>(
             this IRegistrationBuilder<TLimit, TActivatorData, TSingleRegistrationStyle> registration)
         {
             return EnableInterfaceInterceptors(registration, null);
@@ -196,7 +200,8 @@ namespace Autofac.Annotation
         /// <param name="registration">Registration to apply interception to.</param>
         /// <param name="options">Proxy generation options to apply.</param>
         /// <returns>Registration builder allowing the registration to be configured.</returns>
-        public static IRegistrationBuilder<TLimit, TActivatorData, TSingleRegistrationStyle> EnableInterfaceInterceptors<TLimit, TActivatorData, TSingleRegistrationStyle>(
+        public static IRegistrationBuilder<TLimit, TActivatorData, TSingleRegistrationStyle> EnableInterfaceInterceptors<TLimit, TActivatorData,
+            TSingleRegistrationStyle>(
             this IRegistrationBuilder<TLimit, TActivatorData, TSingleRegistrationStyle> registration, ProxyGenerationOptions options)
         {
             if (registration == null)
@@ -207,7 +212,7 @@ namespace Autofac.Annotation
             registration.ConfigurePipeline(p => p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
             {
                 next(ctxt);
-                
+
                 var proxiedInterfaces = ctxt.Instance
                     .GetType()
                     .GetInterfaces()
@@ -218,7 +223,7 @@ namespace Autofac.Annotation
                 {
                     return;
                 }
-                
+
                 var theInterface = proxiedInterfaces.First();
                 var interfaces = proxiedInterfaces.Skip(1).ToArray();
 
@@ -233,7 +238,7 @@ namespace Autofac.Annotation
                     ? ProxyGenerator.CreateInterfaceProxyWithTarget(theInterface, interfaces, ctxt.Instance, interceptors)
                     : ProxyGenerator.CreateInterfaceProxyWithTarget(theInterface, interfaces, ctxt.Instance, options, interceptors);
             }));
-            
+
             return registration;
         }
 
@@ -266,7 +271,6 @@ namespace Autofac.Annotation
             return builder;
         }
 
-       
 
         /// <summary>
         /// Allows a list of interceptor services to be assigned to the registration.
@@ -290,7 +294,7 @@ namespace Autofac.Annotation
             return InterceptedBy(builder, interceptorServiceTypes.Select(t => new TypedService(t)).ToArray());
         }
 
-        
+
         private static void AddInterceptorServicesToMetadata<TLimit, TActivatorData, TStyle>(
             IRegistrationBuilder<TLimit, TActivatorData, TStyle> builder,
             IEnumerable<Service> interceptorServices,
@@ -300,7 +304,7 @@ namespace Autofac.Annotation
             if (builder.RegistrationData.Metadata.TryGetValue(metadataKey, out existing))
             {
                 builder.RegistrationData.Metadata[metadataKey] =
-                    ((IEnumerable<Service>)existing).Concat(interceptorServices).Distinct();
+                    ((IEnumerable<Service>) existing).Concat(interceptorServices).Distinct();
             }
             else
             {
@@ -325,11 +329,11 @@ namespace Autofac.Annotation
             object services;
             if (registration.Metadata.TryGetValue(InterceptorsPropertyName, out services))
             {
-                result = result.Concat((IEnumerable<Service>)services);
+                result = result.Concat((IEnumerable<Service>) services);
             }
 
             return registration.Metadata.TryGetValue(AttributeInterceptorsPropertyName, out services)
-                ? result.Concat((IEnumerable<Service>)services)
+                ? result.Concat((IEnumerable<Service>) services)
                 : result.Concat(GetInterceptorServicesFromAttributes(implType));
         }
 
@@ -351,7 +355,5 @@ namespace Autofac.Annotation
 
             return classAttributeServices.Concat(interfaceAttributeServices);
         }
-
-    
     }
 }

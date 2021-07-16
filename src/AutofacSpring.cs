@@ -4,7 +4,6 @@ using Autofac.Core.Registration;
 
 namespace Autofac.Annotation
 {
-
     /// <summary>
     ///  扩展
     /// </summary>
@@ -25,7 +24,7 @@ namespace Autofac.Annotation
         {
             return builder.RegisterModule(module);
         }
-        
+
         /// <summary>
         /// 注册扩展
         /// </summary>
@@ -52,6 +51,5 @@ namespace Autofac.Annotation
         {
             return builder.WithMetadata(DISABLE_AUTO_INCLUE_INTO_COMPOMENT, true);
         }
-
     }
 }

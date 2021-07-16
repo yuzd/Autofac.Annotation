@@ -28,7 +28,8 @@ namespace Castle.DynamicProxy
 
         private static Type GetAsyncMethodBuilderType(Type returnType)
         {
-            var asyncMethodBuilderAttribute = (AsyncMethodBuilderAttribute)Attribute.GetCustomAttribute(returnType, typeof(AsyncMethodBuilderAttribute), inherit: false);
+            var asyncMethodBuilderAttribute =
+                (AsyncMethodBuilderAttribute) Attribute.GetCustomAttribute(returnType, typeof(AsyncMethodBuilderAttribute), inherit: false);
             if (asyncMethodBuilderAttribute != null)
             {
                 var builderType = asyncMethodBuilderAttribute.BuilderType;
@@ -62,6 +63,7 @@ namespace Castle.DynamicProxy
                     return typeof(AsyncTaskMethodBuilder<>).MakeGenericType(returnType.GetGenericArguments()[0]);
                 }
             }
+
             // NOTE: `AsyncVoidMethodBuilder` is intentionally excluded here because we want to end up in a synchronous
             // `Intercept` callback for non-awaitable methods.
             return null;
@@ -69,14 +71,15 @@ namespace Castle.DynamicProxy
 
         public static void AwaitOnCompleted(this object builder, object awaiter, object stateMachine)
         {
-            var awaitOnCompletedMethod = builder.GetType().GetMethod("AwaitOnCompleted", BindingFlags.Public | BindingFlags.Instance).MakeGenericMethod(awaiter.GetType(), stateMachine.GetType());
-            awaitOnCompletedMethod.Invoke(builder, new object[] { awaiter, stateMachine });
+            var awaitOnCompletedMethod = builder.GetType().GetMethod("AwaitOnCompleted", BindingFlags.Public | BindingFlags.Instance)
+                .MakeGenericMethod(awaiter.GetType(), stateMachine.GetType());
+            awaitOnCompletedMethod.Invoke(builder, new object[] {awaiter, stateMachine});
         }
 
         public static void SetException(this object builder, Exception exception)
         {
             var setExceptionMethod = builder.GetType().GetMethod("SetException", BindingFlags.Public | BindingFlags.Instance);
-            setExceptionMethod.Invoke(builder, new object[] { exception });
+            setExceptionMethod.Invoke(builder, new object[] {exception});
         }
 
         public static void SetResult(this object builder, object result)
@@ -88,14 +91,14 @@ namespace Castle.DynamicProxy
             }
             else
             {
-                setResultMethod.Invoke(builder, new object[] { result });
+                setResultMethod.Invoke(builder, new object[] {result});
             }
         }
 
         public static void Start(this object builder, object stateMachine)
         {
             var startMethod = builder.GetType().GetMethod("Start", BindingFlags.Public | BindingFlags.Instance).MakeGenericMethod(stateMachine.GetType());
-            startMethod.Invoke(builder, new object[] { stateMachine });
+            startMethod.Invoke(builder, new object[] {stateMachine});
         }
 
         public static object Task(this object builder)

@@ -10,19 +10,19 @@ using Autofac.AspectIntercepter.Pointcut;
 
 namespace Autofac.AspectIntercepter.Impl
 {
-
     /// <summary>
     /// 前置拦截处理器
     /// </summary>
-    internal class AspectBeforeInterceptor:IAdvice
+    internal class AspectBeforeInterceptor : IAdvice
     {
         private readonly AspectBefore _beforeAttribute;
         private readonly RunTimePointcutMethod<Before> _pointCutMethod;
+
         public AspectBeforeInterceptor(AspectBefore beforeAttribute)
         {
             _beforeAttribute = beforeAttribute;
         }
-        
+
         public AspectBeforeInterceptor(RunTimePointcutMethod<Before> pointCutMethod)
         {
             _pointCutMethod = pointCutMethod;
@@ -38,15 +38,15 @@ namespace Autofac.AspectIntercepter.Impl
             {
                 var rt = AutoConfigurationHelper.InvokeInstanceMethod(
                     _pointCutMethod.Instance,
-                    _pointCutMethod.MethodInfo, 
+                    _pointCutMethod.MethodInfo,
                     _pointCutMethod.MethodParameters,
-                    aspectContext.ComponentContext, aspectContext,injectAnotation:_pointCutMethod.PointcutInjectAnotation);
+                    aspectContext.ComponentContext, aspectContext, injectAnotation: _pointCutMethod.PointcutInjectAnotation);
                 if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
                 {
                     await ((Task) rt).ConfigureAwait(false);
                 }
             }
-         
+
             await next.Invoke(aspectContext);
         }
     }

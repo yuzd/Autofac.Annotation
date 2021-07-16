@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.Configuration.Xml;
@@ -31,10 +27,10 @@ namespace Autofac.Annotation
         public EmbeddedConfigurationProvider(Stream fileStream)
         {
             var source = new TSource();
-            this._provider = (FileConfigurationProvider)source.Build(new ConfigurationBuilder());
+            this._provider = (FileConfigurationProvider) source.Build(new ConfigurationBuilder());
             this._provider.Load(fileStream);
         }
-        
+
         public EmbeddedConfigurationProvider(string filePath)
         {
             var fileInfo = new FileInfo(filePath);
@@ -43,19 +39,19 @@ namespace Autofac.Annotation
             if (source is JsonConfigurationSource jsonConfigurationSource)
             {
                 jsonConfigurationSource.Optional = true;
-                jsonConfigurationSource.FileProvider= new PhysicalFileProvider(Path.GetDirectoryName(file));
-                jsonConfigurationSource.Path =  Path.GetFileName(file);
+                jsonConfigurationSource.FileProvider = new PhysicalFileProvider(Path.GetDirectoryName(file));
+                jsonConfigurationSource.Path = Path.GetFileName(file);
                 jsonConfigurationSource.ReloadOnChange = true;
             }
             else if (source is XmlConfigurationSource xmlConfigurationSource)
             {
                 xmlConfigurationSource.Optional = true;
-                xmlConfigurationSource.FileProvider= new PhysicalFileProvider(Path.GetDirectoryName(file));
+                xmlConfigurationSource.FileProvider = new PhysicalFileProvider(Path.GetDirectoryName(file));
                 xmlConfigurationSource.Path = Path.GetFileName(file);
                 xmlConfigurationSource.ReloadOnChange = true;
             }
-            
-            this._provider = (FileConfigurationProvider)source.Build(new ConfigurationBuilder());
+
+            this._provider = (FileConfigurationProvider) source.Build(new ConfigurationBuilder());
             this._provider.Load();
         }
 

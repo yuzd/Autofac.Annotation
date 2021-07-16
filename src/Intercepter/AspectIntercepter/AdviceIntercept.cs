@@ -9,10 +9,10 @@ using Castle.DynamicProxy.NoCoverage;
 
 namespace Autofac.AspectIntercepter
 {
-     /// <summary>
+    /// <summary>
     /// AOP拦截器 配合打了 Aspect标签的class 和 里面打了 继承AspectInvokeAttribute 标签的 方法
     /// </summary>
-    [Component(typeof(AdviceIntercept),NotUseProxy = true)]
+    [Component(typeof(AdviceIntercept), NotUseProxy = true)]
     public class AdviceIntercept : AsyncInterceptor
     {
         private readonly IComponentContext _component;
@@ -27,7 +27,7 @@ namespace Autofac.AspectIntercepter
             _component = context;
             _cache = cache;
         }
-        
+
 
         /// <summary>
         /// 
@@ -52,14 +52,15 @@ namespace Autofac.AspectIntercepter
             }
 
             #endregion
-            
+
             var catpture = invocation.CaptureProceedInfo();
             var aspectContext = new AspectContext(_component, invocation);
-            aspectContext.Proceed =  () => { 
+            aspectContext.Proceed = () =>
+            {
                 catpture.Invoke();
                 return new ValueTask();
             };
-            
+
             var runTask = attribute.AspectFunc.Value;
             var task = runTask(aspectContext);
             // If the intercept task has yet to complete, wait for it.
@@ -70,6 +71,7 @@ namespace Autofac.AspectIntercepter
                 // See https://stackoverflow.com/a/17284612
                 Task.Run(() => task).GetAwaiter().GetResult();
             }
+
             task.RethrowIfFaulted();
         }
 
@@ -89,8 +91,8 @@ namespace Autofac.AspectIntercepter
                 if (!invocation.TargetMethod.DeclaringType.GetTypeInfo().IsGenericType ||
                     (!_cache.DynamicCacheList.TryGetValue(invocation.TargetMethod.GetMethodInfoUniqueName(), out var AttributesDynamic)))
                 {
-                     await invocation.ProceedAsync();
-                     return;
+                    await invocation.ProceedAsync();
+                    return;
                 }
 
                 attribute = AttributesDynamic;
@@ -99,14 +101,10 @@ namespace Autofac.AspectIntercepter
             #endregion
 
             var aspectContext = new AspectContext(_component, invocation);
-            aspectContext.Proceed = async () =>
-            {
-                await invocation.ProceedAsync();
-            };
-            
+            aspectContext.Proceed = async () => { await invocation.ProceedAsync(); };
+
             var runTask = attribute.AspectFunc.Value;
             await runTask(aspectContext);
         }
     }
-
 }

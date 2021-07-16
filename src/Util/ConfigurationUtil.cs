@@ -8,7 +8,6 @@ namespace Autofac.Annotation.Util
 {
     internal class ConfigurationUtil
     {
-
         /// <summary>
         /// 从配置文件中获取类型值
         /// </summary>
@@ -47,7 +46,7 @@ namespace Autofac.Annotation.Util
                         list.Add(subKey.Item2);
                     }
 
-                    return new ConfiguredListParameter { List = list.ToArray() };
+                    return new ConfiguredListParameter {List = list.ToArray()};
                 }
             }
 
@@ -58,7 +57,7 @@ namespace Autofac.Annotation.Util
                 dict[subKey.Item1] = subKey.Item2;
             }
 
-            return new ConfiguredDictionaryParameter { Dictionary = dict };
+            return new ConfiguredDictionaryParameter {Dictionary = dict};
         }
 
         private static string GetKeyName(string fullKey)

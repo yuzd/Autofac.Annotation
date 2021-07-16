@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using AspectCore.Extensions.Reflection;
 using Autofac.Annotation;
 using Autofac.AspectIntercepter.Impl;
-using Castle.DynamicProxy;
 
 namespace Autofac.AspectIntercepter.Pointcut
 {
@@ -115,8 +112,8 @@ namespace Autofac.AspectIntercepter.Pointcut
                 if (chain.AroundMethod != null)
                 {
                     var around = new AspectAroundInterceptor(chain.AroundMethod,
-                        chain.AfterMethod != null? new AspectAfterInterceptor(chain.AfterMethod,true):null,
-                        chain.AfterThrowsMethod != null? new AspectAfterThrowsInterceptor(chain.AfterThrowsMethod,true):null);
+                        chain.AfterMethod != null ? new AspectAfterInterceptor(chain.AfterMethod, true) : null,
+                        chain.AfterThrowsMethod != null ? new AspectAfterThrowsInterceptor(chain.AfterThrowsMethod, true) : null);
                     //Arround 先加进去先执行 后续执行权脚在了Arround的实际运行方法
                     builder.Use(next => async ctx => await around.OnInvocation(ctx, next));
                 }

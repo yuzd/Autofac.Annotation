@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Autofac.Events
 {
@@ -14,8 +12,8 @@ namespace Autofac.Events
         /// </summary>
         /// <param name="event"></param>
         void Publish(object @event);
-        
-        
+
+
         /// <summary>
         /// 发布消息并且拿到返回值
         /// </summary>

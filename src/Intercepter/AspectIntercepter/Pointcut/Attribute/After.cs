@@ -13,7 +13,6 @@ namespace Autofac.Annotation
         /// </summary>
         public After()
         {
-            
         }
 
         /// <summary>
@@ -23,12 +22,10 @@ namespace Autofac.Annotation
         {
             this.GroupName = groupName;
         }
-        
+
         /// <summary>
         /// 如果目标方法成功返回 那么就是返回的值 如果目标方法异常 那么就是异常本身
         /// </summary>
         public string Returing { get; set; }
-
     }
-
 }

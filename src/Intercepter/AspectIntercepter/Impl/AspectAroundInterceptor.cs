@@ -10,12 +10,10 @@ using Autofac.AspectIntercepter.Pointcut;
 
 namespace Autofac.AspectIntercepter.Impl
 {
-
-
     /// <summary>
     /// 环绕返回拦截处理器
     /// </summary>
-    internal class AspectAroundInterceptor:IAdvice
+    internal class AspectAroundInterceptor : IAdvice
     {
         private readonly AspectArround _aroundAttribute;
         private readonly AspectAfterInterceptor _aspectAfter;
@@ -28,22 +26,23 @@ namespace Autofac.AspectIntercepter.Impl
             _aroundAttribute = aroundAttribute;
             if (aspectAfter != null)
             {
-                _aspectAfter = new AspectAfterInterceptor(aspectAfter,true);
+                _aspectAfter = new AspectAfterInterceptor(aspectAfter, true);
             }
 
             if (chainAspectAfterThrows != null)
             {
-                _aspectThrows= new AspectAfterThrowsInterceptor(chainAspectAfterThrows,true);
+                _aspectThrows = new AspectAfterThrowsInterceptor(chainAspectAfterThrows, true);
             }
         }
 
-        public AspectAroundInterceptor(RunTimePointcutMethod<Around> pointCutMethod,AspectAfterInterceptor aspectAfter, AspectAfterThrowsInterceptor chainAspectAfterThrows)
+        public AspectAroundInterceptor(RunTimePointcutMethod<Around> pointCutMethod, AspectAfterInterceptor aspectAfter,
+            AspectAfterThrowsInterceptor chainAspectAfterThrows)
         {
             _pointCutMethod = pointCutMethod;
             _aspectAfter = aspectAfter;
-            _aspectThrows= chainAspectAfterThrows;
+            _aspectThrows = chainAspectAfterThrows;
         }
-        
+
         public async Task OnInvocation(AspectContext aspectContext, AspectDelegate next)
         {
             Exception exception = null;
@@ -68,7 +67,6 @@ namespace Autofac.AspectIntercepter.Impl
                 {
                     await ((Task) rt).ConfigureAwait(false);
                 }
-
             }
             catch (Exception ex)
             {
@@ -76,16 +74,16 @@ namespace Autofac.AspectIntercepter.Impl
             }
             finally
             {
-                if(exception == null && _aspectAfter!=null)await _aspectAfter.OnInvocation(aspectContext, next);
+                if (exception == null && _aspectAfter != null) await _aspectAfter.OnInvocation(aspectContext, next);
             }
-            
+
             try
             {
-                if (exception != null && _aspectAfter!=null)
+                if (exception != null && _aspectAfter != null)
                 {
                     await _aspectAfter.OnInvocation(aspectContext, next);
                 }
-                
+
                 if (exception != null && _aspectThrows != null)
                 {
                     await _aspectThrows.OnInvocation(aspectContext, next);
@@ -95,8 +93,6 @@ namespace Autofac.AspectIntercepter.Impl
             {
                 if (exception != null) throw exception;
             }
-            
         }
     }
-
 }

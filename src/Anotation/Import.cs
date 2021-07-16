@@ -8,16 +8,15 @@ namespace Autofac.Annotation
     /// 2. 如果采用的有参数方法的话 会先把参数注册到容器 然后在检查是否实现了特定的接口 
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public sealed class Import: System.Attribute
+    public sealed class Import : Attribute
     {
         /// <summary>
         /// 构造函数
         /// </summary>
         public Import()
         {
-
         }
-        
+
         /// <summary>
         /// 构造函数
         /// </summary>
@@ -25,7 +24,7 @@ namespace Autofac.Annotation
         {
             this.ImportTypes = importTypes;
         }
-        
+
         /// <summary>
         /// 注册的类型
         /// </summary>
@@ -41,6 +40,6 @@ namespace Autofac.Annotation
         /// 
         /// </summary>
         /// <returns></returns>
-         BeanDefination[] SelectImports();
+        BeanDefination[] SelectImports();
     }
 }

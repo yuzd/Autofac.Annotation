@@ -1,12 +1,9 @@
-﻿using AspectCore.Extensions.Reflection;
-using Autofac.Annotation.Util;
-using Autofac.Features.AttributeFilters;
-using Microsoft.Extensions.Configuration;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Autofac.Core;
+using Autofac.Features.AttributeFilters;
+using Microsoft.Extensions.Configuration;
 using Spring.Core.TypeConversion;
 using Spring.Expressions;
 
@@ -120,7 +117,8 @@ namespace Autofac.Annotation
         /// <param name="parameterInfo"></param>
         /// <param name="autoConfigurationDetail"></param>
         /// <returns></returns>
-        internal object Resolve(IComponentContext context, Type classType, Type memberType, string parameterInfo = null, AutoConfigurationDetail autoConfigurationDetail = null)
+        internal object Resolve(IComponentContext context, Type classType, Type memberType, string parameterInfo = null,
+            AutoConfigurationDetail autoConfigurationDetail = null)
         {
             if (classType == null) return null;
             if (string.IsNullOrEmpty(this.value)) return null;
@@ -129,9 +127,9 @@ namespace Autofac.Annotation
                 //判断类型是否是IValue
                 if ((typeof(IObjectFactory).IsAssignableFrom(memberType)))
                 {
-                    return context.Resolve<ObjectBeanFactory>().CreateValueFactory(this,memberType, classType, parameterInfo, autoConfigurationDetail);
+                    return context.Resolve<ObjectBeanFactory>().CreateValueFactory(this, memberType, classType, parameterInfo, autoConfigurationDetail);
                 }
-                
+
                 //先把 ${} 的 placehoder 全部替换掉
                 var parameterValue = ResolveEmbeddedValue(context, classType, this.value, autoConfigurationDetail);
                 int startIndex = parameterValue.ToString().IndexOf("#{", StringComparison.Ordinal);
@@ -176,7 +174,6 @@ namespace Autofac.Annotation
                 if (parameterValue == null) return null;
 
                 return TypeConversionUtils.ConvertValueIfNecessary(memberType, parameterValue, null);
-
             }
             catch (Exception ex)
             {
@@ -277,6 +274,4 @@ namespace Autofac.Annotation
             return propertyValue;
         }
     }
-
-    
 }

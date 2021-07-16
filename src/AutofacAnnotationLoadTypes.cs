@@ -30,7 +30,8 @@ namespace Autofac.Annotation
             where TReflectionActivatorData : ReflectionActivatorData
         {
             //过滤掉框架类
-            if (component.CurrentType.Assembly == this.GetType().Assembly || component.CurrentType.Assembly == typeof(Autofac.Core.Lifetime.LifetimeScope).Assembly)
+            if (component.CurrentType.Assembly == this.GetType().Assembly ||
+                component.CurrentType.Assembly == typeof(Autofac.Core.Lifetime.LifetimeScope).Assembly)
             {
                 return;
             }
@@ -39,40 +40,39 @@ namespace Autofac.Annotation
             {
                 return;
             }
-            
+
             registrar.ConfigurePipeline(p =>
                 p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
                 {
                     next(ctxt);
                     DoBeforeBeanPostProcessor(ctxt);
                 }));
-            
-     
         }
+
         private void RegisterAfterBeanPostProcessor<TReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
         {
             //过滤掉框架类
-            if (component.CurrentType.Assembly == this.GetType().Assembly || component.CurrentType.Assembly == typeof(Autofac.Core.Lifetime.LifetimeScope).Assembly)
+            if (component.CurrentType.Assembly == this.GetType().Assembly ||
+                component.CurrentType.Assembly == typeof(Autofac.Core.Lifetime.LifetimeScope).Assembly)
             {
                 return;
             }
-            
+
             if (component.IsBenPostProcessor)
             {
                 return;
             }
-            
+
             registrar.ConfigurePipeline(p =>
                 p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
                 {
                     next(ctxt);
                     DoAfterBeanPostProcessor(ctxt);
                 }));
-     
         }
-        
+
         /// <summary>
         /// 註冊BeanPostProcessor處理器
         /// </summary>
@@ -82,7 +82,7 @@ namespace Autofac.Annotation
             {
                 return;
             }
-            
+
             registrar.ConfigurePipeline(p =>
                 p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
                 {
@@ -90,12 +90,14 @@ namespace Autofac.Annotation
                     DoBeforeBeanPostProcessor(ctxt);
                 }));
         }
+
         private void RegisterAfterBeanPostProcessor(ComponentModel component, IComponentRegistration registrar)
-        {  
+        {
             if (component.IsBenPostProcessor)
             {
                 return;
             }
+
             registrar.ConfigurePipeline(p =>
                 p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.EndOfPhase, (ctxt, next) =>
                 {
@@ -123,7 +125,7 @@ namespace Autofac.Annotation
                 context.Instance = beanPostProcessor.PostProcessBeforeInitialization(context.Instance);
             }
         }
-        
+
         /// <summary>
         /// BeanPostProcessor處理器
         /// 在afterPropertiesSet或自定义init方法执行之后
@@ -178,7 +180,7 @@ namespace Autofac.Annotation
                     cache.Add(conditional.Type, condition);
                 }
 
-                if (condition.match(context, conditional))
+                if (condition.ShouldSkip(context, conditional))
                 {
                     return true;
                 }
@@ -221,7 +223,7 @@ namespace Autofac.Annotation
                     cache.Add(conditional.Type, condition);
                 }
 
-                if (condition.match(context, conditional))
+                if (condition.ShouldSkip(context, conditional))
                 {
                     return true;
                 }

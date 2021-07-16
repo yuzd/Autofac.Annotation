@@ -1,18 +1,10 @@
-using System.Threading.Tasks;
-using Castle.DynamicProxy;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autofac.Annotation;
 using Autofac.AspectIntercepter.Impl;
 
-
 namespace Autofac.AspectIntercepter.Advice
 {
-   
-
-
     internal class AdviceMethod
     {
         /// <summary>
@@ -62,15 +54,12 @@ namespace Autofac.AspectIntercepter.Advice
                     //After 后加进去先执行
                     builder.Use(next => async ctx => await after.OnInvocation(ctx, next));
                 }
-                
+
                 if (chain.AspectArround != null)
                 {
-                    var around = new AspectAroundInterceptor(chain.AspectArround,chain.AspectAfter,chain.AspectAfterThrows);
+                    var around = new AspectAroundInterceptor(chain.AspectArround, chain.AspectAfter, chain.AspectAfterThrows);
                     //Arround 先加进去先执行 后续执行权脚在了Arround的实际运行方法
-                    builder.Use(next => async ctx =>
-                    {
-                        await around.OnInvocation(ctx, next);
-                    });
+                    builder.Use(next => async ctx => { await around.OnInvocation(ctx, next); });
                 }
 
                 if (chain.AspectArround == null && chain.AspectAfterThrows != null)
@@ -78,13 +67,13 @@ namespace Autofac.AspectIntercepter.Advice
                     var aspectThrowingInterceptor = new AspectAfterThrowsInterceptor(chain.AspectAfterThrows);
                     builder.Use(next => async ctx => { await aspectThrowingInterceptor.OnInvocation(ctx, next); });
                 }
-                
+
                 if (chain.AspectArround == null && chain.AspectAfter != null)
                 {
                     var after = new AspectAfterInterceptor(chain.AspectAfter);
                     builder.Use(next => async ctx => await after.OnInvocation(ctx, next));
                 }
-                
+
                 if (chain.AspectBefore != null)
                 {
                     //Before先加进去先执行
@@ -94,7 +83,7 @@ namespace Autofac.AspectIntercepter.Advice
 
                 aroundIndex++;
                 if (!isLast) continue;
-                
+
                 //真正的方法
                 builder.Use(next => async ctx =>
                 {
@@ -110,9 +99,6 @@ namespace Autofac.AspectIntercepter.Advice
 
                     await next(ctx);
                 });
-               
-                
-         
             }
 
             var aspectfunc = builder.Build();

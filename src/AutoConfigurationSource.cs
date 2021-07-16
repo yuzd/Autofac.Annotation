@@ -71,7 +71,7 @@ namespace Autofac.Annotation
                 {
                     var instanceType = beanMethod.Item3;//返回类型
                     //Condition
-                    if (AutofacAnnotationModule.shouldSkip(builder.ComponentRegistryBuilder, instanceType, beanMethod.Item2))
+                    if (AutofacAnnotationModule.shouldSkip(cr, instanceType, beanMethod.Item2))
                     {
                         return;
                     }

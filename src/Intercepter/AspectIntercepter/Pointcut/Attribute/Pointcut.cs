@@ -117,6 +117,7 @@ namespace Autofac.Annotation
             {typeof(Order), false},
             {typeof(Import), false},
             {typeof(Value), false},
+            {typeof(PostConstruct), false},
             {typeof(InterfaceInterceptor), false},
             {typeof(ClassInterceptor), false},
             {typeof(AfterReturn), false},

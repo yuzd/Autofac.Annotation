@@ -1,21 +1,23 @@
-﻿using AspectCore.Extensions.Reflection;
-using Autofac.Annotation.Util;
-using Autofac.Builder;
-using Autofac.Core;
-using Castle.DynamicProxy;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using AspectCore.Extensions.Reflection;
 using Autofac.Annotation.Config;
+using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter;
 using Autofac.AspectIntercepter.Pointcut;
+using Autofac.Builder;
+using Autofac.Core;
+using Autofac.Core.Lifetime;
 using Autofac.Core.Registration;
 using Autofac.Core.Resolving.Pipeline;
 using Autofac.Features.AttributeFilters;
+using Autofac.Features.Variance;
+using Castle.DynamicProxy;
 using Microsoft.Extensions.Configuration;
 
 namespace Autofac.Annotation
@@ -300,13 +302,13 @@ namespace Autofac.Annotation
 
             var currentType = registration.Activator.LimitType;
 
-            if (typeof(Castle.DynamicProxy.IProxyTargetAccessor).IsAssignableFrom(currentType) && currentType.BaseType != null)
+            if (typeof(IProxyTargetAccessor).IsAssignableFrom(currentType) && currentType.BaseType != null)
             {
                 currentType = currentType.BaseType;
             }
 
             //过滤掉框架类
-            if (currentType.Assembly == this.GetType().Assembly || currentType.Assembly == typeof(Autofac.Core.Lifetime.LifetimeScope).Assembly)
+            if (currentType.Assembly == this.GetType().Assembly || currentType.Assembly == typeof(LifetimeScope).Assembly)
             {
                 return;
             }
@@ -375,7 +377,7 @@ namespace Autofac.Annotation
 
             if (EnableAutofacEventBus)
             {
-                builder.RegisterSource(new Autofac.Features.Variance.ContravariantRegistrationSource());
+                builder.RegisterSource(new ContravariantRegistrationSource());
                 builder.RegisterEventing();
             }
 
@@ -461,9 +463,8 @@ namespace Autofac.Annotation
         /// <typeparam name="TReflectionActivatorData"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        private void RegisterMethods<TReflectionActivatorData>(ComponentModel component,
+        internal static void RegisterMethods<TReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
-            where TReflectionActivatorData : ReflectionActivatorData
         {
             MethodInfo AssertMethod(Type type, string methodName)
             {
@@ -844,9 +845,8 @@ namespace Autofac.Annotation
         /// <typeparam name="TReflectionActivatorData"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        private void SetLifetimeScope<TReflectionActivatorData>(ComponentModel component,
+        internal static void SetLifetimeScope<TReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
-            where TReflectionActivatorData : ReflectionActivatorData
         {
             if (registrar == null)
             {

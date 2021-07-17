@@ -69,14 +69,17 @@ namespace Autofac.Annotation
                     }
 
                     //注册到统一缓存
-                    cache?.ComponentModelCache?.TryAdd(beanMethod.Item3, new ComponentModel
+                    var compoment = new ComponentModel
                     {
                         CurrentType = beanMethod.Item3,
                         InjectProperties = true,
                         InjectPropertyType = InjectPropertyType.Autowired,
-                        AutofacScope = AutofacScope.SingleInstance,
+                        AutofacScope = beanMethod.Item1.AutofacScope,
+                        InitMethod = beanMethod.Item1.InitMethod,
+                        DestroyMethod = beanMethod.Item1.DestroyMethod,
                         RegisterType = RegisterType.Bean
-                    });
+                    };
+                    cache?.ComponentModelCache?.TryAdd(beanMethod.Item3, compoment);
 
                     var rb = RegistrationBuilder.ForDelegate(instanceType, ((context, parameters) =>
                     {
@@ -100,7 +103,10 @@ namespace Autofac.Annotation
                         rb.As(instanceType).Named("`1System.Collections.Generic.IEnumerable`1" + instanceType.FullName, instanceType);
                     }
 
-                    rb.SingleInstance();
+                    //bean也可以注册多例 默认是单例
+                    AutofacAnnotationModule.SetLifetimeScope(compoment, rb);
+                    //bean也可以支持initMethod 和 DestroyMethod
+                    AutofacAnnotationModule.RegisterMethods(compoment, rb);
                     RegistrationBuilder.RegisterSingleComponent(cr, rb);
                 });
             }
@@ -378,6 +384,10 @@ namespace Autofac.Annotation
     [Component(typeof(AutoConfigurationIntercept), NotUseProxy = true)]
     public class AutoConfigurationIntercept : AsyncInterceptor
     {
+#pragma warning disable 649
+        [Autowired] private ComponentModelCacheSingleton cache;
+#pragma warning restore 649
+
         /// <summary>
         /// 单例对象缓存
         /// </summary>
@@ -391,6 +401,7 @@ namespace Autofac.Annotation
         /// <exception cref="NotImplementedException"></exception>
         protected override void Intercept(IInvocation invocation)
         {
+            cache.ComponentModelCache.TryGetValue(invocation.MethodInvocationTarget.ReturnType, out var componentModel);
             if (invocation.MethodInvocationTarget.ReturnType == typeof(void))
             {
                 invocation.Proceed();
@@ -399,7 +410,7 @@ namespace Autofac.Annotation
 
 
             //单例的
-            if (_instanceCache.TryGetValue(invocation.Method, out var instance))
+            if (componentModel?.AutofacScope == AutofacScope.SingleInstance && _instanceCache.TryGetValue(invocation.Method, out var instance))
             {
                 invocation.ReturnValue = instance;
                 return;
@@ -418,8 +429,10 @@ namespace Autofac.Annotation
         /// <exception cref="NotImplementedException"></exception>
         protected override async ValueTask InterceptAsync(IAsyncInvocation invocation)
         {
+            cache.ComponentModelCache.TryGetValue(invocation.TargetMethod.ReturnType, out var componentModel);
+
             //单例的
-            if (_instanceCache.TryGetValue(invocation.TargetMethod, out var instance))
+            if (componentModel?.AutofacScope == AutofacScope.SingleInstance && _instanceCache.TryGetValue(invocation.TargetMethod, out var instance))
             {
                 invocation.Result = instance;
                 return;

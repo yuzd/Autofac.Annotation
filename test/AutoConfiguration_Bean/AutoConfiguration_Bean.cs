@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
+using System.Threading;
 using Autofac.Annotation;
-using Autofac.Configuration.Test.test3;
 using Xunit;
 
 namespace Autofac.Configuration.Test.AutoConfiguration_Bean
 {
-    
     public class AutoConfiguration_Bean
     {
         [Fact]
@@ -23,7 +19,7 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
 
             var a1 = container.Resolve<MyModel>();
             Assert.NotNull(a1);
-            Assert.Equal("yuzd",a1.Name);
+            Assert.Equal("yuzd", a1.Name);
         }
 
         [Fact]
@@ -54,7 +50,42 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
 
             var a1 = container.Resolve<MyModel3>();
             Assert.NotNull(a1);
-            Assert.Equal(2,a1.MyModel2.Count());
+            Assert.Equal(2, a1.MyModel2.Count());
+        }
+
+        [Fact]
+        public void Test_Type_04()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(MyConfig).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<MyModel4>();
+            Thread.Sleep(1000);
+            var a2 = container.Resolve<MyModel4>();
+            Assert.False(a1.Name == a2.Name);
+        }
+
+        [Fact]
+        public void Test_Type_05()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(MyConfig).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<MyModel5>();
+
+
+            Assert.Equal("test", a1.Name);
+
+            container.Dispose();
+            Assert.Equal("end", a1.Name);
         }
     }
 }

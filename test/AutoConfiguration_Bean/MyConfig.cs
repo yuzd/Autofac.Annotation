@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Autofac.Annotation;
 
 namespace Autofac.Configuration.Test.AutoConfiguration_Bean
@@ -16,6 +15,7 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
                 Name = "yuzd"
             };
         }
+
         [Bean]
         public virtual MyModel2 GetMyModel2()
         {
@@ -37,6 +37,7 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
                 Name = "yuzd2"
             };
         }
+
         [Bean]
         public virtual MyModel2 GetMyModel2()
         {
@@ -49,7 +50,7 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
 
     public class MyModel
     {
-        public string Name { get; set; }    
+        public string Name { get; set; }
     }
 
     public class MyModel2
@@ -60,7 +61,48 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
     [Component]
     public class MyModel3
     {
-        [Autowired]
-        public IEnumerable<MyModel2> MyModel2 { get; set; }
+        [Autowired] public IEnumerable<MyModel2> MyModel2 { get; set; }
+    }
+
+    [AutoConfiguration]
+    public class MyConfig3
+    {
+        [Bean(AutofacScope = AutofacScope.InstancePerDependency)]
+        public virtual MyModel4 GetMyModel()
+        {
+            return new MyModel4
+            {
+                Name = DateTime.Now.ToString("HH:mm:ss")
+            };
+        }
+
+        [Bean(AutofacScope = AutofacScope.InstancePerDependency, InitMethod = nameof(MyModel5.Test), DestroyMethod = nameof(MyModel5.End))]
+        public virtual MyModel5 GetMyModel2()
+        {
+            return new MyModel5
+            {
+                Name = DateTime.Now.ToString("HH:mm:ss")
+            };
+        }
+    }
+
+    public class MyModel4
+    {
+        public string Name { get; set; }
+    }
+
+    public class MyModel5
+    {
+        public void Test()
+        {
+            Name = "test";
+        }
+
+        public void End()
+        {
+            Name = "end";
+        }
+
+        public string Name { get; set; }
     }
 }

@@ -35,6 +35,17 @@ namespace Autofac.Annotation
         /// 值越大越优先处理
         /// </summary>
         public int OrderIndex { get; set; }
+
+
+        /// <summary>
+        /// 被创建后执行的方法
+        /// </summary>
+        public string InitMethod { get; set; }
+
+        /// <summary>
+        /// 被Release时执行的方法
+        /// </summary>
+        public string DestroyMethod { get; set; }
     }
 
     internal class AutofacConfigurationInfo

@@ -87,5 +87,24 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
             container.Dispose();
             Assert.Equal("end", a1.Name);
         }
+
+        [Fact]
+        public void Test_Type_06()
+        {
+            var builder = new ContainerBuilder();
+
+            // autofac打标签模式
+            builder.RegisterModule(new AutofacAnnotationModule(typeof(MyConfig).Assembly));
+
+            var container = builder.Build();
+
+            var a1 = container.Resolve<TestPostConstruct1>();
+
+
+            Assert.Equal("test", a1.Name);
+
+            container.Dispose();
+            Assert.Equal("end", a1.Name);
+        }
     }
 }

@@ -7,6 +7,7 @@ using Autofac.Annotation.Condition;
 using Autofac.Annotation.Config;
 using Autofac.Builder;
 using Autofac.Core;
+using Autofac.Core.Lifetime;
 using Autofac.Core.Registration;
 using Autofac.Core.Resolving.Pipeline;
 
@@ -31,7 +32,7 @@ namespace Autofac.Annotation
         {
             //过滤掉框架类
             if (component.CurrentType.Assembly == this.GetType().Assembly ||
-                component.CurrentType.Assembly == typeof(Autofac.Core.Lifetime.LifetimeScope).Assembly)
+                component.CurrentType.Assembly == typeof(LifetimeScope).Assembly)
             {
                 return;
             }
@@ -55,7 +56,7 @@ namespace Autofac.Annotation
         {
             //过滤掉框架类
             if (component.CurrentType.Assembly == this.GetType().Assembly ||
-                component.CurrentType.Assembly == typeof(Autofac.Core.Lifetime.LifetimeScope).Assembly)
+                component.CurrentType.Assembly == typeof(LifetimeScope).Assembly)
             {
                 return;
             }
@@ -114,7 +115,13 @@ namespace Autofac.Annotation
         [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
         private void DoBeforeBeanPostProcessor(ResolveRequestContext context)
         {
-            context.TryResolve<IEnumerable<BeanPostProcessor>>(out var beanPostProcessors);
+            if (!context.ComponentRegistry.Properties.TryGetValue(nameof(List<BeanPostProcessor>), out var temp))
+            {
+                return;
+            }
+
+            var beanPostProcessors = temp as List<BeanPostProcessor>;
+            //context.TryResolve<IEnumerable<BeanPostProcessor>>(out var beanPostProcessors);
             if (beanPostProcessors == null || !beanPostProcessors.Any())
             {
                 return;
@@ -134,7 +141,12 @@ namespace Autofac.Annotation
         [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
         private void DoAfterBeanPostProcessor(ResolveRequestContext context)
         {
-            context.TryResolve<IEnumerable<BeanPostProcessor>>(out var beanPostProcessors);
+            if (!context.ComponentRegistry.Properties.TryGetValue(nameof(List<BeanPostProcessor>), out var temp))
+            {
+                return;
+            }
+
+            var beanPostProcessors = temp as List<BeanPostProcessor>;
             if (beanPostProcessors == null || !beanPostProcessors.Any())
             {
                 return;

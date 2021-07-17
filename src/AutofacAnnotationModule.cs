@@ -381,7 +381,19 @@ namespace Autofac.Annotation
                 builder.RegisterEventing();
             }
 
-            builder.RegisterBuildCallback(r => { this.autofacGlobalScope = r; });
+            //注册自己 让后面的逻辑可以拿到配置参数
+            builder.RegisterInstance(this).SingleInstance();
+            builder.Properties[nameof(AutofacAnnotationModule)] = this;
+
+            builder.RegisterBuildCallback(r =>
+            {
+                this.autofacGlobalScope = r;
+                r.TryResolve<IEnumerable<BeanPostProcessor>>(out var beanPostProcessors);
+                if (beanPostProcessors != null)
+                {
+                    r.ComponentRegistry.Properties[nameof(List<BeanPostProcessor>)] = beanPostProcessors?.ToList();
+                }
+            });
 
             //解析程序集PointCut标签类和方法
             var aspectJ = GetPointCutConfiguration(builder);
@@ -466,61 +478,6 @@ namespace Autofac.Annotation
         internal static void RegisterMethods<TReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
         {
-            MethodInfo AssertMethod(Type type, string methodName)
-            {
-                var emethodName = methodName.Contains(".") ? methodName.Split('.').LastOrDefault() : methodName;
-                MethodInfo method = null;
-                try
-                {
-                    BindingFlags flags = BindingFlags.Public |
-                                         BindingFlags.NonPublic |
-                                         BindingFlags.Static |
-                                         BindingFlags.Instance |
-                                         BindingFlags.DeclaredOnly;
-                    method = type.GetMethod(emethodName, flags);
-                }
-                catch (Exception)
-                {
-                    //如果有多个就抛出异常
-                    throw new DependencyResolutionException($"find method: {methodName} in type:{type.FullName} have more then one");
-                }
-
-                if (method == null)
-                {
-                    throw new DependencyResolutionException($"find method: {methodName} in type:{type.FullName} error");
-                }
-
-                return method;
-            }
-
-            MethodInfo AssertMethodDynamic(object instance, string methodName)
-            {
-                var type = instance.GetType();
-                var emethodName = methodName.Contains(".") ? methodName.Split('.').LastOrDefault() : methodName;
-                MethodInfo method = null;
-                try
-                {
-                    BindingFlags flags = BindingFlags.Public |
-                                         BindingFlags.NonPublic |
-                                         BindingFlags.Static |
-                                         BindingFlags.Instance |
-                                         BindingFlags.DeclaredOnly;
-                    method = type.GetMethod(emethodName, flags);
-                }
-                catch (Exception)
-                {
-                    //如果有多个就抛出异常
-                    throw new DependencyResolutionException($"find method: {methodName} in type:{type.FullName} have more then one");
-                }
-
-                if (method == null)
-                {
-                    throw new DependencyResolutionException($"find method: {methodName} in type:{type.FullName} error");
-                }
-
-                return method;
-            }
-
             if (component == null)
             {
                 throw new ArgumentNullException(nameof(component));
@@ -531,49 +488,113 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(registrar));
             }
 
-            if (!string.IsNullOrEmpty(component.InitMethod))
             {
                 if (component.isDynamicGeneric)
                 {
                     registrar.OnActivated(e =>
                     {
-                        var method = AssertMethodDynamic(e.Instance, component.InitMethod);
-                        AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
+                        var postConstructs = ReflectionExtensions.AssertMethodDynamic<PostConstruct>(e.Instance.GetType());
+                        var method = ReflectionExtensions.AssertMethod(e.Instance.GetType(), component.InitMethod);
+                        if (postConstructs.Any())
+                        {
+                            postConstructs.ForEach(r => { AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, r, e.Context); });
+                        }
+
+                        if (method != null)
+                        {
+                            AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
+                        }
                     });
                 }
                 else
                 {
-                    var method = AssertMethod(component.CurrentType, component.InitMethod);
-                    registrar.OnActivated(e => { AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, method, e.Context); });
+                    var postConstructs = ReflectionExtensions.AssertMethodDynamic<PostConstruct>(component.CurrentType);
+                    var method = ReflectionExtensions.AssertMethod(component.CurrentType, component.InitMethod);
+                    registrar.OnActivated(e =>
+                    {
+                        if (postConstructs.Any())
+                        {
+                            postConstructs.ForEach(r => { AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, r, e.Context); });
+                        }
+
+                        if (method != null)
+                        {
+                            AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
+                        }
+                    });
                 }
             }
 
-            if (!string.IsNullOrEmpty(component.DestroyMethod))
             {
                 if (component.isDynamicGeneric)
                 {
                     registrar.OnRelease(e =>
                     {
-                        var method = AssertMethodDynamic(e, component.DestroyMethod);
-                        if (method.GetParameters().Any())
+                        var destroys = ReflectionExtensions.AssertMethodDynamic<PreDestory>(component.CurrentType);
+                        if (destroys.Any())
+                        {
+                            destroys.ForEach(r =>
+                            {
+                                if (r.GetParameters().Any())
+                                {
+                                    throw new DependencyResolutionException(
+                                        $"class `{component.CurrentType.FullName}` DestroyMethod `PreDestory` must be no parameters");
+                                }
+                            });
+                        }
+
+                        var method = ReflectionExtensions.AssertMethod(e.GetType(), component.DestroyMethod);
+                        if (method != null && method.GetParameters().Any())
                         {
                             throw new DependencyResolutionException(
                                 $"class `{component.CurrentType.FullName}` DestroyMethod `{component.DestroyMethod}` must be no parameters");
                         }
 
-                        method.Invoke(e, null);
+                        if (destroys.Any())
+                        {
+                            destroys.ForEach(r => { r.Invoke(e, null); });
+                        }
+
+                        if (method != null)
+                        {
+                            method.Invoke(e, null);
+                        }
                     });
                 }
                 else
                 {
-                    var method = AssertMethod(component.CurrentType, component.DestroyMethod);
-                    if (method.GetParameters().Any())
+                    var destroys = ReflectionExtensions.AssertMethodDynamic<PreDestory>(component.CurrentType);
+                    if (destroys.Any())
+                    {
+                        destroys.ForEach(r =>
+                        {
+                            if (r.GetParameters().Any())
+                            {
+                                throw new DependencyResolutionException(
+                                    $"class `{component.CurrentType.FullName}` DestroyMethod `PreDestory` must be no parameters");
+                            }
+                        });
+                    }
+
+                    var method = ReflectionExtensions.AssertMethod(component.CurrentType, component.DestroyMethod);
+                    if (method != null && method.GetParameters().Any())
                     {
                         throw new DependencyResolutionException(
                             $"class `{component.CurrentType.FullName}` DestroyMethod `{component.DestroyMethod}` must be no parameters");
                     }
 
-                    registrar.OnRelease(e => { method.Invoke(e, null); });
+                    registrar.OnRelease(e =>
+                    {
+                        if (destroys.Any())
+                        {
+                            destroys.ForEach(r => { r.Invoke(e, null); });
+                        }
+
+                        if (method != null)
+                        {
+                            method.Invoke(e, null);
+                        }
+                    });
                 }
             }
         }
@@ -1188,7 +1209,7 @@ namespace Autofac.Annotation
                         bean.BeanMethodInfoList.Add(new Tuple<Bean, MethodInfo, Type>(beanAttribute, beanTypeMethod, returnType));
                     }
 
-                    cache?.ComponentModelCache.TryAdd(configuration.Type, new ComponentModel
+                    var compoment = new ComponentModel
                     {
                         CurrentType = configuration.Type,
                         InjectProperties = true,
@@ -1198,12 +1219,17 @@ namespace Autofac.Annotation
                         Interceptor = typeof(AutoConfigurationIntercept),
                         AutofacScope = AutofacScope.SingleInstance,
                         InterceptorType = InterceptorType.Class,
+                        InitMethod = configuration.AutofacConfiguration.InitMethod,
+                        DestroyMethod = configuration.AutofacConfiguration.DestroyMethod,
                         RegisterType = RegisterType.AutoConfiguration
-                    });
+                    };
+                    cache?.ComponentModelCache.TryAdd(configuration.Type, compoment);
                     //注册为代理类
-                    builder.RegisterType(configuration.Type).EnableClassInterceptors().InterceptedBy(typeof(AutoConfigurationIntercept))
+                    var rb = builder.RegisterType(configuration.Type).EnableClassInterceptors().InterceptedBy(typeof(AutoConfigurationIntercept))
                         .SingleInstance().WithMetadata(_AUTOFAC_SPRING, true); //注册为单例模式
                     list.AutoConfigurationDetailList.Add(bean);
+
+                    RegisterMethods(compoment, rb);
 
                     EnumerateMetaSourceAttributes(bean.AutoConfigurationClassType, bean.MetaSourceDataList);
                 }
@@ -1877,9 +1903,8 @@ namespace Autofac.Annotation
         /// <typeparam name="TReflectionActivatorData"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        private void SetInjectProperties<TReflectionActivatorData>(ComponentModel component,
+        internal void SetInjectProperties<TReflectionActivatorData>(ComponentModel component,
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
-            where TReflectionActivatorData : ReflectionActivatorData
         {
             if (registrar == null)
             {
@@ -1909,7 +1934,7 @@ namespace Autofac.Annotation
                 }));
         }
 
-        private bool prepareSetInjectProperties(ComponentModel component)
+        internal bool prepareSetInjectProperties(ComponentModel component)
         {
             if (!component.InjectProperties) return false;
 
@@ -1986,7 +2011,7 @@ namespace Autofac.Annotation
         /// <param name="context">容器</param>
         /// <param name="Parameters">参数</param>
         /// <param name="instance">实例</param>
-        private void DoAutoWired(ResolveRequestContext context, List<Parameter> Parameters, object instance)
+        internal static void DoAutoWired(ResolveRequestContext context, List<Parameter> Parameters, object instance)
         {
             if (instance == null) return;
             Type instanceType = instance.GetType();

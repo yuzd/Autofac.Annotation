@@ -105,4 +105,23 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
 
         public string Name { get; set; }
     }
+
+
+    [Component]
+    public class TestPostConstruct1
+    {
+        public string Name { get; set; }
+
+        [PostConstruct]
+        public void init()
+        {
+            Name = "test";
+        }
+
+        [PreDestory]
+        public void end()
+        {
+            Name = "end";
+        }
+    }
 }

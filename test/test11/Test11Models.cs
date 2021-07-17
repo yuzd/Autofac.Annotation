@@ -1,4 +1,3 @@
-
 using System;
 using System.Reflection;
 using Autofac.Annotation.Config;
@@ -8,16 +7,15 @@ namespace Autofac.Annotation.Test.test11
     [Component]
     public class Test11Models1
     {
-        [Soa(typeof(SoaTest1))]
-        private ISoa Soa1;
-        
-        [Soa(typeof(SoaTest2))]
-        private ISoa Soa2;
+        [Soa(typeof(SoaTest1))] private ISoa Soa1;
+
+        [Soa(typeof(SoaTest2))] private ISoa Soa2;
 
         public string getSoa1()
         {
             return Soa1.say();
         }
+
         public string getSoa2()
         {
             return Soa2.say();
@@ -36,6 +34,7 @@ namespace Autofac.Annotation.Test.test11
             return nameof(SoaTest1);
         }
     }
+
     public class SoaTest2 : ISoa
     {
         public string say()
@@ -66,8 +65,8 @@ namespace Autofac.Annotation.Test.test11
                 {
                     continue;
                 }
-                
-                field.SetValue(bean,instance);
+
+                field.SetValue(bean, instance);
             }
 
             return bean;
@@ -78,12 +77,12 @@ namespace Autofac.Annotation.Test.test11
             return bean;
         }
     }
-    
+
     /// <summary>
     /// 測試自己實現一個自定義註解
     /// </summary>
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
-    public sealed class Soa : System.Attribute
+    public sealed class Soa : Attribute
     {
         /// <summary>
         /// 构造函数
@@ -98,4 +97,5 @@ namespace Autofac.Annotation.Test.test11
         /// </summary>
         internal Type Type { get; set; }
     }
+
 }

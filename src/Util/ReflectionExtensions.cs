@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Autofac.Core;
 
 namespace Autofac.Annotation.Util
 {
@@ -10,6 +11,77 @@ namespace Autofac.Annotation.Util
     /// </summary>
     internal static class ReflectionExtensions
     {
+        /// <summary>
+        /// 找打了某个注解的方法
+        /// </summary>
+        /// <param name="type"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="DependencyResolutionException"></exception>
+        internal static List<MethodInfo> AssertMethodDynamic<T>(Type type) where T : Attribute
+        {
+            List<MethodInfo> method = new List<MethodInfo>();
+            try
+            {
+                BindingFlags flags = BindingFlags.Public |
+                                     BindingFlags.NonPublic |
+                                     BindingFlags.Static |
+                                     BindingFlags.Instance |
+                                     BindingFlags.DeclaredOnly;
+                var methods = type.GetMethods(flags);
+                foreach (var method2 in methods)
+                {
+                    var post = method2.GetCustomAttribute<T>();
+                    if (post != null)
+                    {
+                        method.Add(method2);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                //如果有多个就抛出异常
+                throw new DependencyResolutionException($"find method with [${typeof(T).Name}] in type:{type.FullName} have more then one");
+            }
+
+            return method;
+        }
+
+        /// <summary>
+        /// 非泛型 普通类找某个方法
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="methodName"></param>
+        /// <returns></returns>
+        /// <exception cref="DependencyResolutionException"></exception>
+        internal static MethodInfo AssertMethod(Type type, string methodName)
+        {
+            if (string.IsNullOrEmpty(methodName))
+            {
+                return null;
+            }
+
+            var emethodName = methodName.Contains(".") ? methodName.Split('.').LastOrDefault() : methodName;
+            MethodInfo method = null;
+            try
+            {
+                BindingFlags flags = BindingFlags.Public |
+                                     BindingFlags.NonPublic |
+                                     BindingFlags.Static |
+                                     BindingFlags.Instance |
+                                     BindingFlags.DeclaredOnly;
+                method = type.GetMethod(emethodName, flags);
+            }
+            catch (Exception)
+            {
+                //如果有多个就抛出异常
+                throw new DependencyResolutionException($"find method: {methodName} in type:{type.FullName} have more then one");
+            }
+
+            return method;
+        }
+
+
         /// <summary>
         /// 判断是否存在class
         /// </summary>
@@ -71,7 +143,7 @@ namespace Autofac.Annotation.Util
         public static bool TryGetDeclaringProperty(this ParameterInfo pi, out PropertyInfo prop)
         {
             var mi = pi.Member as MethodInfo;
-            if (mi != null && mi.DeclaringType != null && mi.IsSpecialName && mi.Name.StartsWith("set_", System.StringComparison.Ordinal))
+            if (mi != null && mi.DeclaringType != null && mi.IsSpecialName && mi.Name.StartsWith("set_", StringComparison.Ordinal))
             {
                 prop = mi.DeclaringType.GetProperty(mi.Name.Substring(4));
                 return true;

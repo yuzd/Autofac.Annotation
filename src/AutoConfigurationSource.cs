@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using AspectCore.Extensions.Reflection;
 using Autofac.Builder;
+using Autofac.Core.Resolving.Pipeline;
 using Castle.DynamicProxy;
 
 namespace Autofac.Annotation
@@ -36,12 +37,6 @@ namespace Autofac.Annotation
             //注册为工厂
             foreach (var beanMethod in autoConfigurationDetail.BeanMethodInfoList.OrderBy(r => r.Item3.Name))
             {
-                if (!beanMethod.Item2.IsVirtual)
-                {
-                    throw new InvalidOperationException(
-                        $"The Configuration class `{autoConfigurationDetail.AutoConfigurationClassType.FullName}` method `{beanMethod.Item2.Name}` must be virtual!");
-                }
-
                 if (!ProxyUtil.IsAccessible(beanMethod.Item2.ReturnType))
                 {
                     throw new InvalidOperationException(
@@ -77,7 +72,8 @@ namespace Autofac.Annotation
                         AutofacScope = beanMethod.Item1.AutofacScope,
                         InitMethod = beanMethod.Item1.InitMethod,
                         DestroyMethod = beanMethod.Item1.DestroyMethod,
-                        RegisterType = RegisterType.Bean
+                        RegisterType = RegisterType.Bean,
+                        DependsOn = beanMethod.Item1.DependsOn
                     };
                     cache?.ComponentModelCache?.TryAdd(beanMethod.Item3, compoment);
 
@@ -92,7 +88,22 @@ namespace Autofac.Annotation
                         }
 
                         return instance;
-                    }));
+                    })).ConfigurePipeline(p =>
+                    {
+                        //DepondsOn注入
+                        p.Use(PipelinePhase.RegistrationPipelineStart, (context, next) =>
+                        {
+                            if (compoment.DependsOn != null && compoment.DependsOn.Any())
+                            {
+                                foreach (var dependsType in compoment.DependsOn)
+                                {
+                                    new Autowired(false).Resolve(context, compoment.CurrentType, dependsType, dependsType.Name, context.Parameters.ToList());
+                                }
+                            }
+
+                            next(context);
+                        });
+                    });
                     rb.WithMetadata(AutofacAnnotationModule._AUTOFAC_SPRING, true);
                     if (!string.IsNullOrEmpty(beanMethod.Item1.Key))
                     {

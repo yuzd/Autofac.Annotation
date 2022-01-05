@@ -185,16 +185,15 @@ namespace Autofac.Annotation
         /// <param name="type"></param>
         /// <param name="classType"></param>
         /// <param name="fieldOrPropertyName"></param>
-        /// <param name="instance"></param>
         /// <param name="Parameters"></param>
         /// <returns></returns>
-        internal object CreateAutowiredFactory(Autowired autowired, Type type, Type classType, string fieldOrPropertyName, object instance,
+        internal object CreateAutowiredFactory(Autowired autowired, Type type, Type classType, string fieldOrPropertyName,
             List<Parameter> Parameters)
         {
             var targetType = type.GenericTypeArguments[0];
             var valueType = typeof(AutowiredObjectFactory<>);
             var valueFactoryType = valueType.MakeGenericType(targetType);
-            Func<object> function = () => autowired.Resolve(_context, instance, classType, targetType, fieldOrPropertyName, Parameters);
+            Func<object> function = () => autowired.Resolve(_context, classType, targetType, fieldOrPropertyName, Parameters);
             return Activator.CreateInstance(valueFactoryType, new object[] {function});
         }
 
@@ -205,16 +204,14 @@ namespace Autofac.Annotation
         /// <param name="type"></param>
         /// <param name="classType"></param>
         /// <param name="fieldOrPropertyName"></param>
-        /// <param name="instance"></param>
         /// <param name="Parameters"></param>
         /// <returns></returns>
-        internal object CreateLazyFactory(Autowired autowired, Type type, Type classType, string fieldOrPropertyName, object instance,
-            List<Parameter> Parameters)
+        internal object CreateLazyFactory(Autowired autowired, Type type, Type classType, string fieldOrPropertyName, List<Parameter> Parameters)
         {
             var targetType = type.GenericTypeArguments[0];
             var valueType = typeof(LazyAutowiredFactory<>);
             var valueFactoryType = valueType.MakeGenericType(targetType);
-            Func<object> function = () => autowired.Resolve(_context, instance, classType, targetType, fieldOrPropertyName, Parameters);
+            Func<object> function = () => autowired.Resolve(_context, classType, targetType, fieldOrPropertyName, Parameters);
             var lazyFactory = Activator.CreateInstance(valueFactoryType, new object[] {function});
             if (!this._lazyMethodCache.TryGetValue(valueFactoryType, out var _cache))
             {

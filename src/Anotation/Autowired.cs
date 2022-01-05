@@ -74,7 +74,7 @@ namespace Autofac.Annotation
         public override object ResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));
-            return Resolve(context, null, parameter.Member.DeclaringType, parameter.ParameterType, parameter.Name, null);
+            return Resolve(context, parameter.Member.DeclaringType, parameter.ParameterType, parameter.Name, null);
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace Autofac.Annotation
         public object ResolveField(FieldInfo property, IComponentContext context, List<Parameter> Parameters, object instance)
         {
             if (property == null) throw new ArgumentNullException(nameof(property));
-            return Resolve(context, instance, property.DeclaringType, property.FieldType, property.Name, Parameters);
+            return Resolve(context, property.DeclaringType, property.FieldType, property.Name, Parameters);
         }
 
         /// <summary>
@@ -119,10 +119,10 @@ namespace Autofac.Annotation
         public object ResolveProperty(PropertyInfo property, IComponentContext context, List<Parameter> Parameters, object instance)
         {
             if (property == null) throw new ArgumentNullException(nameof(property));
-            return Resolve(context, instance, property.DeclaringType, property.PropertyType, property.Name, Parameters);
+            return Resolve(context, property.DeclaringType, property.PropertyType, property.Name, Parameters);
         }
 
-        internal object Resolve(IComponentContext context, object instance, Type classType, Type memberType, string fieldOrPropertyName,
+        internal object Resolve(IComponentContext context, Type classType, Type memberType, string fieldOrPropertyName,
             List<Parameter> Parameters)
         {
             object returnObj = null;
@@ -130,11 +130,11 @@ namespace Autofac.Annotation
             //针对继承 IObjectFactory 的 需要动态创建
             if ((typeof(IObjectFactory).IsAssignableFrom(memberType)))
             {
-                return context.Resolve<ObjectBeanFactory>().CreateAutowiredFactory(this, memberType, classType, fieldOrPropertyName, instance, null);
+                return context.Resolve<ObjectBeanFactory>().CreateAutowiredFactory(this, memberType, classType, fieldOrPropertyName, null);
             }
             else if (memberType.IsGenericType && memberType.GetGenericTypeDefinition() == typeof(Lazy<>))
             {
-                return context.Resolve<ObjectBeanFactory>().CreateLazyFactory(this, memberType, classType, fieldOrPropertyName, instance, null);
+                return context.Resolve<ObjectBeanFactory>().CreateLazyFactory(this, memberType, classType, fieldOrPropertyName, null);
             }
             else if (string.IsNullOrEmpty(this.Name) && memberType.IsGenericEnumerableInterfaceType())
             {

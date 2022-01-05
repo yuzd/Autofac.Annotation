@@ -1164,12 +1164,6 @@ namespace Autofac.Annotation
                         if (beanAttribute == null) continue;
 
                         var returnType = beanTypeMethod.ReturnType;
-                        if (!beanTypeMethod.IsVirtual) //因为需要被代理 所以必须要求可重写
-                        {
-                            throw new InvalidOperationException(
-                                $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` must be virtual!");
-                        }
-
                         if (returnType == typeof(void))
                         {
                             throw new InvalidOperationException(
@@ -1205,7 +1199,16 @@ namespace Autofac.Annotation
                             throw new InvalidOperationException(
                                 $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType is not accessible!");
                         }
-
+                        var dependsOnAttribute = beanTypeMethod.GetCustomAttribute<DependsOn>();
+                        if (dependsOnAttribute != null)
+                        {
+                            beanAttribute.DependsOn = dependsOnAttribute.dependsOn;
+                            if (beanAttribute.DependsOn.Contains(returnType))
+                            {
+                                throw new InvalidOperationException(
+                                    $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType can not dependency on itself!");
+                            }
+                        }
                         bean.BeanMethodInfoList.Add(new Tuple<Bean, MethodInfo, Type>(beanAttribute, beanTypeMethod, returnType));
                     }
 

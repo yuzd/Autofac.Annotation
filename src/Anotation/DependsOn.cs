@@ -5,7 +5,7 @@ namespace Autofac.Annotation
     /// <summary>
     /// DependsOn标签 配合Bean和Component标签使用
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public sealed class DependsOn : Attribute
     {
         /// <summary>

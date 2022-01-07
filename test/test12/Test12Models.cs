@@ -101,11 +101,23 @@ public class Test12Bean6
 }
 
 [Component]
+[DependsOn(typeof(Test12Bean8))]
 public class Test12Bean7
 {
     public Test12Bean7()
     {
         Test12Models.result.Add("get17"); 
+    }
+    public string Hello { get; set; }
+}
+
+
+[Component]
+public class Test12Bean8
+{
+    public Test12Bean8()
+    {
+        Test12Models.result.Add("get18"); 
     }
     public string Hello { get; set; }
 }

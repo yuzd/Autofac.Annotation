@@ -464,6 +464,9 @@ namespace Autofac.Annotation
 
                 //後置處理器
                 RegisterAfterBeanPostProcessor(component, registrar);
+                
+                //注册DependsOn
+                RegisterDependsOn(component, registrar);
             }
 
             DoAutofacConfiguration(builder);
@@ -1574,7 +1577,8 @@ namespace Autofac.Annotation
                 NotUseProxy = bean.NotUseProxy,
                 EnableAspect = bean.EnableAspect,
                 IsBenPostProcessor = typeof(BeanPostProcessor).IsAssignableFrom(currentType),
-                CurrentClassTypeAttributes = Enumerable.OfType<Attribute>(currentType.GetCustomAttributes()).ToList()
+                CurrentClassTypeAttributes = Enumerable.OfType<Attribute>(currentType.GetCustomAttributes()).ToList(),
+                DependsOn = currentType.GetCustomAttribute<DependsOn>()?.dependsOn
             };
 
             if (bean.AutofacScope == AutofacScope.Default)

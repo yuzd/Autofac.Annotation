@@ -125,6 +125,7 @@ namespace Autofac.Annotation
             {typeof(Before), false},
             {typeof(Pointcut), false},
             {typeof(AfterThrows), false},
+            {typeof(DependsOn), false},
         };
 
         /// <summary>

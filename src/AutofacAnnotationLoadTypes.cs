@@ -243,5 +243,33 @@ namespace Autofac.Annotation
 
             return false;
         }
+
+        /// <summary>
+        /// 注册DependsOn
+        /// </summary>
+        /// <param name="compoment"></param>
+        /// <param name="registrar"></param>
+        /// <typeparam name="TReflectionActivatorData"></typeparam>
+        private void RegisterDependsOn<TReflectionActivatorData>(ComponentModel compoment, IRegistrationBuilder<object,TReflectionActivatorData,object> registrar)
+            where TReflectionActivatorData : ReflectionActivatorData
+        {
+            if (compoment.DependsOn == null || !compoment.DependsOn.Any())
+            {
+                return;
+            }
+            
+            registrar.ConfigurePipeline(p =>
+            {
+                //DepondsOn注入
+                p.Use(PipelinePhase.RegistrationPipelineStart, (context, next) =>
+                {
+                    foreach (var dependsType in compoment.DependsOn)
+                    {
+                        new Autowired(false).Resolve(context, compoment.CurrentType, dependsType, dependsType.Name, context.Parameters.ToList());
+                    }
+                    next(context);
+                });
+            });
+        }
     }
 }

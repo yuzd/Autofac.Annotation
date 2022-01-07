@@ -50,11 +50,12 @@ public class DependsOnTest
         builder.RegisterSpring(r => r.RegisterAssembly(typeof(ConditionTest).Assembly));
         var container = builder.Build();
         var a1 = container.Resolve<Test12Bean3>();
-        Assert.Equal(5,Test12Models.result.Count);
+        Assert.Equal(6,Test12Models.result.Count);
         Assert.Equal("get14",Test12Models.result[0]);
-        Assert.Equal("get17",Test12Models.result[1]);
-        Assert.Equal("get16",Test12Models.result[2]);
-        Assert.Equal("get15",Test12Models.result[3]);
-        Assert.Equal("get13",Test12Models.result[4]);
+        Assert.Equal("get18",Test12Models.result[1]);
+        Assert.Equal("get17",Test12Models.result[2]);
+        Assert.Equal("get16",Test12Models.result[3]);
+        Assert.Equal("get15",Test12Models.result[4]);
+        Assert.Equal("get13",Test12Models.result[5]);
     }
 }

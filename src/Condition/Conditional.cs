@@ -33,7 +33,7 @@ namespace Autofac.Annotation.Condition
     /// <summary>
     /// 只能打在标有Bean的方法上面
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
     public class ConditionOnMissingBean : Conditional
     {
         /// <summary>
@@ -77,7 +77,7 @@ namespace Autofac.Annotation.Condition
     /// <summary>
     /// 只能打在标有Bean的方法上面
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
     public class ConditionOnBean : Conditional
     {
         /// <summary>

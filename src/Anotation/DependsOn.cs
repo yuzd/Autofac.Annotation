@@ -16,7 +16,6 @@ namespace Autofac.Annotation
             this.dependsOn = types;
         }
 
-        
 
         /// <summary>
         /// 依赖的 是用来表示一个bean A的实例化依赖另一个bean B的实例化， 但是A并不需要持有一个B的对象

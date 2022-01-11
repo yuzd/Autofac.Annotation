@@ -43,7 +43,7 @@ namespace Autofac.AspectIntercepter.Impl
                     aspectContext.ComponentContext, aspectContext, injectAnotation: _pointCutMethod.PointcutInjectAnotation);
                 if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
                 {
-                    await ((Task) rt).ConfigureAwait(false);
+                    await ((Task)rt).ConfigureAwait(false);
                 }
             }
 

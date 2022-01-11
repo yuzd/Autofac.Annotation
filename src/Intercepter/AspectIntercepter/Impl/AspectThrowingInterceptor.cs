@@ -68,7 +68,7 @@ namespace Autofac.AspectIntercepter.Impl
                                 injectAnotation: _pointcutThrowin.PointcutInjectAnotation);
                             if (typeof(Task).IsAssignableFrom(_pointcutThrowin.MethodReturnType))
                             {
-                                await ((Task) rt).ConfigureAwait(false);
+                                await ((Task)rt).ConfigureAwait(false);
                             }
                         }
                     }

@@ -65,7 +65,7 @@ namespace Autofac.AspectIntercepter.Impl
 
                 if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
                 {
-                    await ((Task) rt).ConfigureAwait(false);
+                    await ((Task)rt).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)

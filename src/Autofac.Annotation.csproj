@@ -1,63 +1,64 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <Description>Autofac extras library for component registration via attributes 用注解来load autofac 摆脱代码或者xml配置和java的spring的注解注入一样的体验</Description>
-    <VersionPrefix>1.0.0</VersionPrefix>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AssemblyName>Autofac.Annotation</AssemblyName>
-    <PackageId>Autofac.Annotation</PackageId>
-    <PackageTags>autofac spring aspect</PackageTags>
-    <PackageReleaseNotes>autofac spring 
-【AutoConfiguration】【Bean】【Component】【Value[支持SpEL表达式]】【PropertySource】【Aspect】【Pointcut切面】</PackageReleaseNotes>
-    <PackageIconUrl></PackageIconUrl>
-    <PackageProjectUrl>https://github.com/yuzd/Autofac.Annotation</PackageProjectUrl>
-    <PackageLicenseUrl></PackageLicenseUrl>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl></RepositoryUrl>
-    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-    <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
-    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
-    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedAllSources>true</EmbedAllSources>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    <Features>IOperation</Features>
-    <RootNamespace>Autofac.Annotation</RootNamespace>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>4.0.5</Version>
-    <AssemblyVersion>4.0.5.0</AssemblyVersion>
-    <Authors>zdyu</Authors>
-    <PackageVersion>4.0.5</PackageVersion>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-  </PropertyGroup>
+    <PropertyGroup>
+        <Description>Autofac extras library for component registration via attributes 用注解来load autofac 摆脱代码或者xml配置和java的spring的注解注入一样的体验</Description>
+        <VersionPrefix>1.0.0</VersionPrefix>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <AssemblyName>Autofac.Annotation</AssemblyName>
+        <PackageId>Autofac.Annotation</PackageId>
+        <PackageTags>autofac spring aspect</PackageTags>
+        <PackageReleaseNotes>autofac spring
+            【AutoConfiguration】【Bean】【Component】【Value[支持SpEL表达式]】【PropertySource】【Aspect】【Pointcut切面】
+        </PackageReleaseNotes>
+        <PackageIconUrl></PackageIconUrl>
+        <PackageProjectUrl>https://github.com/yuzd/Autofac.Annotation</PackageProjectUrl>
+        <PackageLicenseUrl></PackageLicenseUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl></RepositoryUrl>
+        <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+        <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
+        <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+        <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedAllSources>true</EmbedAllSources>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+        <Features>IOperation</Features>
+        <RootNamespace>Autofac.Annotation</RootNamespace>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <Version>4.0.5</Version>
+        <AssemblyVersion>4.0.5.0</AssemblyVersion>
+        <Authors>zdyu</Authors>
+        <PackageVersion>4.0.5</PackageVersion>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
-    <CodeAnalysisRuleSet />
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
+        <CodeAnalysisRuleSet/>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
-    <CodeAnalysisRuleSet />
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
+        <CodeAnalysisRuleSet/>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net46|AnyCPU'">
-    <DefineConstants>DEBUG;TRACE;NETSTANDARD2_0</DefineConstants>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net46|AnyCPU'">
+        <DefineConstants>DEBUG;TRACE;NETSTANDARD2_0</DefineConstants>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <None Include="..\README.md" Link="README.md" />
-  </ItemGroup>
+    <ItemGroup>
+        <None Include="..\README.md" Link="README.md"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Autofac" Version="6.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Xml" Version="3.1.0" />
-    <PackageReference Include="Spring.EL" Version="1.0.5" />
-    <PackageReference Include="AspectCore.Extensions.Reflection" Version="2.2.0" />
-    <PackageReference Include="Castle.Core" Version="4.4.1" />
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Autofac" Version="6.3.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Xml" Version="3.1.0"/>
+        <PackageReference Include="Spring.EL" Version="1.0.5"/>
+        <PackageReference Include="AspectCore.Extensions.Reflection" Version="2.2.0"/>
+        <PackageReference Include="Castle.Core" Version="4.4.1"/>
+        <PackageReference Include="Microsoft.CSharp" Version="4.7.0"/>
+    </ItemGroup>
 
 </Project>

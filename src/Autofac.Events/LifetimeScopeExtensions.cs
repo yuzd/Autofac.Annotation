@@ -27,7 +27,7 @@ namespace Autofac
             {
                 try
                 {
-                    handler.Handle((dynamic) @event);
+                    handler.Handle((dynamic)@event);
                 }
                 catch (Exception exception)
                 {
@@ -53,7 +53,7 @@ namespace Autofac
             {
                 try
                 {
-                    handler.Handle((dynamic) @event);
+                    handler.Handle((dynamic)@event);
                 }
                 catch (Exception exception)
                 {
@@ -67,7 +67,7 @@ namespace Autofac
             {
                 try
                 {
-                    result.Add((T) handler.Handle((dynamic) @event));
+                    result.Add((T)handler.Handle((dynamic)@event));
                 }
                 catch (Exception exception)
                 {
@@ -95,7 +95,7 @@ namespace Autofac
             {
                 try
                 {
-                    await asyncHandler.HandleAsync((dynamic) @event);
+                    await asyncHandler.HandleAsync((dynamic)@event);
                 }
                 catch (Exception exception)
                 {
@@ -120,7 +120,7 @@ namespace Autofac
             {
                 try
                 {
-                    await asyncHandler.HandleAsync((dynamic) @event);
+                    await asyncHandler.HandleAsync((dynamic)@event);
                 }
                 catch (Exception exception)
                 {
@@ -134,7 +134,7 @@ namespace Autofac
             {
                 try
                 {
-                    result.Add((T) (await asyncHandler.HandleAsync((dynamic) @event)));
+                    result.Add((T)(await asyncHandler.HandleAsync((dynamic)@event)));
                 }
                 catch (Exception exception)
                 {
@@ -207,18 +207,18 @@ namespace Autofac
 
         private static IEnumerable<dynamic> ResolveConcreteHandlers(this ILifetimeScope scope, Type eventType, Func<Type, Type> handlerFactory)
         {
-            return (IEnumerable<dynamic>) scope.Resolve(handlerFactory(eventType));
+            return (IEnumerable<dynamic>)scope.Resolve(handlerFactory(eventType));
         }
 
         private static IEnumerable<dynamic> ResolveConcreteReturnHandlers(this ILifetimeScope scope, Type eventType, Type returnType,
             Func<Type, Type, Type> handlerFactory)
         {
-            return (IEnumerable<dynamic>) scope.Resolve(handlerFactory(eventType, returnType));
+            return (IEnumerable<dynamic>)scope.Resolve(handlerFactory(eventType, returnType));
         }
 
         private static IEnumerable<dynamic> ResolveInterfaceHandlers(this ILifetimeScope scope, Type eventType, Func<Type, Type> handlerFactory)
         {
-            return eventType.GetTypeInfo().ImplementedInterfaces.SelectMany(i => (IEnumerable<dynamic>) scope.Resolve(handlerFactory(i))).Distinct();
+            return eventType.GetTypeInfo().ImplementedInterfaces.SelectMany(i => (IEnumerable<dynamic>)scope.Resolve(handlerFactory(i))).Distinct();
         }
 
         private static IEnumerable<dynamic> ResolveInterfaceReturnHandlers(this ILifetimeScope scope, Type eventType, Type returnType,
@@ -229,7 +229,7 @@ namespace Autofac
                 let inType = iInterface.GenericTypeArguments[0]
                 let outType = iInterface.GenericTypeArguments[1]
                 select new Tuple<Type, Type>(inType, outType)).ToList();
-            return tuplerList.Select(i => (IEnumerable<dynamic>) scope.Resolve(handlerFactory(i.Item1, i.Item2))).Distinct();
+            return tuplerList.Select(i => (IEnumerable<dynamic>)scope.Resolve(handlerFactory(i.Item1, i.Item2))).Distinct();
         }
 
         private static Type MakeHandlerType(Type type)

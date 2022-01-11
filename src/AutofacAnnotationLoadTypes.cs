@@ -77,6 +77,22 @@ namespace Autofac.Annotation
         /// <summary>
         /// 註冊BeanPostProcessor處理器
         /// </summary>
+        private void RegisterBeforeBeanPostProcessor(ComponentModel component,
+            IRegistrationBuilder<object, ConcreteReflectionActivatorData, SingleRegistrationStyle> registrar)
+        {
+            if (component.IsBenPostProcessor)
+            {
+                return;
+            }
+
+            registrar.ConfigurePipeline(p =>
+                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
+                {
+                    next(ctxt);
+                    DoBeforeBeanPostProcessor(ctxt);
+                }));
+        }
+
         private void RegisterBeforeBeanPostProcessor(ComponentModel component, IComponentRegistration registrar)
         {
             if (component.IsBenPostProcessor)
@@ -89,6 +105,22 @@ namespace Autofac.Annotation
                 {
                     next(ctxt);
                     DoBeforeBeanPostProcessor(ctxt);
+                }));
+        }
+
+        private void RegisterAfterBeanPostProcessor(ComponentModel component,
+            IRegistrationBuilder<object, ConcreteReflectionActivatorData, SingleRegistrationStyle> registrar)
+        {
+            if (component.IsBenPostProcessor)
+            {
+                return;
+            }
+
+            registrar.ConfigurePipeline(p =>
+                p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.EndOfPhase, (ctxt, next) =>
+                {
+                    next(ctxt);
+                    DoAfterBeanPostProcessor(ctxt);
                 }));
         }
 
@@ -250,14 +282,15 @@ namespace Autofac.Annotation
         /// <param name="compoment"></param>
         /// <param name="registrar"></param>
         /// <typeparam name="TReflectionActivatorData"></typeparam>
-        private void RegisterDependsOn<TReflectionActivatorData>(ComponentModel compoment, IRegistrationBuilder<object,TReflectionActivatorData,object> registrar)
+        private void RegisterDependsOn<TReflectionActivatorData>(ComponentModel compoment,
+            IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
         {
             if (compoment.DependsOn == null || !compoment.DependsOn.Any())
             {
                 return;
             }
-            
+
             registrar.ConfigurePipeline(p =>
             {
                 //DepondsOn注入
@@ -267,6 +300,7 @@ namespace Autofac.Annotation
                     {
                         new Autowired(false).Resolve(context, compoment.CurrentType, dependsType, dependsType.Name, context.Parameters.ToList());
                     }
+
                     next(context);
                 });
             });

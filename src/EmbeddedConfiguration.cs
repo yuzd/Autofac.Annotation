@@ -35,7 +35,7 @@ namespace Autofac.Annotation
             using (var stream = File.OpenRead(configFile))
             {
                 var provider = new EmbeddedConfigurationProvider<JsonConfigurationSource>(stream);
-                var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
                 Configurations.TryAdd(configFile, config);
                 return config;
             }
@@ -56,7 +56,7 @@ namespace Autofac.Annotation
             using (var stream = File.OpenRead(configFile))
             {
                 var provider = new EmbeddedConfigurationProvider<XmlConfigurationSource>(stream);
-                var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
                 Configurations.TryAdd(configFile, config);
                 return config;
             }
@@ -94,14 +94,14 @@ namespace Autofac.Annotation
                         {
                             //采用Json
                             var provider = new EmbeddedConfigurationProvider<JsonConfigurationSource>(stream);
-                            var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                            var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
                             Configurations.TryAdd(configFile, config);
                             return config;
                         }
                         else if (configFile.ToLower().EndsWith(".xml"))
                         {
                             var provider = new EmbeddedConfigurationProvider<XmlConfigurationSource>(stream);
-                            var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                            var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
                             Configurations.TryAdd(configFile, config);
                             return config;
                         }
@@ -113,14 +113,14 @@ namespace Autofac.Annotation
                     else if (sourceType.Equals(MetaSourceType.JSON))
                     {
                         var provider = new EmbeddedConfigurationProvider<JsonConfigurationSource>(stream);
-                        var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                        var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
                         Configurations.TryAdd(configFile, config);
                         return config;
                     }
                     else
                     {
                         var provider = new EmbeddedConfigurationProvider<XmlConfigurationSource>(stream);
-                        var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                        var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
                         Configurations.TryAdd(configFile, config);
                         return config;
                     }
@@ -134,14 +134,14 @@ namespace Autofac.Annotation
                 {
                     //采用Json
                     var provider = new EmbeddedConfigurationProvider<JsonConfigurationSource>(configFile);
-                    var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                    var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
                     Configurations.TryAdd(configFile, config);
                     return config;
                 }
                 else if (configFile.ToLower().EndsWith(".xml"))
                 {
                     var provider = new EmbeddedConfigurationProvider<XmlConfigurationSource>(configFile);
-                    var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                    var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
                     Configurations.TryAdd(configFile, config);
                     return config;
                 }
@@ -153,14 +153,14 @@ namespace Autofac.Annotation
             else if (sourceType.Equals(MetaSourceType.JSON))
             {
                 var provider = new EmbeddedConfigurationProvider<JsonConfigurationSource>(configFile);
-                var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
                 Configurations.TryAdd(configFile, config);
                 return config;
             }
             else
             {
                 var provider = new EmbeddedConfigurationProvider<XmlConfigurationSource>(configFile);
-                var config = new ConfigurationRoot(new List<IConfigurationProvider> {provider});
+                var config = new ConfigurationRoot(new List<IConfigurationProvider> { provider });
                 Configurations.TryAdd(configFile, config);
                 return config;
             }

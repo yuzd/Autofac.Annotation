@@ -27,7 +27,7 @@ namespace Autofac.Annotation
         public EmbeddedConfigurationProvider(Stream fileStream)
         {
             var source = new TSource();
-            this._provider = (FileConfigurationProvider) source.Build(new ConfigurationBuilder());
+            this._provider = (FileConfigurationProvider)source.Build(new ConfigurationBuilder());
             this._provider.Load(fileStream);
         }
 
@@ -51,7 +51,7 @@ namespace Autofac.Annotation
                 xmlConfigurationSource.ReloadOnChange = true;
             }
 
-            this._provider = (FileConfigurationProvider) source.Build(new ConfigurationBuilder());
+            this._provider = (FileConfigurationProvider)source.Build(new ConfigurationBuilder());
             this._provider.Load();
         }
 

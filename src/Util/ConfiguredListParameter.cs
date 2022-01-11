@@ -34,7 +34,7 @@ namespace Autofac.Annotation.Util
                     if (instantiatableType != null)
                     {
                         var generics = instantiatableType.GetGenericArguments();
-                        var collection = (IList) Activator.CreateInstance(instantiatableType);
+                        var collection = (IList)Activator.CreateInstance(instantiatableType);
                         foreach (string item in castValue.List)
                         {
                             collection.Add(TypeManipulation.ChangeToCompatibleType(item, generics[0]));
@@ -51,7 +51,7 @@ namespace Autofac.Annotation.Util
                     instantiatableType = GetInstantiableDictionaryType(destinationType);
                     if (instantiatableType != null)
                     {
-                        var dictionary = (IDictionary) Activator.CreateInstance(instantiatableType);
+                        var dictionary = (IDictionary)Activator.CreateInstance(instantiatableType);
                         var generics = instantiatableType.GetGenericArguments();
 
                         for (int i = 0; i < castValue.List.Length; i++)
@@ -84,7 +84,7 @@ namespace Autofac.Annotation.Util
                 if (typeof(IDictionary).IsAssignableFrom(destinationType) ||
                     (destinationType.IsConstructedGenericType && typeof(IDictionary<,>).IsAssignableFrom(destinationType.GetGenericTypeDefinition())))
                 {
-                    var generics = destinationType.IsConstructedGenericType ? destinationType.GetGenericArguments() : new[] {typeof(int), typeof(object)};
+                    var generics = destinationType.IsConstructedGenericType ? destinationType.GetGenericArguments() : new[] { typeof(int), typeof(object) };
                     if (generics.Length != 2)
                     {
                         return null;
@@ -113,7 +113,7 @@ namespace Autofac.Annotation.Util
             {
                 if (typeof(IEnumerable).IsAssignableFrom(destinationType))
                 {
-                    var generics = destinationType.IsConstructedGenericType ? destinationType.GetGenericArguments() : new[] {typeof(object)};
+                    var generics = destinationType.IsConstructedGenericType ? destinationType.GetGenericArguments() : new[] { typeof(object) };
                     if (generics.Length != 1)
                     {
                         return null;

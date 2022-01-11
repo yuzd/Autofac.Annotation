@@ -32,7 +32,7 @@ namespace Autofac.AspectIntercepter.Advice
             {
                 var allAttributesinClass = aspectClass.CurrentType.GetReflector()
                     .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
-                    .Select(r => new {IsClass = true, Attribute = r, Index = r.OrderIndex}).ToList();
+                    .Select(r => new { IsClass = true, Attribute = r, Index = r.OrderIndex }).ToList();
 
                 var myArrayMethodInfo = aspectClass.CurrentType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                     .Where(m => !m.IsSpecialName);
@@ -41,7 +41,7 @@ namespace Autofac.AspectIntercepter.Advice
                 {
                     var allAttributes = allAttributesinClass.Concat(method.GetReflector()
                         .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
-                        .Select(r => new {IsClass = false, Attribute = r, Index = r.OrderIndex}));
+                        .Select(r => new { IsClass = false, Attribute = r, Index = r.OrderIndex }));
 
                     //如果class上也打了 method上也打了 优先用method上的
                     var attributes = allAttributes

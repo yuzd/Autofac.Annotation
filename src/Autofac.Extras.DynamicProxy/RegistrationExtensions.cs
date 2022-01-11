@@ -304,7 +304,7 @@ namespace Autofac.Annotation
             if (builder.RegistrationData.Metadata.TryGetValue(metadataKey, out existing))
             {
                 builder.RegistrationData.Metadata[metadataKey] =
-                    ((IEnumerable<Service>) existing).Concat(interceptorServices).Distinct();
+                    ((IEnumerable<Service>)existing).Concat(interceptorServices).Distinct();
             }
             else
             {
@@ -329,11 +329,11 @@ namespace Autofac.Annotation
             object services;
             if (registration.Metadata.TryGetValue(InterceptorsPropertyName, out services))
             {
-                result = result.Concat((IEnumerable<Service>) services);
+                result = result.Concat((IEnumerable<Service>)services);
             }
 
             return registration.Metadata.TryGetValue(AttributeInterceptorsPropertyName, out services)
-                ? result.Concat((IEnumerable<Service>) services)
+                ? result.Concat((IEnumerable<Service>)services)
                 : result.Concat(GetInterceptorServicesFromAttributes(implType));
         }
 

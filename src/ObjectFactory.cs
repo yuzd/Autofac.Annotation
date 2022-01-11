@@ -46,7 +46,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public T GetObject()
         {
-            return (T) function();
+            return (T)function();
         }
     }
 
@@ -69,7 +69,7 @@ namespace Autofac.Annotation
 
         public Lazy<T> CreateLazy()
         {
-            return new Lazy<T>(() => (T) function());
+            return new Lazy<T>(() => (T)function());
         }
     }
 
@@ -116,7 +116,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 
         /// </summary>
-        public T Value => (T) GetObject();
+        public T Value => (T)GetObject();
     }
 
     /// <summary>
@@ -156,7 +156,7 @@ namespace Autofac.Annotation
             var valueType = typeof(ValueObjectFactory<>);
             var valueFactoryType = valueType.MakeGenericType(targetType);
             Func<object> function = () => value.Resolve(_context, classType, targetType, parameterInfo, autoConfigurationDetail);
-            return Activator.CreateInstance(valueFactoryType, new object[] {function});
+            return Activator.CreateInstance(valueFactoryType, new object[] { function });
         }
 
 
@@ -194,7 +194,7 @@ namespace Autofac.Annotation
             var valueType = typeof(AutowiredObjectFactory<>);
             var valueFactoryType = valueType.MakeGenericType(targetType);
             Func<object> function = () => autowired.Resolve(_context, classType, targetType, fieldOrPropertyName, Parameters);
-            return Activator.CreateInstance(valueFactoryType, new object[] {function});
+            return Activator.CreateInstance(valueFactoryType, new object[] { function });
         }
 
         /// <summary>
@@ -212,7 +212,7 @@ namespace Autofac.Annotation
             var valueType = typeof(LazyAutowiredFactory<>);
             var valueFactoryType = valueType.MakeGenericType(targetType);
             Func<object> function = () => autowired.Resolve(_context, classType, targetType, fieldOrPropertyName, Parameters);
-            var lazyFactory = Activator.CreateInstance(valueFactoryType, new object[] {function});
+            var lazyFactory = Activator.CreateInstance(valueFactoryType, new object[] { function });
             if (!this._lazyMethodCache.TryGetValue(valueFactoryType, out var _cache))
             {
                 _cache = lazyFactory.GetType().GetTypeInfo().GetMethod("CreateLazy").GetReflector();

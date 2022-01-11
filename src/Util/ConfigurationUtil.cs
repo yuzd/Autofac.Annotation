@@ -46,7 +46,7 @@ namespace Autofac.Annotation.Util
                         list.Add(subKey.Item2);
                     }
 
-                    return new ConfiguredListParameter {List = list.ToArray()};
+                    return new ConfiguredListParameter { List = list.ToArray() };
                 }
             }
 
@@ -57,7 +57,7 @@ namespace Autofac.Annotation.Util
                 dict[subKey.Item1] = subKey.Item2;
             }
 
-            return new ConfiguredDictionaryParameter {Dictionary = dict};
+            return new ConfiguredDictionaryParameter { Dictionary = dict };
         }
 
         private static string GetKeyName(string fullKey)

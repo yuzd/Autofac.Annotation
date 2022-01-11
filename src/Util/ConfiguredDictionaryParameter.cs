@@ -20,7 +20,7 @@ namespace Autofac.Annotation.Util
                 var castValue = value as ConfiguredDictionaryParameter;
                 if (castValue != null && instantiatableType != null)
                 {
-                    var dictionary = (IDictionary) Activator.CreateInstance(instantiatableType);
+                    var dictionary = (IDictionary)Activator.CreateInstance(instantiatableType);
                     var generics = instantiatableType.GetGenericArguments();
 
                     foreach (var item in castValue.Dictionary)
@@ -57,7 +57,7 @@ namespace Autofac.Annotation.Util
                 if (typeof(IDictionary).IsAssignableFrom(destinationType) ||
                     (destinationType.IsConstructedGenericType && typeof(IDictionary<,>).IsAssignableFrom(destinationType.GetGenericTypeDefinition())))
                 {
-                    var generics = destinationType.IsConstructedGenericType ? destinationType.GetGenericArguments() : new[] {typeof(string), typeof(object)};
+                    var generics = destinationType.IsConstructedGenericType ? destinationType.GetGenericArguments() : new[] { typeof(string), typeof(object) };
                     if (generics.Length != 2)
                     {
                         return null;

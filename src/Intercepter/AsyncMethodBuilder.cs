@@ -29,7 +29,7 @@ namespace Castle.DynamicProxy
         private static Type GetAsyncMethodBuilderType(Type returnType)
         {
             var asyncMethodBuilderAttribute =
-                (AsyncMethodBuilderAttribute) Attribute.GetCustomAttribute(returnType, typeof(AsyncMethodBuilderAttribute), inherit: false);
+                (AsyncMethodBuilderAttribute)Attribute.GetCustomAttribute(returnType, typeof(AsyncMethodBuilderAttribute), inherit: false);
             if (asyncMethodBuilderAttribute != null)
             {
                 var builderType = asyncMethodBuilderAttribute.BuilderType;
@@ -73,13 +73,13 @@ namespace Castle.DynamicProxy
         {
             var awaitOnCompletedMethod = builder.GetType().GetMethod("AwaitOnCompleted", BindingFlags.Public | BindingFlags.Instance)
                 .MakeGenericMethod(awaiter.GetType(), stateMachine.GetType());
-            awaitOnCompletedMethod.Invoke(builder, new object[] {awaiter, stateMachine});
+            awaitOnCompletedMethod.Invoke(builder, new object[] { awaiter, stateMachine });
         }
 
         public static void SetException(this object builder, Exception exception)
         {
             var setExceptionMethod = builder.GetType().GetMethod("SetException", BindingFlags.Public | BindingFlags.Instance);
-            setExceptionMethod.Invoke(builder, new object[] {exception});
+            setExceptionMethod.Invoke(builder, new object[] { exception });
         }
 
         public static void SetResult(this object builder, object result)
@@ -91,14 +91,14 @@ namespace Castle.DynamicProxy
             }
             else
             {
-                setResultMethod.Invoke(builder, new object[] {result});
+                setResultMethod.Invoke(builder, new object[] { result });
             }
         }
 
         public static void Start(this object builder, object stateMachine)
         {
             var startMethod = builder.GetType().GetMethod("Start", BindingFlags.Public | BindingFlags.Instance).MakeGenericMethod(stateMachine.GetType());
-            startMethod.Invoke(builder, new object[] {stateMachine});
+            startMethod.Invoke(builder, new object[] { stateMachine });
         }
 
         public static object Task(this object builder)

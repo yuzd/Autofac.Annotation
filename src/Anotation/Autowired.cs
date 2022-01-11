@@ -185,7 +185,7 @@ namespace Autofac.Annotation
                         throw new DependencyResolutionException(AutowiredParmeter.GetCircualrChains(propertyService));
                     }
                 }
-                else if (context.TryResolveService(propertyService, new Parameter[] {AutowiredParmeter}, out returnObj))
+                else if (context.TryResolveService(propertyService, new Parameter[] { AutowiredParmeter }, out returnObj))
                 {
                 }
                 //先判断根据Type来找是否能找得到 发现Type没有就尝试用当前的属性定义的名称去找
@@ -202,7 +202,7 @@ namespace Autofac.Annotation
                             throw new DependencyResolutionException(AutowiredParmeter.GetCircualrChains(propertyService));
                         }
                     }
-                    else if (context.TryResolveService(propertyService, new Parameter[] {AutowiredParmeter}, out returnObj))
+                    else if (context.TryResolveService(propertyService, new Parameter[] { AutowiredParmeter }, out returnObj))
                     {
                     }
                 }

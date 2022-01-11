@@ -28,7 +28,7 @@ namespace Autofac.Annotation.Util
         /// </exception>
         public static object ChangeToCompatibleType(object value, Type destinationType, ParameterInfo memberInfo)
         {
-            var attrib = (TypeConverterAttribute) null;
+            var attrib = (TypeConverterAttribute)null;
             if (memberInfo != null)
             {
                 attrib = memberInfo.GetCustomAttributes(typeof(TypeConverterAttribute), true).Cast<TypeConverterAttribute>().FirstOrDefault();
@@ -54,7 +54,7 @@ namespace Autofac.Annotation.Util
         /// </exception>
         public static object ChangeToCompatibleType(object value, Type destinationType, MemberInfo memberInfo)
         {
-            var attrib = (TypeConverterAttribute) null;
+            var attrib = (TypeConverterAttribute)null;
             if (memberInfo != null)
             {
                 attrib = memberInfo.GetCustomAttributes(typeof(TypeConverterAttribute), true).Cast<TypeConverterAttribute>().FirstOrDefault();
@@ -96,7 +96,7 @@ namespace Autofac.Annotation.Util
                 return value;
             }
 
-            var converter = (TypeConverter) null;
+            var converter = (TypeConverter)null;
 
             // Try to get custom type converter information.
             if (converterAttribute != null && !string.IsNullOrEmpty(converterAttribute.ConverterTypeName))
@@ -128,8 +128,8 @@ namespace Autofac.Annotation.Util
                 var parser = destinationType.GetMethod("TryParse", BindingFlags.Static | BindingFlags.Public);
                 if (parser != null)
                 {
-                    var parameters = new[] {value, null};
-                    if ((bool) parser.Invoke(null, parameters))
+                    var parameters = new[] { value, null };
+                    if ((bool)parser.Invoke(null, parameters))
                     {
                         return parameters[1];
                     }

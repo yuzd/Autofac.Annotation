@@ -9,27 +9,27 @@ using Castle.DynamicProxy.NoCoverage;
 namespace Autofac.AspectIntercepter
 {
     /// <summary>
-    /// AOP Pointcut拦截器
+    ///     AOP Pointcut拦截器
     /// </summary>
     [Component(typeof(PointcutIntercept), NotUseProxy = true)]
     public class PointcutIntercept : AsyncInterceptor
     {
+        private readonly AdviceIntercept _adviceIntercept;
         private readonly IComponentContext _component;
         private readonly PointcutMethodInvokeCache _configuration;
 
-
         /// <summary>
-        /// 构造方法
+        ///     构造方法
         /// </summary>
-        public PointcutIntercept(IComponentContext context, PointcutMethodInvokeCache configurationList)
+        public PointcutIntercept(IComponentContext context, PointcutMethodInvokeCache configurationList, AdviceIntercept adviceIntercept)
         {
             _component = context;
             _configuration = configurationList;
+            _adviceIntercept = adviceIntercept;
         }
 
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="invocation"></param>
         protected override void Intercept(IInvocation invocation)
@@ -41,7 +41,8 @@ namespace Autofac.AspectIntercepter
                         out var pointCutDynamic))
                 {
                     //该方法不需要拦截
-                    invocation.Proceed();
+                    _adviceIntercept.InterceptInternal(invocation);
+                    // invocation.Proceed();
                     return;
                 }
 
@@ -60,19 +61,16 @@ namespace Autofac.AspectIntercepter
             var task = runTask(aspectContext);
             // If the intercept task has yet to complete, wait for it.
             if (!task.IsCompleted)
-            {
                 // Need to use Task.Run() to prevent deadlock in .NET Framework ASP.NET requests.
                 // GetAwaiter().GetResult() prevents a thrown exception being wrapped in a AggregateException.
                 // See https://stackoverflow.com/a/17284612
                 Task.Run(() => task).GetAwaiter().GetResult();
-            }
 
             task.RethrowIfFaulted();
         }
 
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="invocation"></param>
         /// <returns></returns>
@@ -85,7 +83,8 @@ namespace Autofac.AspectIntercepter
                         out var pointCutDynamic))
                 {
                     //该方法不需要拦截
-                    await invocation.ProceedAsync();
+                    await _adviceIntercept.InterceptInternalAsync(invocation);
+                    // await invocation.ProceedAsync();
                     return;
                 }
 

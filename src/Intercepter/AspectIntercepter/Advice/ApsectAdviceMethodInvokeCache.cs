@@ -15,8 +15,8 @@ namespace Autofac.AspectIntercepter.Advice
     /// 在DI容器build的时候会触发这个实例new
     /// 然后解析所有打了Aspect标签的class进行解析打了有继承AspectInvokeAttribute的所有方法并且缓存起来
     /// </summary>
-    [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, NotUseProxy = true)]
-    public class ApsectAdviceMethodInvokeCache
+    [Component(Services = new []{typeof(ApsectAdviceMethodInvokeCache),typeof(IStartable)},AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, NotUseProxy = true,OrderIndex = Int32.MinValue)]
+    public class ApsectAdviceMethodInvokeCache:IStartable
     {
         /// <summary>
         /// 构造方法
@@ -268,5 +268,13 @@ namespace Autofac.AspectIntercepter.Advice
         /// 由于动态泛型的method是跟着泛型T变化的  所以需要单独缓存
         /// </summary>
         internal ConcurrentDictionary<string, AspectAttributeChainBuilder> DynamicCacheList { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Start()
+        {
+            
+        }
     }
 }

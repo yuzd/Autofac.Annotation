@@ -8,38 +8,38 @@ using Autofac.AspectIntercepter.Impl;
 namespace Autofac.AspectIntercepter.Pointcut
 {
     /// <summary>
-    ///  构建拦截器链的方法
+    ///     构建拦截器链的方法
     /// </summary>
     internal class PointcutMethod
     {
         /// <summary>
-        /// 排序
+        ///     排序
         /// </summary>
         public int OrderIndex { get; set; }
 
         /// <summary>
-        /// 切面配置对应的前置方法
+        ///     切面配置对应的前置方法
         /// </summary>
         public RunTimePointcutMethod<Before> BeforeMethod { get; set; }
 
         /// <summary>
-        /// 切面配置对应的后置方法(只是正常)
+        ///     切面配置对应的后置方法(只是正常)
         /// </summary>
         public RunTimePointcutMethod<AfterReturn> AfterReturnMethod { get; set; }
 
         /// <summary>
-        /// 切面配置对应的后置方法(不管正常还是异常)
+        ///     切面配置对应的后置方法(不管正常还是异常)
         /// </summary>
         public RunTimePointcutMethod<After> AfterMethod { get; set; }
 
 
         /// <summary>
-        /// 切面配置对应的环绕方法
+        ///     切面配置对应的环绕方法
         /// </summary>
         public RunTimePointcutMethod<Around> AroundMethod { get; set; }
 
         /// <summary>
-        /// 切面配置对应的错误拦截方法(只是异常)
+        ///     切面配置对应的错误拦截方法(只是异常)
         /// </summary>
         public RunTimePointcutMethod<AfterThrows> AfterThrowsMethod { get; set; }
     }
@@ -47,54 +47,63 @@ namespace Autofac.AspectIntercepter.Pointcut
     internal class RunTimePointcutMethod<T>
     {
         /// <summary>
-        /// 对应的是哪种pointcut方法标签 有 After Before Around Throws
+        ///     对应的是哪种pointcut方法标签 有 After Before Around Throws
         /// </summary>
         public T PointcutBasicAttribute { get; set; }
 
         /// <summary>
-        /// 被拦截实例
+        ///     被拦截实例
         /// </summary>
         public object Instance { get; set; }
 
         /// <summary>
-        /// 被拦截方法
+        ///     被拦截方法
         /// </summary>
         public MethodReflector MethodInfo { get; set; }
 
         /// <summary>
-        /// 方法返回类型
+        ///     方法返回类型
         /// </summary>
         public Type MethodReturnType { get; set; }
 
         /// <summary>
-        /// 方法参数
+        ///     方法参数
         /// </summary>
         public ParameterInfo[] MethodParameters { get; set; }
 
         /// <summary>
-        /// 被拦截方法上的指定的切面注解
+        ///     被拦截方法上的指定的切面注解
         /// </summary>
         public Attribute PointcutInjectAnotation { get; set; }
     }
 
 
     /// <summary>
-    /// 构建拦截器链
+    ///     构建拦截器链
     /// </summary>
     internal class PointcutMethodChainBuilder
     {
-        public List<PointcutMethod> PointcutMethodChainList { get; set; }
-
         public readonly Lazy<AspectDelegate> AspectFunc;
 
         public PointcutMethodChainBuilder()
         {
-            AspectFunc = new Lazy<AspectDelegate>(this.BuilderMethodChain);
+            AspectFunc = new Lazy<AspectDelegate>(() => BuilderMethodChain());
         }
 
-        private AspectDelegate BuilderMethodChain()
+        /// <summary>
+        ///     支持把Aspect传进来
+        /// </summary>
+        /// <param name="mimin"></param>
+        public PointcutMethodChainBuilder(Lazy<AspectDelegate> mimin)
         {
-            AspectMiddlewareBuilder builder = new AspectMiddlewareBuilder();
+            AspectFunc = new Lazy<AspectDelegate>(() => BuilderMethodChain(mimin));
+        }
+
+        public List<PointcutMethod> PointcutMethodChainList { get; set; }
+
+        private AspectDelegate BuilderMethodChain(Lazy<AspectDelegate> mimin = null)
+        {
+            var builder = new AspectMiddlewareBuilder();
 
             var aroundIndex = 0;
             foreach (var chain in PointcutMethodChainList)
@@ -148,7 +157,10 @@ namespace Autofac.AspectIntercepter.Pointcut
                 {
                     try
                     {
-                        await ctx.Proceed();
+                        if (mimin != null)
+                            await mimin.Value.Invoke(ctx);
+                        else
+                            await ctx.Proceed();
                     }
                     catch (Exception ex)
                     {

@@ -286,10 +286,7 @@ namespace Autofac.Annotation
             else
                 allCompoment.ComponentModelCache.TryAdd(component.Item1.CurrentType, component.Item1);
 
-            if (isGeneric)
-            {
-                return;
-            }
+            if (isGeneric) return;
 
             componentRegistry.Register(component.Item2.CreateRegistration());
         }
@@ -539,12 +536,14 @@ namespace Autofac.Annotation
         {
             if (registrar == null) throw new ArgumentNullException(nameof(registrar));
 
+         
+
             if (component.EnableAspect && component.Interceptor != null)
             {
                 throw new InvalidOperationException(
                     $"'{component.CurrentType.FullName}' can not interceptor by both EnableAspect and Interceptor:'{component.Interceptor.FullName}' ");
             }
-            else if (component.Interceptor != null)
+            if (component.Interceptor != null)
             {
                 //配置拦截器
                 switch (component.InterceptorType)
@@ -574,38 +573,26 @@ namespace Autofac.Annotation
                             $"'{component.CurrentType.FullName}' can not interceptor by both EnableAspect and Interceptor:'{component.Interceptor.FullName}' ");
                 }
             }
-            else if (component.EnableAspect)
+            
+            registrar.As(component.CurrentType);
+   
+            //某些不能被设置为代理 防止出错
+            if (component.NotUseProxy) return;
+            
+            //PointCut 包含 Aspect 。反之不可以
+            if (aspecJ.PointcutConfigurationInfoList.Any() && !aspecJ.PointcutTypeInfoList.ContainsKey(component.CurrentType)
+                                                                && needWarpForPointcut(component, aspecJ))
             {
-                if (component.isDynamicGeneric)
-                    //动态泛型类的话 只能用 interface拦截器 
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
-                else if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
-                    //打了[InterfaceInterceptor]标签
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
-                else if (component.InterceptorType == InterceptorType.Interface)
-                    //指定了 interface 拦截器 或
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
-                else
-                    //默认是class + virtual 拦截器
-                    registrar.EnableClassInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
-            }
-            else
-            {
-                registrar.As(component.CurrentType);
-
-                //某些不能被设置为代理 防止出错
-                if (component.NotUseProxy) return;
-
                 //找到是否存在需要Pointcut的如果有的话就配置一个代理拦截器
-                if (!aspecJ.PointcutConfigurationInfoList.Any())
-                    //配置了拦截器就不能注册自己
-                    return;
-
-                if (aspecJ.PointcutTypeInfoList.ContainsKey(component.CurrentType))
-                    //配置了拦截器就不能注册自己
-                    return;
-
-                if (!needWarpForPointcut(component, aspecJ)) return;
+                // if (!aspecJ.PointcutConfigurationInfoList.Any())
+                //     //配置了拦截器就不能注册自己
+                //     return;
+                //
+                // if (aspecJ.PointcutTypeInfoList.ContainsKey(component.CurrentType))
+                //     //配置了拦截器就不能注册自己
+                //     return;
+                //
+                // if (!needWarpForPointcut(component, aspecJ)) return;
 
                 if (component.CurrentType.GetCustomAttribute<ClassInterceptor>() != null)
                 {
@@ -628,6 +615,21 @@ namespace Autofac.Annotation
                 }
 
                 registrar.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+            }
+            else if (component.EnableAspect)
+            {
+                if (component.isDynamicGeneric)
+                    //动态泛型类的话 只能用 interface拦截器 
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                else if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
+                    //打了[InterfaceInterceptor]标签
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                else if (component.InterceptorType == InterceptorType.Interface)
+                    //指定了 interface 拦截器 或
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                else
+                    //默认是class + virtual 拦截器
+                    registrar.EnableClassInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
             }
         }
 
@@ -712,10 +714,8 @@ namespace Autofac.Annotation
             if (!component.AutoActivate) return;
 
             if (component.AutoActivate && component.AutofacScope == AutofacScope.SingleInstance)
-            {
                 //默认单例注册完成后自动装载
                 registrar.AutoActivate();
-            }
         }
 
         /// <summary>
@@ -1362,6 +1362,12 @@ namespace Autofac.Annotation
                 result.Interceptor = null;
                 result.AutofacScope = AutofacScope.SingleInstance;
                 result.OrderIndex = int.MinValue;
+                result.NotUseProxy = true;
+                result.EnableAspect = false;
+            }
+            else
+            {
+                //自动识别EnableAspect
             }
 
             #region 解析注册对应的类的列表

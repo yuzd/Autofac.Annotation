@@ -29,9 +29,9 @@ public class TestPointCutUseAutofacRegister
         var container = builder.Build();
         var a1 = container.Resolve<TestModel13_1>();
         a1.TestModel132.Say();
-        Assert.Equal(2,TestModel13_1.result.Count);
+        Assert.Equal(4,TestModel13_1.result.Count);
         a1.Say();
-        Assert.Equal(5,TestModel13_1.result.Count);
+        Assert.Equal(7,TestModel13_1.result.Count);
     }
 }
 
@@ -49,7 +49,7 @@ public class TestModel13_1
 }
 
 /// <summary>
-/// 因为有EnableAspect导致了pointcut无法生效，因为他们是互斥的
+/// EnableAspect 和 pointcut共同起作用
 /// </summary>
 [Component(EnableAspect = true)]
 public class TestModel13_2
@@ -59,7 +59,7 @@ public class TestModel13_2
     [BeforeIntecepor]
     public virtual void Say()
     {
-        TestModel13_1.result.Add("2");
+        TestModel13_1.result.Add("3");
         Console.WriteLine("hello");
     }
 }
@@ -68,7 +68,7 @@ public class BeforeIntecepor : AspectBefore
 {
     public override Task Before(AspectContext aspectContext)
     {
-        TestModel13_1.result.Add("1");
+        TestModel13_1.result.Add("2");
         return Task.CompletedTask;
     }
 }
@@ -81,6 +81,12 @@ public class Pointcut13
     {
         TestModel13_1.result.Add("1");
         await next(context);
-        TestModel13_1.result.Add("3");
+        TestModel13_1.result.Add("4");
     }
+}
+
+[Component]
+public abstract class AbTest1
+{
+    
 }

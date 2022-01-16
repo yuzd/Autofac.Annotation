@@ -129,6 +129,32 @@ public class TestPointCutUseAutofacRegister
         var PointCutTestResult = container.Resolve<PointCutTestResult>();
         Assert.Equal(6, PointCutTestResult.result7.Count);
     }
+    
+    [Fact]
+    public void Test8()
+    {
+        var builder = new ContainerBuilder();
+        builder.RegisterSpring(r => r.RegisterAssembly(typeof(TestPointCutUseAutofacRegister).Assembly));
+        builder.RegisterType(typeof(TestModel8)).InstancePerDependency();
+        builder.RegisterType(typeof(TestModel82)).InstancePerDependency();
+        var container = builder.Build();
+        var a1 = container.Resolve<TestModel8>();
+        a1.Say();
+        var PointCutTestResult = container.Resolve<PointCutTestResult>();
+        Assert.Equal(6, PointCutTestResult.result7.Count);
+    }
+    
+    [Fact]
+    public void Test9()
+    {
+        var builder = new ContainerBuilder();
+        builder.RegisterSpring(r => r.RegisterAssembly(typeof(TestPointCutUseAutofacRegister).Assembly));
+        var container = builder.Build();
+        var a1 = container.Resolve<TestPa1>();
+        a1.Say2();
+        var PointCutTestResult = container.Resolve<PointCutTestResult>();
+        Assert.Equal(2, PointCutTestResult.result8.Count);
+    }
 }
 
 /// <summary>
@@ -287,6 +313,7 @@ public class PointCutTestResult
     public List<string> result5 { get; set; } = new List<string>();
     public List<string> result6 { get; set; } = new List<string>();
     public List<string> result7 { get; set; } = new List<string>();
+    public List<string> result8 { get; set; } = new List<string>();
 }
 
 public abstract class TestModelBase
@@ -316,6 +343,10 @@ public abstract class TestModelBase2
     {
         _pointCutTestResult.result7.Add("TestModel13_4.Say2");
     }
+    public virtual void Say2(object obj)
+    {
+        Console.WriteLine("hello Say2 obj");
+    }
 }
 
 public class TestModel8 : TestModelBase2
@@ -328,7 +359,17 @@ public class TestModel8 : TestModelBase2
     }
 }
 
-[Pointcut(NameSpace = "Autofac.Annotation.Test.test13", Class = "TestModel8")]
+public class TestModel82 : TestModelBase2
+{
+    public virtual void Say()
+    {
+        _pointCutTestResult.result7.Add("TestModel13_4.Say");
+        Say2();
+        Console.WriteLine("hello");
+    }
+}
+
+[Pointcut(NameSpace = "Autofac.Annotation.Test.test13", Class = "TestModel8*")]
 public class Pointcut14
 {
     [Around]
@@ -360,5 +401,41 @@ public class Pointcut14
     public void AfterReturn(object value1)
     {
         Console.WriteLine("PointcutTest1.AfterReturn");
+    }
+}
+
+
+
+public abstract class TestModelBase3
+{
+    [Autowired] public PointCutTestResult _pointCutTestResult;
+
+    [BeforeIntecepor5]
+    public virtual void Say2()
+    {
+        _pointCutTestResult.result8.Add("TestModelBase3.Say2");
+    }
+    
+}
+
+[Component]
+public class TestPa1 : TestModelBase3
+{
+    
+}
+
+[Component]
+public class TestPa2 : TestModelBase3
+{
+    
+}
+
+public class BeforeIntecepor5 : AspectBefore
+{
+    public override Task Before(AspectContext aspectContext)
+    {
+        var _pointCutTestResult = aspectContext.ComponentContext.Resolve<PointCutTestResult>();
+        _pointCutTestResult.result8.Add("BeforeIntecepor5.Before");
+        return Task.CompletedTask;
     }
 }

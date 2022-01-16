@@ -79,7 +79,6 @@ namespace Autofac.AspectIntercepter.Pointcut
 
 
     /// <summary>
-    ///     构建拦截器链
     /// </summary>
     internal class PointcutMethodChainBuilder
     {

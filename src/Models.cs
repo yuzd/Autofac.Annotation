@@ -370,4 +370,32 @@ namespace Autofac.Annotation
         PointCut,
         AutoConfiguration
     }
+
+    internal class ObjectKey
+    {
+       
+        public ObjectKey(Type type,MethodInfo method)
+        {
+            this.Type = type;
+            this.Method = method;
+        }
+        public Type Type { get; set; }
+        public MethodInfo Method { get; set; }
+        
+        public override int GetHashCode()
+        {
+            return this.Type.GetHashCode() + this.Method.GetHashCode();
+        }
+        
+        public override bool Equals(object obj)
+        {
+            var item = obj as ObjectKey;
+            if(item == null)
+            {
+                return false;
+            }
+
+            return this.Type == item.Type && this.Method == item.Method;
+        }
+    }
 }

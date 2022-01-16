@@ -675,10 +675,11 @@ namespace Autofac.Annotation
                     }
                     else
                     {
-                        if (pointCutCfg.PointcutTargetInfoList.ContainsKey(method))
-                            pointCutCfg.PointcutTargetInfoList[method].Add(new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation));
+                        var key = new ObjectKey(targetClass, method);
+                        if (pointCutCfg.PointcutTargetInfoList.ContainsKey(key))
+                            pointCutCfg.PointcutTargetInfoList[key].Add(new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation));
                         else
-                            pointCutCfg.PointcutTargetInfoList.TryAdd(method,
+                            pointCutCfg.PointcutTargetInfoList.TryAdd(key,
                                 new List<RunTimePointCutConfiguration> { new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation) });
                     }
 
@@ -1071,7 +1072,7 @@ namespace Autofac.Annotation
             var list = new PointCutConfigurationList
             {
                 PointcutConfigurationInfoList = new List<PointcutConfigurationInfo>(),
-                PointcutTargetInfoList = new ConcurrentDictionary<MethodInfo, List<RunTimePointCutConfiguration>>(),
+                PointcutTargetInfoList = new ConcurrentDictionary<ObjectKey, List<RunTimePointCutConfiguration>>(),
                 DynamicPointcutTargetInfoList = new ConcurrentDictionary<string, List<RunTimePointCutConfiguration>>(),
                 PointcutTypeInfoList = new ConcurrentDictionary<Type, bool>()
             };

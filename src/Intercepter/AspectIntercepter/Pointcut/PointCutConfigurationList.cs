@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using Autofac.Annotation;
 
 namespace Autofac.AspectIntercepter.Pointcut
 {
@@ -18,7 +19,7 @@ namespace Autofac.AspectIntercepter.Pointcut
         /// <summary>
         /// 对应的method目标集合
         /// </summary>
-        public ConcurrentDictionary<MethodInfo, List<RunTimePointCutConfiguration>> PointcutTargetInfoList { get; set; }
+        public ConcurrentDictionary<ObjectKey, List<RunTimePointCutConfiguration>> PointcutTargetInfoList { get; set; }
 
         /// <summary>
         /// 针对动态泛型类的method目标集合
@@ -48,5 +49,6 @@ namespace Autofac.AspectIntercepter.Pointcut
         /// 方法运行时 有识别到 需要注入 指定注解
         /// </summary>
         public Attribute MethodInjectPointcutAttribute { get; set; }
+        
     }
 }

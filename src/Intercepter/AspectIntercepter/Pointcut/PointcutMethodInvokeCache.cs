@@ -22,14 +22,14 @@ namespace Autofac.AspectIntercepter.Pointcut
             var pointCutConfigurationList = context.Resolve<PointCutConfigurationList>();
             var _cache = context.Resolve<ApsectAdviceMethodInvokeCache>();
 
-            CacheList = new ConcurrentDictionary<MethodInfo, PointcutMethodChainBuilder>();
+            CacheList = new ConcurrentDictionary<ObjectKey, PointcutMethodChainBuilder>();
 
             DynamicCacheList = new ConcurrentDictionary<string, PointcutMethodChainBuilder>();
 
             //每个方法维度的 每个方法对应的是一组pointcut 每个pointcut 就是一个切面 一个切面里面会有多组 拦截器方法
             foreach (var methodCache in pointCutConfigurationList.PointcutTargetInfoList)
             {
-                var pointCutMethodChain = _cache != null && _cache.CacheList.TryGetValue(methodCache.Key, out var attribute)
+                var pointCutMethodChain = _cache != null && _cache.CacheList.TryGetValue(methodCache.Key.Method, out var attribute)
                         ? new PointcutMethodChainBuilder
                             (attribute.AspectFunc)
                             {
@@ -208,7 +208,7 @@ namespace Autofac.AspectIntercepter.Pointcut
         /// <summary>
         ///     缓存
         /// </summary>
-        internal ConcurrentDictionary<MethodInfo, PointcutMethodChainBuilder> CacheList { get; set; }
+        internal ConcurrentDictionary<ObjectKey, PointcutMethodChainBuilder> CacheList { get; set; }
 
         /// <summary>
         ///     由于动态泛型的method是跟着泛型T变化的  所以需要单独缓存

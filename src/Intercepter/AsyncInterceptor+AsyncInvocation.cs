@@ -25,6 +25,7 @@ namespace Castle.DynamicProxy
             public IReadOnlyList<object> Arguments => invocation.Arguments;
 
             public MethodInfo TargetMethod => this.invocation.MethodInvocationTarget;
+            public Type TargetType=> this.invocation.TargetType;
             public MethodInfo Method => this.invocation.Method;
 
             public object Result { get; set; }

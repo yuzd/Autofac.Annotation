@@ -1,6 +1,7 @@
 // Copyright (c) 2020 stakx
 // License available at https://github.com/stakx/DynamicProxy.AsyncInterceptor/blob/master/LICENSE.md.
 
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -21,6 +22,11 @@ namespace Castle.DynamicProxy
         /// 被拦截的目标方法
         /// </summary>
         MethodInfo TargetMethod { get; }
+        
+        /// <summary>
+        /// 被拦截的目标类
+        /// </summary>
+        Type TargetType { get; }
 
         /// <summary>
         /// 被拦截的目标方法的proxy方法

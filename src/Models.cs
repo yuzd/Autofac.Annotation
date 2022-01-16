@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using AspectCore.Extensions.Reflection;
+using Autofac.AspectIntercepter.Advice;
 using Autofac.AspectIntercepter.Pointcut;
 using Microsoft.Extensions.Configuration;
 
@@ -161,6 +162,13 @@ namespace Autofac.Annotation
         ///     依赖的 是用来表示一个bean A的实例化依赖另一个bean B的实例化， 但是A并不需要持有一个B的对象
         /// </summary>
         internal Type[] DependsOn { get; set; }
+
+
+        /// <summary>
+        ///     一个class下所有的打了aspect标签的方法缓存
+        /// </summary>
+        internal readonly ConcurrentDictionary<MethodInfo, List<AspectInvokeAttribute>> AspectAttributeCache =
+            new ConcurrentDictionary<MethodInfo, List<AspectInvokeAttribute>>();
     }
 
     /// <summary>

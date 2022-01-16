@@ -34,9 +34,11 @@ namespace Autofac.AspectIntercepter
         /// <param name="invocation"></param>
         internal void InterceptInternal(IInvocation invocation)
         {
+            //注意 针对是继承过来的方法会不到
+
             #region 先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
 
-            if (!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget, out var attribute))
+            if (!_cache.CacheList.TryGetValue(invocation.Method, out var attribute))
             {
                 //动态泛型类
                 if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
@@ -84,7 +86,7 @@ namespace Autofac.AspectIntercepter
         {
             #region 先从缓存里面拿到这个方法时候打了继承AspectInvokeAttribute的标签
 
-            if (!_cache.CacheList.TryGetValue(invocation.TargetMethod, out var attribute))
+            if (!_cache.CacheList.TryGetValue(invocation.Method, out var attribute))
             {
                 //动态泛型类
                 if (!invocation.TargetMethod.DeclaringType.GetTypeInfo().IsGenericType ||

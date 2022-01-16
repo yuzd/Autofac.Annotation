@@ -34,7 +34,7 @@ namespace Autofac.AspectIntercepter
         /// <param name="invocation"></param>
         protected override void Intercept(IInvocation invocation)
         {
-            if (!_configuration.CacheList.TryGetValue(invocation.MethodInvocationTarget, out var pointCut))
+            if (!_configuration.CacheList.TryGetValue(invocation.Method, out var pointCut))
             {
                 if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
                     !_configuration.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(),
@@ -76,7 +76,7 @@ namespace Autofac.AspectIntercepter
         /// <returns></returns>
         protected override async ValueTask InterceptAsync(IAsyncInvocation invocation)
         {
-            if (!_configuration.CacheList.TryGetValue(invocation.TargetMethod, out var pointCut))
+            if (!_configuration.CacheList.TryGetValue(invocation.Method, out var pointCut))
             {
                 if (!invocation.TargetMethod.DeclaringType.GetTypeInfo().IsGenericType ||
                     !_configuration.DynamicCacheList.TryGetValue(invocation.TargetMethod.GetMethodInfoUniqueName(),

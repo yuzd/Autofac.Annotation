@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using AspectCore.Extensions.Reflection;
 using Autofac.Annotation.Condition;
 using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter.Advice;
@@ -206,10 +207,10 @@ namespace Autofac.Annotation
         /// 是否可用
         /// </summary>
         /// <returns></returns>
-        internal bool IsVaild(ComponentModel component, KeyValuePair<MethodInfo, List<Attribute>> methodInfoCache,
+        internal bool IsVaild(ComponentModel component, MethodInfo methodInfoCache,
             Attribute parentClassinjectPointcutAnnotationCache, out Attribute injectPointcutAnnotationCache)
         {
-            var methodInfo = methodInfoCache.Key;
+            var methodInfo = methodInfoCache;
             injectPointcutAnnotationCache = null;
             //如果本身带了_的话
             //test_a  
@@ -226,7 +227,7 @@ namespace Autofac.Annotation
             if (this.AttributeType != null)
             {
                 Attribute annotation = null;
-                foreach (var attr in methodInfoCache.Value)
+                foreach (var attr in methodInfoCache.GetReflector().GetCustomAttributes())
                 {
                     if (AttributeType == attr.GetType())
                     {

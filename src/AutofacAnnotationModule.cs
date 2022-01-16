@@ -322,11 +322,11 @@ namespace Autofac.Annotation
             });
 
             //解析程序集PointCut标签类和方法
-            var aspectJ = GetPointCutConfiguration(builder);
+            var pointCutCfg = GetPointCutConfiguration(builder);
             //解析程序集拿到打了pointcut的类 打了Compoment的类 解析Import的类
-            var componetList = GetAllComponent(builder, aspectJ);
+            var componetList = GetAllComponent(builder, pointCutCfg);
             var cache = builder.Properties[_ALL_COMPOMENT] as ComponentModelCacheSingleton;
-            if (cache != null) cache.PointCutConfigurationList = aspectJ;
+            if (cache != null) cache.PointCutConfigurationList = pointCutCfg;
             foreach (var component in componetList)
             {
                 //Conditional
@@ -376,7 +376,7 @@ namespace Autofac.Annotation
                 SetAutoActivate(component, registrar);
 
                 //拦截器
-                SetIntercept(component, registrar, aspectJ);
+                SetIntercept(component, registrar, pointCutCfg);
 
                 //方法注册
                 RegisterMethods(component, registrar);
@@ -488,38 +488,48 @@ namespace Autofac.Annotation
         private void SetIntercept(ComponentModel component,
             IRegistrationBuilder<object, ReflectionActivatorData, object> builder, ComponentModelCacheSingleton allCompoment)
         {
-            //找到是否存在需要Pointcut的如果有的话就配置一个代理拦截器
-            if (allCompoment.PointCutConfigurationList == null || !allCompoment.PointCutConfigurationList.PointcutConfigurationInfoList.Any())
-                //配置了拦截器就不能注册自己
-                return;
+            PointCutConfigurationList pointCutCfg = allCompoment.PointCutConfigurationList;
 
-            if (allCompoment.PointCutConfigurationList.PointcutTypeInfoList.ContainsKey(component.CurrentType))
-                //配置了拦截器就不能注册自己
-                return;
-
-            if (!needWarpForPointcut(component, allCompoment.PointCutConfigurationList)) return;
-
-            if (component.CurrentType.GetCustomAttribute<ClassInterceptor>() != null)
+            if (pointCutCfg != null && pointCutCfg.PointcutConfigurationInfoList.Any() && !pointCutCfg.PointcutTypeInfoList.ContainsKey(component.CurrentType)
+                && NeedWarpForPointcut(component, pointCutCfg))
             {
+                if (component.CurrentType.GetCustomAttribute<ClassInterceptor>() != null)
+                {
+                    builder.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    return;
+                }
+
+                if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
+                {
+                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    return;
+                }
+
+                //找寻它的继承的接口列表下是否存在相同的namespace下的接口
+                if (component.CurrentType.GetTypeInfo().ImplementedInterfaces
+                    .Any(r => r.Assembly.Equals(component.CurrentType.Assembly)))
+                {
+                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    return;
+                }
+
                 builder.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
-                return;
             }
-
-            if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
+            else if (component.EnableAspect)
             {
-                builder.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
-                return;
+                if (component.isDynamicGeneric)
+                    //动态泛型类的话 只能用 interface拦截器 
+                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                else if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
+                    //打了[InterfaceInterceptor]标签
+                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                else if (component.InterceptorType == InterceptorType.Interface)
+                    //指定了 interface 拦截器 或
+                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                else
+                    //默认是class + virtual 拦截器
+                    builder.EnableClassInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
             }
-
-            //找寻它的继承的接口列表下是否存在相同的namespace下的接口
-            if (component.CurrentType.GetTypeInfo().ImplementedInterfaces
-                .Any(r => r.Assembly.Equals(component.CurrentType.Assembly)))
-            {
-                builder.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
-                return;
-            }
-
-            builder.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
         }
 
         /// <summary>
@@ -529,22 +539,17 @@ namespace Autofac.Annotation
         /// <typeparam name="TConcreteReflectionActivatorData"></typeparam>
         /// <param name="component"></param>
         /// <param name="registrar"></param>
-        /// <param name="aspecJ"></param>
+        /// <param name="pointCutCfg"></param>
         private void SetIntercept<TLimit, TConcreteReflectionActivatorData>(ComponentModel component,
-            IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, object> registrar, PointCutConfigurationList aspecJ)
+            IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, object> registrar, PointCutConfigurationList pointCutCfg)
             where TConcreteReflectionActivatorData : ReflectionActivatorData
         {
             if (registrar == null) throw new ArgumentNullException(nameof(registrar));
 
-         
-
             if (component.EnableAspect && component.Interceptor != null)
-            {
                 throw new InvalidOperationException(
                     $"'{component.CurrentType.FullName}' can not interceptor by both EnableAspect and Interceptor:'{component.Interceptor.FullName}' ");
-            }
             if (component.Interceptor != null)
-            {
                 //配置拦截器
                 switch (component.InterceptorType)
                 {
@@ -572,28 +577,16 @@ namespace Autofac.Annotation
                         throw new InvalidOperationException(
                             $"'{component.CurrentType.FullName}' can not interceptor by both EnableAspect and Interceptor:'{component.Interceptor.FullName}' ");
                 }
-            }
-            
+
             registrar.As(component.CurrentType);
-   
+
             //某些不能被设置为代理 防止出错
             if (component.NotUseProxy) return;
-            
-            //PointCut 包含 Aspect 。反之不可以
-            if (aspecJ.PointcutConfigurationInfoList.Any() && !aspecJ.PointcutTypeInfoList.ContainsKey(component.CurrentType)
-                                                                && needWarpForPointcut(component, aspecJ))
-            {
-                //找到是否存在需要Pointcut的如果有的话就配置一个代理拦截器
-                // if (!aspecJ.PointcutConfigurationInfoList.Any())
-                //     //配置了拦截器就不能注册自己
-                //     return;
-                //
-                // if (aspecJ.PointcutTypeInfoList.ContainsKey(component.CurrentType))
-                //     //配置了拦截器就不能注册自己
-                //     return;
-                //
-                // if (!needWarpForPointcut(component, aspecJ)) return;
 
+            //PointCut 包含 Aspect 。反之不可以
+            if (pointCutCfg.PointcutConfigurationInfoList.Any() && !pointCutCfg.PointcutTypeInfoList.ContainsKey(component.CurrentType)
+                                                                && NeedWarpForPointcut(component, pointCutCfg))
+            {
                 if (component.CurrentType.GetCustomAttribute<ClassInterceptor>() != null)
                 {
                     registrar.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
@@ -638,55 +631,47 @@ namespace Autofac.Annotation
         ///     查看是否存在需要拦截的
         /// </summary>
         /// <param name="component"></param>
-        /// <param name="aspectJ"></param>
+        /// <param name="pointCutCfg"></param>
         /// <returns></returns>
-        private bool needWarpForPointcut(ComponentModel component, PointCutConfigurationList aspectJ)
+        private bool NeedWarpForPointcut(ComponentModel component, PointCutConfigurationList pointCutCfg)
         {
             var targetClass = component.CurrentType;
 
             var result = false;
-            Dictionary<MethodInfo, List<Attribute>> instanceMthodCustomAttributeList = null;
-            foreach (var aspectClass in aspectJ.PointcutConfigurationInfoList)
+            foreach (var aspectClass in pointCutCfg.PointcutConfigurationInfoList)
             {
                 //切面 不能 切自己
                 if (aspectClass.PointClass == component.CurrentType)
                 {
-                    aspectJ.PointcutTypeInfoList.TryAdd(targetClass, true);
+                    pointCutCfg.PointcutTypeInfoList.TryAdd(targetClass, true);
                     return false;
                 }
 
                 //先检查class是否满足  pointCutClassInjectAnotation指的是 这个切面 在这个class上有没有对应的
                 if (!aspectClass.Pointcut.IsVaildClass(component, out var pointCutClassInjectAnotation)) continue;
 
-                //查看里面的method是否有满足的
-                if (instanceMthodCustomAttributeList == null)
+                //查看里面的method是否有满足的 包含查询继承的方法
+                foreach (var method in targetClass.GetAllInstanceMethod())
                 {
-                    var instanceMethodList = targetClass.GetAllInstanceMethod(false).ToList().Where(m => !m.IsSpecialName).ToList();
-                    instanceMthodCustomAttributeList = new Dictionary<MethodInfo, List<Attribute>>();
-                    foreach (var method in instanceMethodList) instanceMthodCustomAttributeList.Add(method, method.GetCustomAttributes().ToList());
-                }
-
-                foreach (var methodCache in instanceMthodCustomAttributeList)
-                {
-                    var method = methodCache.Key;
                     //pointCutMethodInjectAnotation 指的是 这个切面 在method 有没有对应的 如果method没有 class有就用class的
-                    if (!aspectClass.Pointcut.IsVaild(component, methodCache, pointCutClassInjectAnotation, out var pointCutMethodInjectAnotation)) continue;
+                    if (!aspectClass.Pointcut.IsVaild(component, method, pointCutClassInjectAnotation, out var pointCutMethodInjectAnotation)) continue;
 
                     if (component.isDynamicGeneric)
                     {
                         var uniqKey = method.GetMethodInfoUniqueName();
-                        if (aspectJ.DynamicPointcutTargetInfoList.ContainsKey(uniqKey))
-                            aspectJ.DynamicPointcutTargetInfoList[uniqKey].Add(new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation));
+                        if (pointCutCfg.DynamicPointcutTargetInfoList.ContainsKey(uniqKey))
+                            pointCutCfg.DynamicPointcutTargetInfoList[uniqKey]
+                                .Add(new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation));
                         else
-                            aspectJ.DynamicPointcutTargetInfoList.TryAdd(uniqKey,
+                            pointCutCfg.DynamicPointcutTargetInfoList.TryAdd(uniqKey,
                                 new List<RunTimePointCutConfiguration> { new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation) });
                     }
                     else
                     {
-                        if (aspectJ.PointcutTargetInfoList.ContainsKey(method))
-                            aspectJ.PointcutTargetInfoList[method].Add(new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation));
+                        if (pointCutCfg.PointcutTargetInfoList.ContainsKey(method))
+                            pointCutCfg.PointcutTargetInfoList[method].Add(new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation));
                         else
-                            aspectJ.PointcutTargetInfoList.TryAdd(method,
+                            pointCutCfg.PointcutTargetInfoList.TryAdd(method,
                                 new List<RunTimePointCutConfiguration> { new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation) });
                     }
 
@@ -694,7 +679,7 @@ namespace Autofac.Annotation
                 }
             }
 
-            aspectJ.PointcutTypeInfoList.TryAdd(targetClass, true);
+            pointCutCfg.PointcutTypeInfoList.TryAdd(targetClass, true);
             return result;
         }
 
@@ -1085,7 +1070,7 @@ namespace Autofac.Annotation
             };
             try
             {
-                var allConfiguration = GetAllPointcutConfiguration();
+                var allConfiguration = DoPointcutConfiguration();
                 if (!allConfiguration.Any()) return list;
 
                 list.PointcutConfigurationInfoList = allConfiguration;
@@ -1141,7 +1126,7 @@ namespace Autofac.Annotation
         ///     获取所有打了切面的信息
         /// </summary>
         /// <returns></returns>
-        private List<PointcutConfigurationInfo> GetAllPointcutConfiguration()
+        private List<PointcutConfigurationInfo> DoPointcutConfiguration()
         {
             if (_assemblyList == null || _assemblyList.Count < 1) throw new ArgumentNullException(nameof(_assemblyList));
 
@@ -1165,7 +1150,7 @@ namespace Autofac.Annotation
 
                 foreach (var configuration in typeList)
                 {
-                    //解析方法
+                    //解析方法 pointcut配置类不支持继承的方法
                     var beanTypeMethodList = configuration.Type.GetAllInstanceMethod(false);
 
                     //一个point标签下 class里面 最多一组 
@@ -1365,9 +1350,10 @@ namespace Autofac.Annotation
                 result.NotUseProxy = true;
                 result.EnableAspect = false;
             }
-            else
+            else if (!currentType.IsInterface && !currentType.IsAbstract)
             {
                 //自动识别EnableAspect
+                NeedWarpForAspect(result);
             }
 
             #region 解析注册对应的类的列表
@@ -1642,10 +1628,11 @@ namespace Autofac.Annotation
             };
 
             component.MetaSourceList = new List<MetaSourceData>();
+            EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
+            NeedWarpForAspect(component);
 
             if (isGeneric)
             {
-                EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
                 RegisterBeforeBeanPostProcessor(component, registration);
                 RegisterComponentValues(component, registration);
                 SetInjectProperties(component, registration);
@@ -1654,7 +1641,6 @@ namespace Autofac.Annotation
             }
 
             var builder = RegistrationBuilder.ForType(component.CurrentType);
-            EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
             RegisterBeforeBeanPostProcessor(component, builder);
             RegisterComponentValues(component, builder);
             SetInjectProperties(component, builder);

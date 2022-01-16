@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using AspectCore.Extensions.Reflection;
 using Autofac.Core;
 
 namespace Autofac.Annotation.Util
@@ -171,8 +172,8 @@ namespace Autofac.Annotation.Util
                                  BindingFlags.Instance |
                                  BindingFlags.DeclaredOnly;
 
-            if (!getBaseType) return type.GetMethods(flags);
-            return type.GetMethods(flags).Union(GetAllMethod(type.BaseType, getBaseType));
+            if (!getBaseType) return type.GetMethods(flags).Where(m => !m.IsSpecialName);
+            return type.GetMethods(flags).Where(m => !m.IsSpecialName).Union(GetAllMethod(type.BaseType));
         }
 
         /// <summary>
@@ -194,8 +195,8 @@ namespace Autofac.Annotation.Util
                                  BindingFlags.Instance |
                                  BindingFlags.DeclaredOnly;
 
-            if (!getBaseType) return type.GetMethods(flags);
-            return type.GetMethods(flags).Union(GetAllMethod(type.BaseType, getBaseType));
+            if (!getBaseType) return type.GetMethods(flags).Where(m => !m.IsSpecialName);
+            return type.GetMethods(flags).Where(m => !m.IsSpecialName).Union(GetAllMethod(type.BaseType));
         }
 
         /// <summary>

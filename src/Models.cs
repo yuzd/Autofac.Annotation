@@ -169,6 +169,11 @@ namespace Autofac.Annotation
         /// </summary>
         internal readonly ConcurrentDictionary<MethodInfo, List<AspectInvokeAttribute>> AspectAttributeCache =
             new ConcurrentDictionary<MethodInfo, List<AspectInvokeAttribute>>();
+
+        /// <summary>
+        /// 是否Pointcut要拦截继承(比如抽象父类)的方法 默认为true
+        /// </summary>
+        public bool EnablePointcutInherited { get; set; } = true;
     }
 
     /// <summary>

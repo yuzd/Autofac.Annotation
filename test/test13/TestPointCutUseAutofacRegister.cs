@@ -116,6 +116,19 @@ public class TestPointCutUseAutofacRegister
         var PointCutTestResult = container.Resolve<PointCutTestResult>();
         Assert.Equal(3, PointCutTestResult.result1.Count);
     }
+
+    [Fact]
+    public void Test7()
+    {
+        var builder = new ContainerBuilder();
+        builder.RegisterSpring(r => r.RegisterAssembly(typeof(TestPointCutUseAutofacRegister).Assembly));
+        builder.RegisterType(typeof(TestModel8)).InstancePerDependency();
+        var container = builder.Build();
+        var a1 = container.Resolve<TestModel8>();
+        a1.Say();
+        var PointCutTestResult = container.Resolve<PointCutTestResult>();
+        Assert.Equal(6, PointCutTestResult.result7.Count);
+    }
 }
 
 /// <summary>
@@ -273,6 +286,7 @@ public class PointCutTestResult
     public List<string> result { get; set; } = new List<string>();
     public List<string> result5 { get; set; } = new List<string>();
     public List<string> result6 { get; set; } = new List<string>();
+    public List<string> result7 { get; set; } = new List<string>();
 }
 
 public abstract class TestModelBase
@@ -291,5 +305,60 @@ public class TestModel13_3 : TestModelBase
 {
     public void he()
     {
+    }
+}
+
+public abstract class TestModelBase2
+{
+    [Autowired] public PointCutTestResult _pointCutTestResult;
+
+    public virtual void Say2()
+    {
+        _pointCutTestResult.result7.Add("TestModel13_4.Say2");
+    }
+}
+
+public class TestModel8 : TestModelBase2
+{
+    public virtual void Say()
+    {
+        _pointCutTestResult.result7.Add("TestModel13_4.Say");
+        Say2();
+        Console.WriteLine("hello");
+    }
+}
+
+[Pointcut(NameSpace = "Autofac.Annotation.Test.test13", Class = "TestModel8")]
+public class Pointcut14
+{
+    [Around]
+    public async Task Around(AspectContext context, AspectDelegate next)
+    {
+        var _pointCutTestResult = context.ComponentContext.Resolve<PointCutTestResult>();
+
+         _pointCutTestResult.result7.Add("Pointcut13.Around.start");
+        await next(context);
+        _pointCutTestResult.result7.Add("Pointcut13.Around.end");
+    }
+    
+    
+    [Before]
+    public void Before()
+    {
+        Console.WriteLine("PointcutTest1.Before");
+
+    }
+
+    [After]
+    public void After()
+    {
+        Console.WriteLine("PointcutTest1.After");
+
+    }
+
+    [AfterReturn(Returing = "value1")]
+    public void AfterReturn(object value1)
+    {
+        Console.WriteLine("PointcutTest1.AfterReturn");
     }
 }

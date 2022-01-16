@@ -20,6 +20,8 @@ using Autofac.Features.Variance;
 using Castle.DynamicProxy;
 using Microsoft.Extensions.Configuration;
 
+#pragma warning disable CS0618
+
 namespace Autofac.Annotation
 {
     /// <inheritdoc />
@@ -286,7 +288,7 @@ namespace Autofac.Annotation
             else
                 allCompoment.ComponentModelCache.TryAdd(component.Item1.CurrentType, component.Item1);
 
-            if (isGeneric) return;
+            if (isGeneric || component.Item2 == null) return;
 
             componentRegistry.Register(component.Item2.CreateRegistration());
         }
@@ -484,14 +486,11 @@ namespace Autofac.Annotation
         /// </summary>
         /// <param name="component"></param>
         /// <param name="builder"></param>
-        /// <param name="allCompoment"></param>
+        /// <param name="needWarpPointcut"></param>
         private void SetIntercept(ComponentModel component,
-            IRegistrationBuilder<object, ReflectionActivatorData, object> builder, ComponentModelCacheSingleton allCompoment)
+            IRegistrationBuilder<object, ReflectionActivatorData, object> builder, bool needWarpPointcut)
         {
-            PointCutConfigurationList pointCutCfg = allCompoment.PointCutConfigurationList;
-
-            if (pointCutCfg != null && pointCutCfg.PointcutConfigurationInfoList.Any() && !pointCutCfg.PointcutTypeInfoList.ContainsKey(component.CurrentType)
-                && NeedWarpForPointcut(component, pointCutCfg))
+            if (needWarpPointcut)
             {
                 if (component.CurrentType.GetCustomAttribute<ClassInterceptor>() != null)
                 {
@@ -584,8 +583,7 @@ namespace Autofac.Annotation
             if (component.NotUseProxy) return;
 
             //PointCut 包含 Aspect 。反之不可以
-            if (pointCutCfg.PointcutConfigurationInfoList.Any() && !pointCutCfg.PointcutTypeInfoList.ContainsKey(component.CurrentType)
-                                                                && NeedWarpForPointcut(component, pointCutCfg))
+            if (NeedWarpForPointcut(component, pointCutCfg))
             {
                 if (component.CurrentType.GetCustomAttribute<ClassInterceptor>() != null)
                 {
@@ -636,8 +634,17 @@ namespace Autofac.Annotation
         private bool NeedWarpForPointcut(ComponentModel component, PointCutConfigurationList pointCutCfg)
         {
             var targetClass = component.CurrentType;
+            if (targetClass.IsAbstract || targetClass.IsInterface) return false;
 
             var result = false;
+
+            if (pointCutCfg == null || pointCutCfg.PointcutConfigurationInfoList == null || !pointCutCfg.PointcutConfigurationInfoList.Any())
+            {
+                return false;
+            }
+
+            if (pointCutCfg.PointcutTypeInfoList.ContainsKey(targetClass)) return true;
+
             foreach (var aspectClass in pointCutCfg.PointcutConfigurationInfoList)
             {
                 //切面 不能 切自己
@@ -651,7 +658,7 @@ namespace Autofac.Annotation
                 if (!aspectClass.Pointcut.IsVaildClass(component, out var pointCutClassInjectAnotation)) continue;
 
                 //查看里面的method是否有满足的 包含查询继承的方法
-                foreach (var method in targetClass.GetAllInstanceMethod())
+                foreach (var method in targetClass.GetAllInstanceMethod(component.EnablePointcutInherited))
                 {
                     //pointCutMethodInjectAnotation 指的是 这个切面 在method 有没有对应的 如果method没有 class有就用class的
                     if (!aspectClass.Pointcut.IsVaild(component, method, pointCutClassInjectAnotation, out var pointCutMethodInjectAnotation)) continue;
@@ -1330,6 +1337,7 @@ namespace Autofac.Annotation
                 OrderIndex = bean.OrderIndex,
                 NotUseProxy = bean.NotUseProxy,
                 EnableAspect = bean.EnableAspect,
+                EnablePointcutInherited = bean.EnablePointcutInherited,
                 IsBenPostProcessor = typeof(BeanPostProcessor).IsAssignableFrom(currentType),
                 CurrentClassTypeAttributes = currentType.GetCustomAttributes().OfType<Attribute>().ToList(),
                 DependsOn = currentType.GetCustomAttribute<DependsOn>()?.dependsOn
@@ -1350,7 +1358,7 @@ namespace Autofac.Annotation
                 result.NotUseProxy = true;
                 result.EnableAspect = false;
             }
-            else if (!currentType.IsInterface && !currentType.IsAbstract)
+            else
             {
                 //自动识别EnableAspect
                 NeedWarpForAspect(result);
@@ -1629,9 +1637,9 @@ namespace Autofac.Annotation
 
             component.MetaSourceList = new List<MetaSourceData>();
             EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
-            NeedWarpForAspect(component);
 
-            if (isGeneric)
+            var needPointCut = isGeneric || NeedWarpForPointcut(component, allCompoment.PointCutConfigurationList);
+            if (isGeneric || !(NeedWarpForAspect(component) || needPointCut))
             {
                 RegisterBeforeBeanPostProcessor(component, registration);
                 RegisterComponentValues(component, registration);
@@ -1644,7 +1652,7 @@ namespace Autofac.Annotation
             RegisterBeforeBeanPostProcessor(component, builder);
             RegisterComponentValues(component, builder);
             SetInjectProperties(component, builder);
-            SetIntercept(component, builder, allCompoment);
+            SetIntercept(component, builder, needPointCut);
             RegisterAfterBeanPostProcessor(component, builder);
             return (component, builder);
         }

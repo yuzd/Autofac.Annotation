@@ -251,6 +251,7 @@ namespace Autofac.Annotation
         /// <param name="aspectClass"></param>
         private static bool NeedWarpForAspect(ComponentModel aspectClass)
         {
+            if (aspectClass.CurrentType.IsInterface || aspectClass.CurrentType.IsAbstract) return false;
             if (aspectClass.AspectAttributeCache.Any()) return true;
 
             //class上的标签也是包含继承关系

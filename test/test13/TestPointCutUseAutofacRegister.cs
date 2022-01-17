@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Autofac.AspectIntercepter.Advice;
+using Castle.DynamicProxy;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -129,7 +130,7 @@ public class TestPointCutUseAutofacRegister
         var PointCutTestResult = container.Resolve<PointCutTestResult>();
         Assert.Equal(6, PointCutTestResult.result7.Count);
     }
-    
+
     [Fact]
     public void Test8()
     {
@@ -143,7 +144,7 @@ public class TestPointCutUseAutofacRegister
         var PointCutTestResult = container.Resolve<PointCutTestResult>();
         Assert.Equal(6, PointCutTestResult.result7.Count);
     }
-    
+
     [Fact]
     public void Test9()
     {
@@ -154,6 +155,40 @@ public class TestPointCutUseAutofacRegister
         a1.Say2();
         var PointCutTestResult = container.Resolve<PointCutTestResult>();
         Assert.Equal(2, PointCutTestResult.result8.Count);
+    }
+
+    [Fact]
+    public void Test10()
+    {
+        // ProxyGenerator _generator = new ProxyGenerator();
+        // var proxy = _generator.CreateClassProxy<GenericModel1<string>>(new CallLoggingInterceptor());
+        // proxy.Say();
+        var builder = new ContainerBuilder();
+        builder.RegisterSpring(r => r.RegisterAssembly(typeof(TestPointCutUseAutofacRegister).Assembly));
+        var container = builder.Build();
+        var a1 = container.Resolve<GenericModel1<string>>();
+        a1.Say();
+        var PointCutTestResult = container.Resolve<PointCutTestResult>();
+        Assert.Equal(2, PointCutTestResult.result9.Count);
+    }
+}
+
+public class CallLoggingInterceptor : IInterceptor
+{
+    private int indentation;
+
+    public void Intercept(IInvocation invocation)
+    {
+        try
+        {
+            indentation++;
+            Console.WriteLine(string.Format("{0} ! {1}", new string(' ', indentation), invocation.Method.Name));
+            invocation.Proceed();
+        }
+        finally
+        {
+            indentation--;
+        }
     }
 }
 
@@ -314,6 +349,7 @@ public class PointCutTestResult
     public List<string> result6 { get; set; } = new List<string>();
     public List<string> result7 { get; set; } = new List<string>();
     public List<string> result8 { get; set; } = new List<string>();
+    public List<string> result9 { get; set; } = new List<string>();
 }
 
 public abstract class TestModelBase
@@ -343,6 +379,7 @@ public abstract class TestModelBase2
     {
         _pointCutTestResult.result7.Add("TestModel13_4.Say2");
     }
+
     public virtual void Say2(object obj)
     {
         Console.WriteLine("hello Say2 obj");
@@ -377,24 +414,22 @@ public class Pointcut14
     {
         var _pointCutTestResult = context.ComponentContext.Resolve<PointCutTestResult>();
 
-         _pointCutTestResult.result7.Add("Pointcut13.Around.start");
+        _pointCutTestResult.result7.Add("Pointcut13.Around.start");
         await next(context);
         _pointCutTestResult.result7.Add("Pointcut13.Around.end");
     }
-    
-    
+
+
     [Before]
     public void Before()
     {
         Console.WriteLine("PointcutTest1.Before");
-
     }
 
     [After]
     public void After()
     {
         Console.WriteLine("PointcutTest1.After");
-
     }
 
     [AfterReturn(Returing = "value1")]
@@ -403,8 +438,6 @@ public class Pointcut14
         Console.WriteLine("PointcutTest1.AfterReturn");
     }
 }
-
-
 
 public abstract class TestModelBase3
 {
@@ -415,19 +448,16 @@ public abstract class TestModelBase3
     {
         _pointCutTestResult.result8.Add("TestModelBase3.Say2");
     }
-    
 }
 
 [Component]
 public class TestPa1 : TestModelBase3
 {
-    
 }
 
 [Component]
 public class TestPa2 : TestModelBase3
 {
-    
 }
 
 public class BeforeIntecepor5 : AspectBefore
@@ -436,6 +466,29 @@ public class BeforeIntecepor5 : AspectBefore
     {
         var _pointCutTestResult = aspectContext.ComponentContext.Resolve<PointCutTestResult>();
         _pointCutTestResult.result8.Add("BeforeIntecepor5.Before");
+        return Task.CompletedTask;
+    }
+}
+
+[Component]
+public class GenericModel1<T> where T : class
+{
+    [Autowired] public PointCutTestResult _pointCutTestResult;
+    public T Model { get; set; }
+
+    [BeforeIntecepor6]
+    public virtual void Say()
+    {
+        _pointCutTestResult.result9.Add("say");
+    }
+}
+
+public class BeforeIntecepor6 : AspectBefore
+{
+    public override Task Before(AspectContext aspectContext)
+    {
+        var _pointCutTestResult = aspectContext.ComponentContext.Resolve<PointCutTestResult>();
+        _pointCutTestResult.result9.Add("Before");
         return Task.CompletedTask;
     }
 }

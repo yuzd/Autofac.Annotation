@@ -516,10 +516,7 @@ namespace Autofac.Annotation
             }
             else if (component.EnableAspect)
             {
-                if (component.isDynamicGeneric)
-                    //动态泛型类的话 只能用 interface拦截器 
-                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
-                else if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
+                if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
                     //打了[InterfaceInterceptor]标签
                     builder.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
                 else if (component.InterceptorType == InterceptorType.Interface)
@@ -609,10 +606,7 @@ namespace Autofac.Annotation
             }
             else if (component.EnableAspect)
             {
-                if (component.isDynamicGeneric)
-                    //动态泛型类的话 只能用 interface拦截器 
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
-                else if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
+                if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
                     //打了[InterfaceInterceptor]标签
                     registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
                 else if (component.InterceptorType == InterceptorType.Interface)

@@ -184,7 +184,7 @@ namespace Autofac.Annotation.Util
         /// <returns></returns>
         public static IEnumerable<MethodInfo> GetAllMethod(this Type type, bool getBaseType = true)
         {
-            if (type == null)
+            if (type == null || type == typeof(object))
             {
                 return Enumerable.Empty<MethodInfo>();
             }

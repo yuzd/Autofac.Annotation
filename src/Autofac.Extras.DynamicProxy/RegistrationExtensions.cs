@@ -136,6 +136,27 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(registration));
             }
 
+            if (registration.ActivatorData.ImplementationType.IsGenericTypeDefinition)
+            {
+                registration.ConfigurePipeline(p => p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
+                {
+                    next(ctxt);
+
+
+                    var interceptors = GetInterceptorServices(ctxt.Registration, ctxt.Instance.GetType())
+                        .Select(ctxt.ResolveService)
+                        .Cast<IInterceptor>()
+                        .ToArray();
+
+                    //这里需要改一下
+                    //https://github.com/JSkimming/Castle.Core.AsyncInterceptor/blob/master/src/Castle.Core.AsyncInterceptor/ProxyGeneratorExtensions.cs
+                    ctxt.Instance = options == null
+                        ? ProxyGenerator.CreateClassProxyWithTarget(ctxt.Instance.GetType(), ctxt.Instance, interceptors)
+                        : ProxyGenerator.CreateClassProxyWithTarget(ctxt.Instance.GetType(), ctxt.Instance, options, interceptors);
+                }));
+                return registration;
+            }
+
             registration.ActivatorData.ImplementationType =
                 ProxyGenerator.ProxyBuilder.CreateClassProxyType(
                     registration.ActivatorData.ImplementationType,

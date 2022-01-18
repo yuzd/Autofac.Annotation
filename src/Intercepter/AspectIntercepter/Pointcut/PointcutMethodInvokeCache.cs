@@ -14,13 +14,17 @@ namespace Autofac.AspectIntercepter.Pointcut
     [Component(AutofacScope = AutofacScope.SingleInstance, AutoActivate = true, NotUseProxy = true)]
     public class PointcutMethodInvokeCache
     {
+        private readonly ApsectAdviceMethodInvokeCache _cache;
+        private readonly IComponentContext _context;
+
         /// <summary>
         ///     初始化
         /// </summary>
         public PointcutMethodInvokeCache(IComponentContext context)
         {
+            _context = context;
             var pointCutConfigurationList = context.Resolve<PointCutConfigurationList>();
-            var _cache = context.Resolve<ApsectAdviceMethodInvokeCache>();
+            _cache = context.Resolve<ApsectAdviceMethodInvokeCache>();
 
             CacheList = new ConcurrentDictionary<ObjectKey, PointcutMethodChainBuilder>();
 
@@ -118,92 +122,120 @@ namespace Autofac.AspectIntercepter.Pointcut
 
             foreach (var methodCache in pointCutConfigurationList.DynamicPointcutTargetInfoList)
             {
-                var pointCutMethodChain = _cache != null && _cache.DynamicCacheList.TryGetValue(methodCache.Key, out var attribute)
-                    ? new PointcutMethodChainBuilder
-                        (attribute.AspectFunc)
-                        {
-                            PointcutMethodChainList = new List<PointcutMethod>()
-                        }
-                    : new PointcutMethodChainBuilder
-                    {
-                        PointcutMethodChainList = new List<PointcutMethod>()
-                    };
-
-                //一个方法会有多个pointcut
-                foreach (var pointcutRunTime in methodCache.Value)
-                {
-                    var pointcut = pointcutRunTime.PointcutConfigurationInfo;
-                    var pointCutMethod = new PointcutMethod
-                    {
-                        OrderIndex = pointcut.Pointcut.OrderIndex
-                    };
-
-                    pointCutMethodChain.PointcutMethodChainList.Add(pointCutMethod);
-
-                    //每个切换先拿到对应的实例 重复拿也没关系 因为是单例的
-                    var instance = context.Resolve(pointcut.PointClass);
-
-                    if (pointcut.BeforeMethod != null)
-                        pointCutMethod.BeforeMethod = new RunTimePointcutMethod<Before>
-                        {
-                            Instance = instance,
-                            MethodInfo = pointcut.BeforeMethod.Item2.GetReflector(),
-                            MethodReturnType = pointcut.BeforeMethod.Item2.ReturnType,
-                            MethodParameters = pointcut.BeforeMethod.Item2.GetParameters(),
-                            PointcutBasicAttribute = pointcut.BeforeMethod.Item1,
-                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
-                        };
-
-                    if (pointcut.AfterMethod != null)
-                        pointCutMethod.AfterMethod = new RunTimePointcutMethod<After>
-                        {
-                            Instance = instance,
-                            MethodInfo = pointcut.AfterMethod.Item2.GetReflector(),
-                            MethodReturnType = pointcut.AfterMethod.Item2.ReturnType,
-                            MethodParameters = pointcut.AfterMethod.Item2.GetParameters(),
-                            PointcutBasicAttribute = pointcut.AfterMethod.Item1,
-                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
-                        };
-
-                    if (pointcut.AfterReturnMethod != null)
-                        pointCutMethod.AfterReturnMethod = new RunTimePointcutMethod<AfterReturn>
-                        {
-                            Instance = instance,
-                            MethodInfo = pointcut.AfterReturnMethod.Item2.GetReflector(),
-                            MethodReturnType = pointcut.AfterReturnMethod.Item2.ReturnType,
-                            MethodParameters = pointcut.AfterReturnMethod.Item2.GetParameters(),
-                            PointcutBasicAttribute = pointcut.AfterReturnMethod.Item1,
-                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
-                        };
-
-                    if (pointcut.AroundMethod != null)
-                        pointCutMethod.AroundMethod = new RunTimePointcutMethod<Around>
-                        {
-                            Instance = instance,
-                            MethodInfo = pointcut.AroundMethod.Item2.GetReflector(),
-                            MethodReturnType = pointcut.AroundMethod.Item2.ReturnType,
-                            MethodParameters = pointcut.AroundMethod.Item2.GetParameters(),
-                            PointcutBasicAttribute = pointcut.AroundMethod.Item1,
-                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
-                        };
-
-                    if (pointcut.AfterThrows != null)
-                        pointCutMethod.AfterThrowsMethod = new RunTimePointcutMethod<AfterThrows>
-                        {
-                            Instance = instance,
-                            MethodInfo = pointcut.AfterThrows.Item2.GetReflector(),
-                            MethodReturnType = pointcut.AfterThrows.Item2.ReturnType,
-                            MethodParameters = pointcut.AfterThrows.Item2.GetParameters(),
-                            PointcutBasicAttribute = pointcut.AfterThrows.Item1,
-                            PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
-                        };
-                }
-
-                pointCutMethodChain.PointcutMethodChainList = pointCutMethodChain.PointcutMethodChainList.OrderBy(r => r.OrderIndex).ToList();
-                DynamicCacheList.TryAdd(methodCache.Key, pointCutMethodChain);
+                AddCacheInter(methodCache.Key, methodCache.Value);
             }
         }
 
+        /// <summary>
+        /// 针对泛型
+        /// </summary>
+        /// <param name="keys"></param>
+        internal void AddCache(ConcurrentBag<string> keys)
+        {
+            lock (_cache)
+            {
+                var pointCutConfigurationList = _context.Resolve<PointCutConfigurationList>();
+                foreach (var key in keys.Distinct())
+                {
+                    if (pointCutConfigurationList.DynamicPointcutTargetInfoList.TryGetValue(key, out var value))
+                    {
+                        AddCacheInter(key, value);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 针对泛型
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        private void AddCacheInter(string key, List<RunTimePointCutConfiguration> value)
+        {
+            var pointCutMethodChain = _cache != null && _cache.DynamicCacheList.TryGetValue(key, out var attribute)
+                ? new PointcutMethodChainBuilder
+                    (attribute.AspectFunc)
+                    {
+                        PointcutMethodChainList = new List<PointcutMethod>()
+                    }
+                : new PointcutMethodChainBuilder
+                {
+                    PointcutMethodChainList = new List<PointcutMethod>()
+                };
+
+            //一个方法会有多个pointcut
+            foreach (var pointcutRunTime in value)
+            {
+                var pointcut = pointcutRunTime.PointcutConfigurationInfo;
+                var pointCutMethod = new PointcutMethod
+                {
+                    OrderIndex = pointcut.Pointcut.OrderIndex
+                };
+
+                pointCutMethodChain.PointcutMethodChainList.Add(pointCutMethod);
+
+                //每个切换先拿到对应的实例 重复拿也没关系 因为是单例的
+                var instance = _context.Resolve(pointcut.PointClass);
+
+                if (pointcut.BeforeMethod != null)
+                    pointCutMethod.BeforeMethod = new RunTimePointcutMethod<Before>
+                    {
+                        Instance = instance,
+                        MethodInfo = pointcut.BeforeMethod.Item2.GetReflector(),
+                        MethodReturnType = pointcut.BeforeMethod.Item2.ReturnType,
+                        MethodParameters = pointcut.BeforeMethod.Item2.GetParameters(),
+                        PointcutBasicAttribute = pointcut.BeforeMethod.Item1,
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                    };
+
+                if (pointcut.AfterMethod != null)
+                    pointCutMethod.AfterMethod = new RunTimePointcutMethod<After>
+                    {
+                        Instance = instance,
+                        MethodInfo = pointcut.AfterMethod.Item2.GetReflector(),
+                        MethodReturnType = pointcut.AfterMethod.Item2.ReturnType,
+                        MethodParameters = pointcut.AfterMethod.Item2.GetParameters(),
+                        PointcutBasicAttribute = pointcut.AfterMethod.Item1,
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                    };
+
+                if (pointcut.AfterReturnMethod != null)
+                    pointCutMethod.AfterReturnMethod = new RunTimePointcutMethod<AfterReturn>
+                    {
+                        Instance = instance,
+                        MethodInfo = pointcut.AfterReturnMethod.Item2.GetReflector(),
+                        MethodReturnType = pointcut.AfterReturnMethod.Item2.ReturnType,
+                        MethodParameters = pointcut.AfterReturnMethod.Item2.GetParameters(),
+                        PointcutBasicAttribute = pointcut.AfterReturnMethod.Item1,
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                    };
+
+                if (pointcut.AroundMethod != null)
+                    pointCutMethod.AroundMethod = new RunTimePointcutMethod<Around>
+                    {
+                        Instance = instance,
+                        MethodInfo = pointcut.AroundMethod.Item2.GetReflector(),
+                        MethodReturnType = pointcut.AroundMethod.Item2.ReturnType,
+                        MethodParameters = pointcut.AroundMethod.Item2.GetParameters(),
+                        PointcutBasicAttribute = pointcut.AroundMethod.Item1,
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                    };
+
+                if (pointcut.AfterThrows != null)
+                    pointCutMethod.AfterThrowsMethod = new RunTimePointcutMethod<AfterThrows>
+                    {
+                        Instance = instance,
+                        MethodInfo = pointcut.AfterThrows.Item2.GetReflector(),
+                        MethodReturnType = pointcut.AfterThrows.Item2.ReturnType,
+                        MethodParameters = pointcut.AfterThrows.Item2.GetParameters(),
+                        PointcutBasicAttribute = pointcut.AfterThrows.Item1,
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                    };
+            }
+
+            pointCutMethodChain.PointcutMethodChainList = pointCutMethodChain.PointcutMethodChainList.OrderBy(r => r.OrderIndex).ToList();
+            DynamicCacheList.TryAdd(key, pointCutMethodChain);
+        }
 
         /// <summary>
         ///     缓存

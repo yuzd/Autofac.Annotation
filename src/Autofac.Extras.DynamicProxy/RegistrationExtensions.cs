@@ -28,6 +28,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using Autofac.AspectIntercepter.Advice;
+using Autofac.AspectIntercepter.Pointcut;
 using Autofac.Builder;
 using Autofac.Core;
 using Autofac.Core.Resolving.Pipeline;
@@ -44,6 +46,7 @@ namespace Autofac.Annotation
     public static class RegistrationExtensions
     {
         private const string InterceptorsPropertyName = "Autofac.Extras.DynamicProxy.RegistrationExtensions.InterceptorsPropertyName";
+        private const string InterceptorsForGenericMethodCache = "Autofac.Extras.DynamicProxy.RegistrationExtensions.InterceptorsForGenericMethodCache";
 
         private const string AttributeInterceptorsPropertyName = "Autofac.Extras.DynamicProxy.RegistrationExtensions.AttributeInterceptorsPropertyName";
 
@@ -196,6 +199,59 @@ namespace Autofac.Annotation
         }
 
         /// <summary>
+        /// 针对泛型的
+        /// </summary>
+        /// <param name="registration"></param>
+        /// <param name="component"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        internal static IComponentRegistration EnableClassInterceptors(this IComponentRegistration registration, ComponentModel component,
+            ProxyGenerationOptions options)
+        {
+            if (registration == null)
+            {
+                throw new ArgumentNullException(nameof(registration));
+            }
+
+
+            registration.ConfigurePipeline(p => p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
+            {
+                next(ctxt);
+
+                if (!ctxt.Registration.Metadata.TryGetValue(InterceptorsForGenericMethodCache, out var _))
+                {
+                    ctxt.Registration.Metadata.TryAdd(InterceptorsForGenericMethodCache, true);
+                    ctxt.Resolve<ApsectAdviceMethodInvokeCache>().AddCache(component);
+                    ctxt.Resolve<PointcutMethodInvokeCache>().AddCache(component.DynamicGenricMethodsNeedPointcuts);
+                }
+
+                var interceptors = GetInterceptorServices(ctxt.Registration, ctxt.Instance.GetType())
+                    .Select(ctxt.ResolveService)
+                    .Cast<IInterceptor>()
+                    .ToArray();
+
+                //这里需要改一下
+                ctxt.Instance = options == null
+                    ? ProxyGenerator.CreateClassProxyWithTarget(ctxt.Instance.GetType(), ctxt.Instance, interceptors)
+                    : ProxyGenerator.CreateClassProxyWithTarget(ctxt.Instance.GetType(), ctxt.Instance, options, interceptors);
+            }));
+            return registration;
+        }
+
+        /// <summary>
+        /// 针对泛型的
+        /// </summary>
+        /// <param name="registration"></param>
+        /// <param name="component"></param>
+        /// <returns></returns>
+        internal static IComponentRegistration EnableClassInterceptors(this IComponentRegistration registration, ComponentModel component)
+        {
+            return registration.EnableClassInterceptors(component, ProxyGenerationOptions.Default);
+        }
+
+
+        /// <summary>
         /// Enable interface interception on the target type. Interceptors will be determined
         /// via Intercept attributes on the class or interface, or added with InterceptedBy() calls.
         /// </summary>
@@ -261,6 +317,81 @@ namespace Autofac.Annotation
             }));
 
             return registration;
+        }
+
+        /// <summary>
+        /// 给泛型用的
+        /// </summary>
+        /// <param name="registration"></param>
+        /// <param name="component"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        internal static IComponentRegistration EnableInterfaceInterceptors(
+            this IComponentRegistration registration, ComponentModel component, ProxyGenerationOptions options)
+        {
+            if (registration == null)
+            {
+                throw new ArgumentNullException(nameof(registration));
+            }
+
+            registration.ConfigurePipeline(p => p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
+            {
+                next(ctxt);
+
+                if (!ctxt.Registration.Metadata.TryGetValue(InterceptorsForGenericMethodCache, out var _))
+                {
+                    ctxt.Registration.Metadata.TryAdd(InterceptorsForGenericMethodCache, true);
+                    ctxt.Resolve<ApsectAdviceMethodInvokeCache>().AddCache(component);
+                    ctxt.Resolve<PointcutMethodInvokeCache>().AddCache(component.DynamicGenricMethodsNeedPointcuts);
+                }
+
+                var proxiedInterfaces = ctxt.Instance
+                    .GetType()
+                    .GetInterfaces()
+                    .Where(ProxyUtil.IsAccessible)
+                    .ToArray();
+
+                if (!proxiedInterfaces.Any())
+                {
+                    return;
+                }
+
+                var theInterface = proxiedInterfaces.First();
+                var interfaces = proxiedInterfaces.Skip(1).ToArray();
+
+                var interceptors = GetInterceptorServices(ctxt.Registration, ctxt.Instance.GetType())
+                    .Select(ctxt.ResolveService)
+                    .Cast<IInterceptor>()
+                    .ToArray();
+
+                //这里需要改一下
+                //https://github.com/JSkimming/Castle.Core.AsyncInterceptor/blob/master/src/Castle.Core.AsyncInterceptor/ProxyGeneratorExtensions.cs
+                ctxt.Instance = options == null
+                    ? ProxyGenerator.CreateInterfaceProxyWithTarget(theInterface, interfaces, ctxt.Instance, interceptors)
+                    : ProxyGenerator.CreateInterfaceProxyWithTarget(theInterface, interfaces, ctxt.Instance, options, interceptors);
+            }));
+
+            return registration;
+        }
+
+        /// <summary>
+        /// 给泛型用的
+        /// </summary>
+        /// <param name="registration"></param>
+        /// <param name="component"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        internal static IComponentRegistration EnableInterfaceInterceptors(
+            this IComponentRegistration registration, ComponentModel component)
+        {
+            if (registration == null)
+            {
+                throw new ArgumentNullException(nameof(registration));
+            }
+
+
+            return registration.EnableInterfaceInterceptors(component, null);
         }
 
         /// <summary>
@@ -331,6 +462,40 @@ namespace Autofac.Annotation
             {
                 builder.RegistrationData.Metadata.Add(metadataKey, interceptorServices);
             }
+        }
+
+        /// <summary>
+        /// 添加拦截器类型到当前的metadata
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="interceptorType"></param>
+        public static IComponentRegistration InterceptedBy(this IComponentRegistration builder, Type interceptorType)
+        {
+            IEnumerable<Service> services = new Service[] { new TypedService(interceptorType) };
+            if (builder.Metadata.TryGetValue(InterceptorsPropertyName, out var existing))
+            {
+                builder.Metadata[InterceptorsPropertyName] = ((IEnumerable<Service>)existing).Concat(services).Distinct();
+                ;
+            }
+            else
+            {
+                builder.Metadata.Add(InterceptorsPropertyName, services);
+            }
+
+            return builder;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static IComponentRegistration WithMetadata(this IComponentRegistration builder, string key, object value)
+        {
+            builder.Metadata.Add(key, value);
+            return builder;
         }
 
         private static IEnumerable<Service> GetInterceptorServices(IComponentRegistration registration, Type implType)

@@ -174,6 +174,11 @@ namespace Autofac.Annotation
         /// 是否Pointcut要拦截继承(比如抽象父类)的方法 默认为true
         /// </summary>
         public bool EnablePointcutInherited { get; set; } = true;
+
+        /// <summary>
+        /// 针对泛型 在resovle的时候动态注册的时候 检查哪些method需要pointcut
+        /// </summary>
+        internal readonly ConcurrentBag<string> DynamicGenricMethodsNeedPointcuts = new ConcurrentBag<string>();
     }
 
     /// <summary>
@@ -373,24 +378,24 @@ namespace Autofac.Annotation
 
     internal class ObjectKey
     {
-       
-        public ObjectKey(Type type,MethodInfo method)
+        public ObjectKey(Type type, MethodInfo method)
         {
             this.Type = type;
             this.Method = method;
         }
+
         public Type Type { get; set; }
         public MethodInfo Method { get; set; }
-        
+
         public override int GetHashCode()
         {
             return this.Type.GetHashCode() + this.Method.GetHashCode();
         }
-        
+
         public override bool Equals(object obj)
         {
             var item = obj as ObjectKey;
-            if(item == null)
+            if (item == null)
             {
                 return false;
             }

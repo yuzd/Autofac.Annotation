@@ -488,6 +488,53 @@ namespace Autofac.Annotation
         /// <param name="builder"></param>
         /// <param name="needWarpPointcut"></param>
         private void SetIntercept(ComponentModel component,
+            IComponentRegistration builder, bool needWarpPointcut)
+        {
+            if (needWarpPointcut)
+            {
+                if (component.CurrentType.GetCustomAttribute<ClassInterceptor>() != null)
+                {
+                    builder.EnableClassInterceptors(component).InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    return;
+                }
+
+                if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
+                {
+                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    return;
+                }
+
+                //找寻它的继承的接口列表下是否存在相同的namespace下的接口
+                if (component.CurrentType.GetTypeInfo().ImplementedInterfaces
+                    .Any(r => r.Assembly.Equals(component.CurrentType.Assembly)))
+                {
+                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    return;
+                }
+
+                builder.EnableClassInterceptors(component).InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+            }
+            else if (component.EnableAspect)
+            {
+                if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
+                    //打了[InterfaceInterceptor]标签
+                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                else if (component.InterceptorType == InterceptorType.Interface)
+                    //指定了 interface 拦截器 或
+                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                else
+                    //默认是class + virtual 拦截器
+                    builder.EnableClassInterceptors(component).InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+            }
+        }
+
+        /// <summary>
+        ///     拦截器
+        /// </summary>
+        /// <param name="component"></param>
+        /// <param name="builder"></param>
+        /// <param name="needWarpPointcut"></param>
+        private void SetIntercept(ComponentModel component,
             IRegistrationBuilder<object, ReflectionActivatorData, object> builder, bool needWarpPointcut)
         {
             if (needWarpPointcut)
@@ -624,8 +671,9 @@ namespace Autofac.Annotation
         /// </summary>
         /// <param name="component"></param>
         /// <param name="pointCutCfg"></param>
+        /// <param name="isgeneric"></param>
         /// <returns></returns>
-        private bool NeedWarpForPointcut(ComponentModel component, PointCutConfigurationList pointCutCfg)
+        private bool NeedWarpForPointcut(ComponentModel component, PointCutConfigurationList pointCutCfg, bool isgeneric = false)
         {
             var targetClass = component.CurrentType;
             if (targetClass.IsAbstract || targetClass.IsInterface) return false;
@@ -657,7 +705,7 @@ namespace Autofac.Annotation
                     //pointCutMethodInjectAnotation 指的是 这个切面 在method 有没有对应的 如果method没有 class有就用class的
                     if (!aspectClass.Pointcut.IsVaild(component, method, pointCutClassInjectAnotation, out var pointCutMethodInjectAnotation)) continue;
 
-                    if (component.isDynamicGeneric)
+                    if (component.isDynamicGeneric || isgeneric)
                     {
                         var uniqKey = method.GetMethodInfoUniqueName();
                         if (pointCutCfg.DynamicPointcutTargetInfoList.ContainsKey(uniqKey))
@@ -666,6 +714,7 @@ namespace Autofac.Annotation
                         else
                             pointCutCfg.DynamicPointcutTargetInfoList.TryAdd(uniqKey,
                                 new List<RunTimePointCutConfiguration> { new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation) });
+                        component.DynamicGenricMethodsNeedPointcuts.Add(uniqKey);
                     }
                     else
                     {
@@ -1623,6 +1672,7 @@ namespace Autofac.Annotation
                 AutoActivate = false,
                 CurrentType = currentType,
                 InjectProperties = true,
+                InterceptorType = InterceptorType.Class,
                 InjectPropertyType = InjectPropertyType.Autowired,
                 IsBenPostProcessor = typeof(BeanPostProcessor).IsAssignableFrom(currentType),
                 CurrentClassTypeAttributes = isGeneric
@@ -1633,12 +1683,14 @@ namespace Autofac.Annotation
             component.MetaSourceList = new List<MetaSourceData>();
             EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
 
-            var needPointCut = isGeneric || NeedWarpForPointcut(component, allCompoment.PointCutConfigurationList);
-            if (isGeneric || !(NeedWarpForAspect(component) || needPointCut))
+            var needPointCut = NeedWarpForPointcut(component, allCompoment.PointCutConfigurationList, isGeneric);
+            NeedWarpForAspect(component);
+            if (isGeneric)
             {
                 RegisterBeforeBeanPostProcessor(component, registration);
                 RegisterComponentValues(component, registration);
                 SetInjectProperties(component, registration);
+                SetIntercept(component, registration, needPointCut);
                 RegisterAfterBeanPostProcessor(component, registration);
                 return (component, null);
             }

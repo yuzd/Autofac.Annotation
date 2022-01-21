@@ -80,7 +80,7 @@ namespace Autofac.Annotation
                     var rb = RegistrationBuilder.ForDelegate(instanceType, ((context, parameters) =>
                     {
                         var autoConfigurationInstance = context.Resolve(autoConfigurationDetail.AutoConfigurationClassType);
-                        var instance = AutoConfigurationHelper.InvokeInstanceMethod(context, autoConfigurationDetail, autoConfigurationInstance,
+                        var instance = MethodInvokeHelper.InvokeInstanceMethod(context, autoConfigurationDetail, autoConfigurationInstance,
                             beanMethod.Item2);
                         if (instance is Task)
                         {
@@ -125,7 +125,7 @@ namespace Autofac.Annotation
     }
 
 
-    internal static class AutoConfigurationHelper
+    internal static class MethodInvokeHelper
     {
         /// <summary>
         /// 调用切面的拦截方法

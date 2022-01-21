@@ -413,9 +413,9 @@ namespace Autofac.Annotation
                     {
                         var postConstructs = ReflectionExtensions.AssertMethodDynamic<PostConstruct>(e.Instance.GetType());
                         var method = ReflectionExtensions.AssertMethod(e.Instance.GetType(), component.InitMethod);
-                        if (postConstructs.Any()) postConstructs.ForEach(r => { AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, r, e.Context); });
+                        if (postConstructs.Any()) postConstructs.ForEach(r => { MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context); });
 
-                        if (method != null) AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
+                        if (method != null) MethodInvokeHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
                     });
                 }
                 else
@@ -424,9 +424,9 @@ namespace Autofac.Annotation
                     var method = ReflectionExtensions.AssertMethod(component.CurrentType, component.InitMethod);
                     registrar.OnActivated(e =>
                     {
-                        if (postConstructs.Any()) postConstructs.ForEach(r => { AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, r, e.Context); });
+                        if (postConstructs.Any()) postConstructs.ForEach(r => { MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context); });
 
-                        if (method != null) AutoConfigurationHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
+                        if (method != null) MethodInvokeHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
                     });
                 }
             }
@@ -1797,7 +1797,13 @@ namespace Autofac.Annotation
                     select new Tuple<FieldInfo, Autowired, FieldReflector>(p, va, p.GetReflector()))
                 .ToList();
 
-            if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any()) return false;
+            component.AutowiredMethodInfoList = (from p in component.CurrentType.GetAllMethod()
+                    let va = p.GetCustomAttribute<Autowired>()
+                    where va != null && p.ReturnType == typeof(void)
+                    select new Tuple<MethodInfo, Autowired>(p, va))
+                .ToList();
+
+            if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any() && !component.AutowiredMethodInfoList.Any()) return false;
 
             //初始化 AllowCircularDependencies 参数
             component.AutowiredPropertyInfoList.ForEach(r =>
@@ -1807,6 +1813,11 @@ namespace Autofac.Annotation
             });
 
             component.AutowiredFieldInfoList.ForEach(r =>
+            {
+                if (r.Item2.AllowCircularDependencies == null) //如果自己指定了的话 就不管了
+                    r.Item2.AllowCircularDependencies = AllowCircularDependencies;
+            });
+            component.AutowiredMethodInfoList.ForEach(r =>
             {
                 if (r.Item2.AllowCircularDependencies == null) //如果自己指定了的话 就不管了
                     r.Item2.AllowCircularDependencies = AllowCircularDependencies;
@@ -1954,6 +1965,12 @@ namespace Autofac.Annotation
                             $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
                             + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""), ex);
                     }
+                }
+
+                //方法注入
+                foreach (var method in model.AutowiredMethodInfoList)
+                {
+                    MethodInvokeHelper.InvokeInstanceMethod(RealInstance, method.Item1, context);
                 }
             }
             finally

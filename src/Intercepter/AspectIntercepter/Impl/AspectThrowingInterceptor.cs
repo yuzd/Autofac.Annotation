@@ -57,7 +57,7 @@ namespace Autofac.AspectIntercepter.Impl
                         if (_pointcutThrowin.PointcutBasicAttribute.ExceptionType == null ||
                             _pointcutThrowin.PointcutBasicAttribute.ExceptionType == currentExType)
                         {
-                            var rt = AutoConfigurationHelper.InvokeInstanceMethod(
+                            var rt = MethodInvokeHelper.InvokeInstanceMethod(
                                 _pointcutThrowin.Instance,
                                 _pointcutThrowin.MethodInfo,
                                 _pointcutThrowin.MethodParameters,

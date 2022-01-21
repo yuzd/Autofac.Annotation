@@ -234,7 +234,7 @@ namespace Autofac.Annotation.Util
         /// <returns></returns>
         public static IEnumerable<FieldInfo> GetAllFields(this Type type)
         {
-            if (type == null)
+            if (type == null || type == typeof(object))
             {
                 return Enumerable.Empty<FieldInfo>();
             }
@@ -255,7 +255,7 @@ namespace Autofac.Annotation.Util
         /// <returns></returns>
         public static IEnumerable<PropertyInfo> GetAllProperties(this Type type)
         {
-            if (type == null)
+            if (type == null || type == typeof(object))
             {
                 return Enumerable.Empty<PropertyInfo>();
             }

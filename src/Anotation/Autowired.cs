@@ -12,7 +12,7 @@ namespace Autofac.Annotation
     /// 注入属性或者字段
     /// 只能打一个标签 可以继承父类
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.Method)]
     public sealed class Autowired : ParameterFilterAttribute
     {
         /// <summary>

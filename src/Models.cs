@@ -23,6 +23,7 @@ namespace Autofac.Annotation
             ComponentServiceList = new List<ComponentServiceModel>();
             AutowiredFieldInfoList = new List<Tuple<FieldInfo, Autowired, FieldReflector>>();
             AutowiredPropertyInfoList = new List<Tuple<PropertyInfo, Autowired, PropertyReflector>>();
+            AutowiredMethodInfoList = new List<Tuple<MethodInfo, Autowired>>();
             ValueFieldInfoList = new List<Tuple<FieldInfo, Value, FieldReflector>>();
             ValuePropertyInfoList = new List<Tuple<PropertyInfo, Value, PropertyReflector>>();
         }
@@ -47,6 +48,10 @@ namespace Autofac.Annotation
         /// </summary>
         public List<Tuple<PropertyInfo, Autowired, PropertyReflector>> AutowiredPropertyInfoList { get; set; }
 
+        /// <summary>
+        ///     需要装配的Autowired的public方法集合
+        /// </summary>
+        public List<Tuple<MethodInfo, Autowired>> AutowiredMethodInfoList { get; set; }
 
         /// <summary>
         ///     需要装配的Value的字段集合

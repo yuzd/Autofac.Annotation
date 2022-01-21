@@ -47,7 +47,7 @@ namespace Autofac.AspectIntercepter.Impl
             }
             else
             {
-                var rt = AutoConfigurationHelper.InvokeInstanceMethod(
+                var rt = MethodInvokeHelper.InvokeInstanceMethod(
                     _pointCutMethod.Instance,
                     _pointCutMethod.MethodInfo,
                     _pointCutMethod.MethodParameters,

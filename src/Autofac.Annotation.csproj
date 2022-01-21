@@ -28,10 +28,10 @@
         <RootNamespace>Autofac.Annotation</RootNamespace>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-        <Version>4.0.8</Version>
-        <AssemblyVersion>4.0.8.0</AssemblyVersion>
+        <Version>4.0.9</Version>
+        <AssemblyVersion>4.0.9.0</AssemblyVersion>
         <Authors>zdyu</Authors>
-        <PackageVersion>4.0.8</PackageVersion>
+        <PackageVersion>4.0.9</PackageVersion>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
 

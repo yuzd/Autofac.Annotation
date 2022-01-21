@@ -36,6 +36,18 @@ public class TestAutowiredOnMethod
         Assert.NotNull(a1._autowiredOn2);
         Assert.NotNull(a1._school);
     }
+
+    [Fact]
+    public void Test3()
+    {
+        var builder = new ContainerBuilder();
+        builder.RegisterSpring(r => r.RegisterAssembly(typeof(AutowiredOn1).Assembly));
+        var container = builder.Build();
+        var a1 = container.Resolve<AutowiredOn6>();
+        Assert.NotNull(a1._autiwriedBase);
+        Assert.Equal("AutowiredOn5", a1._autiwriedBase.Hello);
+        Assert.NotNull(a1._school);
+    }
 }
 
 [Component]
@@ -66,6 +78,43 @@ public class AutowiredOn3
     public void SetAutowiredOn2(AutowiredOn2 autowiredOn2, [Value("${a9}")] string school)
     {
         _autowiredOn2 = autowiredOn2;
+        _school = school;
+    }
+}
+
+public class AutiwriedBase
+{
+    public string Hello { get; set; }
+}
+
+[Component("AutowiredOn4")]
+public class AutowiredOn4 : AutiwriedBase
+{
+    public AutowiredOn4()
+    {
+        Hello = "AutowiredOn4";
+    }
+}
+
+[Component("AutowiredOn5")]
+public class AutowiredOn5 : AutiwriedBase
+{
+    public AutowiredOn5()
+    {
+        Hello = "AutowiredOn5";
+    }
+}
+
+[Component]
+public class AutowiredOn6
+{
+    public AutiwriedBase _autiwriedBase;
+    public string _school;
+
+    [Autowired]
+    public void SetAutowiredOn2([Autowired("AutowiredOn5")] AutiwriedBase autiwriedBase, [Value("${a9}")] string school)
+    {
+        _autiwriedBase = autiwriedBase;
         _school = school;
     }
 }

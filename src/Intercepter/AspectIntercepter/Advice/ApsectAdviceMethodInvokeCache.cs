@@ -40,7 +40,7 @@ namespace Autofac.AspectIntercepter.Advice
         {
             lock (aspectClass.AspectAttributeCache)
             {
-                AddCacheInter(aspectClass, true);
+                AddCacheInter(aspectClass, aspectClass.isGeneric);
             }
         }
 

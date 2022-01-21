@@ -724,6 +724,7 @@ namespace Autofac.Annotation
                         else
                             pointCutCfg.PointcutTargetInfoList.TryAdd(key,
                                 new List<RunTimePointCutConfiguration> { new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation) });
+                        component.MethodsNeedPointcuts.Add(key);
                     }
 
                     result = true;
@@ -1675,17 +1676,16 @@ namespace Autofac.Annotation
                 InterceptorType = InterceptorType.Class,
                 InjectPropertyType = InjectPropertyType.Autowired,
                 IsBenPostProcessor = typeof(BeanPostProcessor).IsAssignableFrom(currentType),
-                CurrentClassTypeAttributes = isGeneric
-                    ? currentType.GetGenericTypeDefinition().GetCustomAttributes().OfType<Attribute>().ToList()
-                    : currentType.GetCustomAttributes().OfType<Attribute>().ToList()
+                CurrentClassTypeAttributes = currentType.GetCustomAttributes().OfType<Attribute>().ToList()
             };
 
             component.MetaSourceList = new List<MetaSourceData>();
             EnumerateMetaSourceAttributes(component.CurrentType, component.MetaSourceList);
 
             var needPointCut = NeedWarpForPointcut(component, allCompoment.PointCutConfigurationList, isGeneric);
-            NeedWarpForAspect(component);
-            if (isGeneric)
+            var neewAspect = NeedWarpForAspect(component);
+            var needProxy = neewAspect || needPointCut;
+            if (isGeneric || !needProxy)
             {
                 RegisterBeforeBeanPostProcessor(component, registration);
                 RegisterComponentValues(component, registration);

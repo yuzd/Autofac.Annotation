@@ -223,7 +223,7 @@ namespace Autofac.Annotation
                 {
                     ctxt.Registration.Metadata.TryAdd(InterceptorsForGenericMethodCache, true);
                     ctxt.Resolve<ApsectAdviceMethodInvokeCache>().AddCache(component);
-                    ctxt.Resolve<PointcutMethodInvokeCache>().AddCache(component.DynamicGenricMethodsNeedPointcuts);
+                    ctxt.Resolve<PointcutMethodInvokeCache>().AddCache(component);
                 }
 
                 var interceptors = GetInterceptorServices(ctxt.Registration, ctxt.Instance.GetType())
@@ -343,7 +343,7 @@ namespace Autofac.Annotation
                 {
                     ctxt.Registration.Metadata.TryAdd(InterceptorsForGenericMethodCache, true);
                     ctxt.Resolve<ApsectAdviceMethodInvokeCache>().AddCache(component);
-                    ctxt.Resolve<PointcutMethodInvokeCache>().AddCache(component.DynamicGenricMethodsNeedPointcuts);
+                    ctxt.Resolve<PointcutMethodInvokeCache>().AddCache(component);
                 }
 
                 var proxiedInterfaces = ctxt.Instance

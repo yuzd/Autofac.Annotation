@@ -154,6 +154,18 @@ namespace Autofac.Annotation
         }
 
         /// <summary>
+        /// 是否是泛型类
+        /// </summary>
+        internal bool isGeneric
+        {
+            get
+            {
+                var currentTypeInfo = CurrentType.GetTypeInfo();
+                return currentTypeInfo.IsGenericType;
+            }
+        }
+
+        /// <summary>
         ///     注册类型
         /// </summary>
         internal RegisterType RegisterType { get; set; } = RegisterType.Compoment;
@@ -179,6 +191,11 @@ namespace Autofac.Annotation
         /// 针对泛型 在resovle的时候动态注册的时候 检查哪些method需要pointcut
         /// </summary>
         internal readonly ConcurrentBag<string> DynamicGenricMethodsNeedPointcuts = new ConcurrentBag<string>();
+
+        /// <summary>
+        /// 针对飞泛型 在resovle的时候动态注册的时候 检查哪些method需要pointcut
+        /// </summary>
+        internal readonly ConcurrentBag<ObjectKey> MethodsNeedPointcuts = new ConcurrentBag<ObjectKey>();
     }
 
     /// <summary>

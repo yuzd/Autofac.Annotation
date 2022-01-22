@@ -48,13 +48,6 @@ namespace Autofac.AspectIntercepter.Advice
         {
             if (!aspectClass.AspectAttributeCache.Any()) return;
 
-            var allAttributesinClass = aspectClass.CurrentType.GetReflector()
-                .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
-                .Select(r => new { IsClass = true, Attribute = r, Index = r.OrderIndex }).ToList();
-
-            var myArrayMethodInfo = aspectClass.CurrentType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-                .Where(m => !m.IsSpecialName);
-
             foreach (var item in aspectClass.AspectAttributeCache)
             {
                 var method = item.Key;

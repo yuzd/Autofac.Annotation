@@ -27,8 +27,7 @@ namespace Autofac.Annotation.Util
                 BindingFlags flags = BindingFlags.Public |
                                      BindingFlags.NonPublic |
                                      BindingFlags.Static |
-                                     BindingFlags.Instance |
-                                     BindingFlags.DeclaredOnly;
+                                     BindingFlags.Instance;
                 var methods = type.GetMethods(flags);
                 foreach (var method2 in methods)
                 {
@@ -69,8 +68,7 @@ namespace Autofac.Annotation.Util
                 BindingFlags flags = BindingFlags.Public |
                                      BindingFlags.NonPublic |
                                      BindingFlags.Static |
-                                     BindingFlags.Instance |
-                                     BindingFlags.DeclaredOnly;
+                                     BindingFlags.Instance ;
                 method = type.GetMethod(emethodName, flags);
             }
             catch (Exception)

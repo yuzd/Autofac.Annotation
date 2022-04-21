@@ -7,6 +7,7 @@
 // <summary></summary>
 //-----------------------------------------------------------------------
 
+using System;
 using Xunit;
 
 namespace Autofac.Annotation.Test.test14;
@@ -47,6 +48,17 @@ public class TestAutowiredOnMethod
         Assert.NotNull(a1._autiwriedBase);
         Assert.Equal("AutowiredOn5", a1._autiwriedBase.Hello);
         Assert.NotNull(a1._school);
+    }
+
+    [Fact]
+    public void Test4()
+    {
+        var builder = new ContainerBuilder();
+        builder.RegisterSpring(r => r.RegisterAssembly(typeof(AutowiredOn1).Assembly));
+        var container = builder.Build();
+        var a1 = container.Resolve<AutowiredBaseChild1>();
+        Assert.NotNull(a1._autiwriedBase);
+        Assert.Equal("AutowiredOn5", a1._autiwriedBase.Hello);
     }
 }
 
@@ -116,5 +128,29 @@ public class AutowiredOn6
     {
         _autiwriedBase = autiwriedBase;
         _school = school;
+    }
+}
+
+public abstract class AutowiredBase1
+{
+    public AutiwriedBase _autiwriedBase;
+
+    [Autowired]
+    public void SetAutowiredOn([Autowired("AutowiredOn5")] AutiwriedBase autiwriedBase)
+    {
+        _autiwriedBase = autiwriedBase; ;
+        // 父类的初始化
+        DoInit();
+    }
+    // 子类扩展的初始化方法
+    public abstract void DoInit();
+}
+
+[Component]
+public class AutowiredBaseChild1: AutowiredBase1
+{
+    public override void DoInit()
+    {
+        Console.WriteLine("test_AutowiredBaseChild1");
     }
 }

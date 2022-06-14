@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using AspectCore.Extensions.Reflection;
 using Autofac.Annotation.Condition;
 using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter.Advice;
@@ -227,7 +226,7 @@ namespace Autofac.Annotation
             if (this.AttributeType != null)
             {
                 Attribute annotation = null;
-                foreach (var attr in methodInfoCache.GetReflector().GetCustomAttributes())
+                foreach (var attr in methodInfoCache.GetCustomAttributes())
                 {
                     if (AttributeType == attr.GetType())
                     {

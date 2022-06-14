@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
-using AspectCore.Extensions.Reflection;
 using Autofac.Core;
 
 namespace Autofac.Annotation
@@ -130,7 +129,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 存储lazy的 CreateLazy 的方法缓存
         /// </summary>
-        private readonly ConcurrentDictionary<Type, MethodReflector> _lazyMethodCache = new ConcurrentDictionary<Type, MethodReflector>();
+        private readonly ConcurrentDictionary<Type, MethodInfo> _lazyMethodCache = new ConcurrentDictionary<Type, MethodInfo>();
 
         /// <summary>
         /// 
@@ -215,11 +214,11 @@ namespace Autofac.Annotation
             var lazyFactory = Activator.CreateInstance(valueFactoryType, new object[] { function });
             if (!this._lazyMethodCache.TryGetValue(valueFactoryType, out var _cache))
             {
-                _cache = lazyFactory.GetType().GetTypeInfo().GetMethod("CreateLazy").GetReflector();
+                _cache = lazyFactory.GetType().GetTypeInfo().GetMethod("CreateLazy");
                 this._lazyMethodCache.TryAdd(valueFactoryType, _cache);
             }
 
-            return _cache.Invoke(lazyFactory);
+            return _cache?.Invoke(lazyFactory,null);
         }
     }
 }

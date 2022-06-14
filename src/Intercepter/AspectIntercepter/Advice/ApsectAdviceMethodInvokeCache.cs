@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using AspectCore.Extensions.Reflection;
 using Autofac.Annotation;
 using Autofac.Annotation.Util;
 

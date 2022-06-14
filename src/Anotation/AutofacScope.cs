@@ -22,6 +22,8 @@
 
         /// <summary>
         /// 根据每个请求一个实例
+        /// https://autofac.readthedocs.io/en/latest/lifetime/instance-scope.html
+        /// ASP.NET Core uses Instance Per Lifetime Scope rather than Instance Per Request.
         /// </summary>
         InstancePerRequest,
 

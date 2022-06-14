@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using AspectCore.Extensions.Reflection;
 using Autofac.Builder;
 using Autofac.Core.Resolving.Pipeline;
 using Castle.DynamicProxy;
@@ -140,7 +139,7 @@ namespace Autofac.Annotation
         /// <param name="returnParam"></param>
         /// <param name="injectAnotation"></param>
         /// <returns></returns>
-        public static object InvokeInstanceMethod(object instance, MethodReflector methodInfo, ParameterInfo[] parameters, IComponentContext context,
+        public static object InvokeInstanceMethod(object instance, MethodInfo methodInfo, ParameterInfo[] parameters, IComponentContext context,
             AspectContext invocation = null, AspectDelegate _next = null, object returnValue = null, string returnParam = null,
             Attribute injectAnotation = null)
         {

@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using AspectCore.Extensions.Reflection;
 using Autofac.Annotation;
 using Autofac.AspectIntercepter.Advice;
 
@@ -108,7 +107,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                     pointCutMethod.BeforeMethod = new RunTimePointcutMethod<Before>
                     {
                         Instance = instance,
-                        MethodInfo = pointcut.BeforeMethod.Item2.GetReflector(),
+                        MethodInfo = pointcut.BeforeMethod.Item2,
                         MethodReturnType = pointcut.BeforeMethod.Item2.ReturnType,
                         MethodParameters = pointcut.BeforeMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.BeforeMethod.Item1,
@@ -119,7 +118,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                     pointCutMethod.AfterMethod = new RunTimePointcutMethod<After>
                     {
                         Instance = instance,
-                        MethodInfo = pointcut.AfterMethod.Item2.GetReflector(),
+                        MethodInfo = pointcut.AfterMethod.Item2,
                         MethodReturnType = pointcut.AfterMethod.Item2.ReturnType,
                         MethodParameters = pointcut.AfterMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AfterMethod.Item1,
@@ -130,7 +129,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                     pointCutMethod.AfterReturnMethod = new RunTimePointcutMethod<AfterReturn>
                     {
                         Instance = instance,
-                        MethodInfo = pointcut.AfterReturnMethod.Item2.GetReflector(),
+                        MethodInfo = pointcut.AfterReturnMethod.Item2,
                         MethodReturnType = pointcut.AfterReturnMethod.Item2.ReturnType,
                         MethodParameters = pointcut.AfterReturnMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AfterReturnMethod.Item1,
@@ -141,7 +140,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                     pointCutMethod.AroundMethod = new RunTimePointcutMethod<Around>
                     {
                         Instance = instance,
-                        MethodInfo = pointcut.AroundMethod.Item2.GetReflector(),
+                        MethodInfo = pointcut.AroundMethod.Item2,
                         MethodReturnType = pointcut.AroundMethod.Item2.ReturnType,
                         MethodParameters = pointcut.AroundMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AroundMethod.Item1,
@@ -152,7 +151,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                     pointCutMethod.AfterThrowsMethod = new RunTimePointcutMethod<AfterThrows>
                     {
                         Instance = instance,
-                        MethodInfo = pointcut.AfterThrows.Item2.GetReflector(),
+                        MethodInfo = pointcut.AfterThrows.Item2,
                         MethodReturnType = pointcut.AfterThrows.Item2.ReturnType,
                         MethodParameters = pointcut.AfterThrows.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AfterThrows.Item1,
@@ -201,7 +200,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                     pointCutMethod.BeforeMethod = new RunTimePointcutMethod<Before>
                     {
                         Instance = instance,
-                        MethodInfo = pointcut.BeforeMethod.Item2.GetReflector(),
+                        MethodInfo = pointcut.BeforeMethod.Item2,
                         MethodReturnType = pointcut.BeforeMethod.Item2.ReturnType,
                         MethodParameters = pointcut.BeforeMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.BeforeMethod.Item1,
@@ -212,7 +211,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                     pointCutMethod.AfterMethod = new RunTimePointcutMethod<After>
                     {
                         Instance = instance,
-                        MethodInfo = pointcut.AfterMethod.Item2.GetReflector(),
+                        MethodInfo = pointcut.AfterMethod.Item2,
                         MethodReturnType = pointcut.AfterMethod.Item2.ReturnType,
                         MethodParameters = pointcut.AfterMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AfterMethod.Item1,
@@ -223,7 +222,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                     pointCutMethod.AfterReturnMethod = new RunTimePointcutMethod<AfterReturn>
                     {
                         Instance = instance,
-                        MethodInfo = pointcut.AfterReturnMethod.Item2.GetReflector(),
+                        MethodInfo = pointcut.AfterReturnMethod.Item2,
                         MethodReturnType = pointcut.AfterReturnMethod.Item2.ReturnType,
                         MethodParameters = pointcut.AfterReturnMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AfterReturnMethod.Item1,
@@ -234,7 +233,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                     pointCutMethod.AroundMethod = new RunTimePointcutMethod<Around>
                     {
                         Instance = instance,
-                        MethodInfo = pointcut.AroundMethod.Item2.GetReflector(),
+                        MethodInfo = pointcut.AroundMethod.Item2,
                         MethodReturnType = pointcut.AroundMethod.Item2.ReturnType,
                         MethodParameters = pointcut.AroundMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AroundMethod.Item1,
@@ -245,7 +244,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                     pointCutMethod.AfterThrowsMethod = new RunTimePointcutMethod<AfterThrows>
                     {
                         Instance = instance,
-                        MethodInfo = pointcut.AfterThrows.Item2.GetReflector(),
+                        MethodInfo = pointcut.AfterThrows.Item2,
                         MethodReturnType = pointcut.AfterThrows.Item2.ReturnType,
                         MethodParameters = pointcut.AfterThrows.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AfterThrows.Item1,

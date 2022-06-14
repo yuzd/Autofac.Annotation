@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using AspectCore.Extensions.Reflection;
 using Autofac.Annotation.Config;
 using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter;
@@ -1784,7 +1783,7 @@ namespace Autofac.Annotation
                     where va != null && !typeInfo.IsValueType && !typeInfo.IsEnum
                           && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
                           && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
-                    select new Tuple<PropertyInfo, Autowired, PropertyReflector>(p, va, p.GetReflector()))
+                    select new Tuple<PropertyInfo, Autowired, PropertyInfo>(p, va, p))
                 .ToList();
 
             component.AutowiredFieldInfoList = (from p in component.CurrentType.GetAllFields()
@@ -1794,7 +1793,7 @@ namespace Autofac.Annotation
                     where va != null && !typeInfo.IsValueType && !typeInfo.IsEnum
                           && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
                           && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
-                    select new Tuple<FieldInfo, Autowired, FieldReflector>(p, va, p.GetReflector()))
+                    select new Tuple<FieldInfo, Autowired, FieldInfo>(p, va, p))
                 .ToList();
 
             component.AutowiredMethodInfoList = (from p in component.CurrentType.GetAllMethod()
@@ -1920,7 +1919,7 @@ namespace Autofac.Annotation
                     {
                         if (model.isDynamicGeneric) //如果是动态泛型的话
                         {
-                            instanceType.GetTypeInfo().GetField(field.Item1.Name).GetReflector().SetValue(RealInstance, obj);
+                            instanceType.GetTypeInfo().GetField(field.Item1.Name).SetValue(RealInstance, obj);
                             continue;
                         }
 
@@ -1953,7 +1952,7 @@ namespace Autofac.Annotation
                     {
                         if (model.isDynamicGeneric) //如果是动态泛型的话
                         {
-                            instanceType.GetTypeInfo().GetProperty(property.Item1.Name).GetReflector().SetValue(RealInstance, obj);
+                            instanceType.GetTypeInfo().GetProperty(property.Item1.Name).SetValue(RealInstance, obj);
                             continue;
                         }
 
@@ -2083,7 +2082,7 @@ namespace Autofac.Annotation
                 {
                     if (model.isDynamicGeneric) //如果是动态泛型的话
                     {
-                        instanceType.GetTypeInfo().GetField(field.Item1.Name).GetReflector().SetValue(RealInstance, value);
+                        instanceType.GetTypeInfo().GetField(field.Item1.Name).SetValue(RealInstance, value);
                         continue;
                     }
 
@@ -2105,7 +2104,7 @@ namespace Autofac.Annotation
                 {
                     if (model.isDynamicGeneric) //如果是动态泛型的话
                     {
-                        instanceType.GetTypeInfo().GetProperty(property.Item1.Name).GetReflector().SetValue(RealInstance, value);
+                        instanceType.GetTypeInfo().GetProperty(property.Item1.Name)?.SetValue(RealInstance, value);
                         continue;
                     }
 
@@ -2126,12 +2125,12 @@ namespace Autofac.Annotation
             component.ValuePropertyInfoList = (from p in component.CurrentType.GetAllProperties()
                 let va = p.GetCustomAttribute<Value>()
                 where va != null
-                select new Tuple<PropertyInfo, Value, PropertyReflector>(p, va, p.GetReflector())).ToList();
+                select new Tuple<PropertyInfo, Value, PropertyInfo>(p, va, p)).ToList();
 
             component.ValueFieldInfoList = (from p in component.CurrentType.GetAllFields()
                 let va = p.GetCustomAttribute<Value>()
                 where va != null
-                select new Tuple<FieldInfo, Value, FieldReflector>(p, va, p.GetReflector())).ToList();
+                select new Tuple<FieldInfo, Value, FieldInfo>(p, va, p)).ToList();
 
             if (!component.ValueFieldInfoList.Any() && !component.ValuePropertyInfoList.Any()) return false;
 

@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
-using AspectCore.Extensions.Reflection;
 using Autofac.AspectIntercepter.Advice;
 using Autofac.AspectIntercepter.Pointcut;
 using Microsoft.Extensions.Configuration;
@@ -21,11 +20,11 @@ namespace Autofac.Annotation
         {
             MetaSourceList = new List<MetaSourceData>();
             ComponentServiceList = new List<ComponentServiceModel>();
-            AutowiredFieldInfoList = new List<Tuple<FieldInfo, Autowired, FieldReflector>>();
-            AutowiredPropertyInfoList = new List<Tuple<PropertyInfo, Autowired, PropertyReflector>>();
+            AutowiredFieldInfoList = new List<Tuple<FieldInfo, Autowired, FieldInfo>>();
+            AutowiredPropertyInfoList = new List<Tuple<PropertyInfo, Autowired, PropertyInfo>>();
             AutowiredMethodInfoList = new List<Tuple<MethodInfo, Autowired>>();
-            ValueFieldInfoList = new List<Tuple<FieldInfo, Value, FieldReflector>>();
-            ValuePropertyInfoList = new List<Tuple<PropertyInfo, Value, PropertyReflector>>();
+            ValueFieldInfoList = new List<Tuple<FieldInfo, Value, FieldInfo>>();
+            ValuePropertyInfoList = new List<Tuple<PropertyInfo, Value, PropertyInfo>>();
         }
 
         /// <summary>
@@ -41,12 +40,12 @@ namespace Autofac.Annotation
         /// <summary>
         ///     需要装配的Autowired的字段集合
         /// </summary>
-        public List<Tuple<FieldInfo, Autowired, FieldReflector>> AutowiredFieldInfoList { get; set; }
+        public List<Tuple<FieldInfo, Autowired, FieldInfo>> AutowiredFieldInfoList { get; set; }
 
         /// <summary>
         ///     需要装配的Autowired的属性集合
         /// </summary>
-        public List<Tuple<PropertyInfo, Autowired, PropertyReflector>> AutowiredPropertyInfoList { get; set; }
+        public List<Tuple<PropertyInfo, Autowired, PropertyInfo>> AutowiredPropertyInfoList { get; set; }
 
         /// <summary>
         ///     需要装配的Autowired的public方法集合
@@ -56,12 +55,12 @@ namespace Autofac.Annotation
         /// <summary>
         ///     需要装配的Value的字段集合
         /// </summary>
-        public List<Tuple<FieldInfo, Value, FieldReflector>> ValueFieldInfoList { get; set; }
+        public List<Tuple<FieldInfo, Value, FieldInfo>> ValueFieldInfoList { get; set; }
 
         /// <summary>
         ///     需要装配的Value的属性集合
         /// </summary>
-        public List<Tuple<PropertyInfo, Value, PropertyReflector>> ValuePropertyInfoList { get; set; }
+        public List<Tuple<PropertyInfo, Value, PropertyInfo>> ValuePropertyInfoList { get; set; }
 
         /// <summary>
         ///     PropertySource

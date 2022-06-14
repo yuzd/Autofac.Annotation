@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using AspectCore.Extensions.Reflection;
 using Autofac.Annotation;
 using Autofac.AspectIntercepter.Impl;
 
@@ -59,7 +58,7 @@ namespace Autofac.AspectIntercepter.Pointcut
         /// <summary>
         ///     被拦截方法
         /// </summary>
-        public MethodReflector MethodInfo { get; set; }
+        public MethodInfo MethodInfo { get; set; }
 
         /// <summary>
         ///     方法返回类型

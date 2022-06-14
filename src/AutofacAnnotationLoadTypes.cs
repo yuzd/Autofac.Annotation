@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using AspectCore.Extensions.Reflection;
 using Autofac.Annotation.Condition;
 using Autofac.Annotation.Config;
 using Autofac.Annotation.Util;
@@ -255,7 +254,7 @@ namespace Autofac.Annotation
             if (aspectClass.AspectAttributeCache.Any()) return true;
 
             //class上的标签也是包含继承关系
-            var allAttributesinClass = aspectClass.CurrentType.GetReflector()
+            var allAttributesinClass = aspectClass.CurrentType
                 .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
                 .Select(r => new { IsClass = true, Attribute = r, Index = r.OrderIndex }).ToList();
 
@@ -264,7 +263,7 @@ namespace Autofac.Annotation
 
             foreach (var method in myArrayMethodInfo)
             {
-                var allAttributes = allAttributesinClass.Concat(method.GetReflector()
+                var allAttributes = allAttributesinClass.Concat(method
                     .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
                     .Select(r => new { IsClass = false, Attribute = r, Index = r.OrderIndex }));
 

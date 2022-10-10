@@ -28,10 +28,10 @@
         <RootNamespace>Autofac.Annotation</RootNamespace>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-        <Version>4.1.1</Version>
-        <AssemblyVersion>4.1.1.0</AssemblyVersion>
+        <Version>4.1.2</Version>
+        <AssemblyVersion>4.1.2.0</AssemblyVersion>
         <Authors>zdyu</Authors>
-        <PackageVersion>4.1.1</PackageVersion>
+        <PackageVersion>4.1.2</PackageVersion>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
 
@@ -56,7 +56,7 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Xml" Version="3.1.0" />
         <PackageReference Include="Spring.EL" Version="1.0.5" />
-        <PackageReference Include="Castle.Core" Version="5.0.0" />
+        <PackageReference Include="Castle.Core" Version="5.1.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     </ItemGroup>
 

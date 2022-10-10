@@ -399,6 +399,7 @@ public class PointCutTestResult
     public List<string> result9 { get; set; } = new List<string>();
     public List<string> result10 { get; set; } = new List<string>();
     public List<string> result11 { get; set; } = new List<string>();
+    public List<string> result12 { get; set; } = new List<string>();
 }
 
 public abstract class TestModelBase

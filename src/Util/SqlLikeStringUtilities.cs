@@ -2,6 +2,9 @@ using System.Collections.Generic;
 
 namespace Autofac.Annotation.Util
 {
+    /// <summary>
+    /// 
+    /// </summary>
     internal class SqlLikeStringUtilities
     {
         /// <summary>
@@ -61,9 +64,9 @@ namespace Autofac.Annotation.Util
                         set.Clear();
                         if (pattern[patternIndex + 1] == '-' && pattern[patternIndex + 3] == ']')
                         {
-                            char start = char.ToUpper(pattern[patternIndex]);
+                            char start = (pattern[patternIndex]);
                             patternIndex += 2;
-                            char end = char.ToUpper(pattern[patternIndex]);
+                            char end = (pattern[patternIndex]);
                             if (start <= end)
                             {
                                 for (char ci = start; ci <= end; ci++)
@@ -88,7 +91,7 @@ namespace Autofac.Annotation.Util
 
                 if (isWildCardOn)
                 {
-                    if (char.ToUpper(c) == char.ToUpper(p))
+                    if ((c) == (p))
                     {
                         isWildCardOn = false;
                         patternIndex++;
@@ -100,7 +103,7 @@ namespace Autofac.Annotation.Util
                 }
                 else if (isCharSetOn || isNotCharSetOn)
                 {
-                    bool charMatch = (set.Contains(char.ToUpper(c)));
+                    bool charMatch = (set.Contains(c));
                     if ((isNotCharSetOn && charMatch) || (isCharSetOn && !charMatch))
                     {
                         if (lastWildCard >= 0) patternIndex = lastWildCard;
@@ -115,7 +118,7 @@ namespace Autofac.Annotation.Util
                 }
                 else
                 {
-                    if (char.ToUpper(c) == char.ToUpper(p))
+                    if ((c) == (p))
                     {
                         patternIndex++;
                     }

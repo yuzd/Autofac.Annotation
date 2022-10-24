@@ -8,6 +8,8 @@
 //-----------------------------------------------------------------------
 
 using System;
+using Autofac.Annotation.Condition;
+using Autofac.Annotation.Test.test10;
 using Xunit;
 
 namespace Autofac.Annotation.Test.issue29;
@@ -64,6 +66,25 @@ public class TestAutowiredWithValue
         var testAutowiredWithValueModel3 = container.Resolve<TestAutowiredWithValueModel311>();
 
         var testAutowiredWithValueModel = testAutowiredWithValueModel3.TestAutowiredWithValueModel1.Value;
+        Assert.NotNull(testAutowiredWithValueModel);
+
+        Assert.IsType<TestAutowiredWithValueModel2>(testAutowiredWithValueModel);
+    }
+    
+     
+    [Fact]
+    public void Test_Type_01111()
+    {
+        var builder = new ContainerBuilder();
+
+        // autofac打标签模式
+        builder.RegisterModule(new AutofacAnnotationModule(typeof(TestAutowiredWithValue).Assembly));
+
+        var container = builder.Build();
+
+        var testAutowiredWithValueModel3 = container.Resolve<TestAutowiredWithValueModel5>();
+
+        var testAutowiredWithValueModel = testAutowiredWithValueModel3._testAutowiredWithValueModel;
         Assert.NotNull(testAutowiredWithValueModel);
 
         Assert.IsType<TestAutowiredWithValueModel2>(testAutowiredWithValueModel);
@@ -147,6 +168,27 @@ public class TestAutowiredWithValueModel311
     [Autowired("${ITestAutowiredWithValueModel}")]
     public Lazy<ITestAutowiredWithValueModel> TestAutowiredWithValueModel1 { get; set; }
 
+}
+
+
+public class TestAutowiredWithValueModel5
+{
+    public ITestAutowiredWithValueModel _testAutowiredWithValueModel;
+
+    public TestAutowiredWithValueModel5(ITestAutowiredWithValueModel testAutowiredWithValueModel)
+    {
+        _testAutowiredWithValueModel = testAutowiredWithValueModel;
+    }
+}
+
+[AutoConfiguration]
+public class TestAutowiredWithValueAutoConfiguration
+{
+    [Bean]
+    public virtual TestAutowiredWithValueModel5 getTest10Model12([Autowired("${ITestAutowiredWithValueModel}")] ITestAutowiredWithValueModel testAutowiredWithValueModel)
+    {
+        return new TestAutowiredWithValueModel5(testAutowiredWithValueModel);
+    }
 }
 
 [Component]

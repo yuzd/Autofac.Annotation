@@ -7,6 +7,7 @@
 // <summary></summary>
 //-----------------------------------------------------------------------
 
+using System;
 using Xunit;
 
 namespace Autofac.Annotation.Test.issue29;
@@ -49,6 +50,24 @@ public class TestAutowiredWithValue
         Assert.IsType<TestAutowiredWithValueModel1>(testAutowiredWithValueModel3.TestAutowiredWithValueModel1);
     }
     
+    
+    [Fact]
+    public void Test_Type_0111()
+    {
+        var builder = new ContainerBuilder();
+
+        // autofac打标签模式
+        builder.RegisterModule(new AutofacAnnotationModule(typeof(TestAutowiredWithValue).Assembly));
+
+        var container = builder.Build();
+
+        var testAutowiredWithValueModel3 = container.Resolve<TestAutowiredWithValueModel311>();
+
+        var testAutowiredWithValueModel = testAutowiredWithValueModel3.TestAutowiredWithValueModel1.Value;
+        Assert.NotNull(testAutowiredWithValueModel);
+
+        Assert.IsType<TestAutowiredWithValueModel2>(testAutowiredWithValueModel);
+    }
     [Fact]
     public void Test_Type_02()
     {
@@ -119,6 +138,14 @@ public class TestAutowiredWithValueModel31
 {
     [Autowired("${ITestAutowiredWithValueModel}")]
     public ITestAutowiredWithValueModel TestAutowiredWithValueModel1 { get; set; }
+
+}
+
+[Component]
+public class TestAutowiredWithValueModel311
+{
+    [Autowired("${ITestAutowiredWithValueModel}")]
+    public Lazy<ITestAutowiredWithValueModel> TestAutowiredWithValueModel1 { get; set; }
 
 }
 

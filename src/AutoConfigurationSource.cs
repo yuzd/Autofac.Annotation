@@ -339,7 +339,7 @@ namespace Autofac.Annotation
                     var autowired = parameter.GetCustomAttribute<Autowired>();
                     if (autowired != null)
                     {
-                        parameterObj.Add(autowired.ResolveParameter(parameter, context));
+                        parameterObj.Add(autowired.ResolveParameterWithConfiguration(autoConfigurationDetail,parameter, context));
                         continue;
                     }
 

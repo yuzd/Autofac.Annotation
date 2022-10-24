@@ -12,6 +12,9 @@ namespace Autofac.Annotation
     /// <summary>
     /// 注入值
     /// 只能打一个标签 可以继承父类
+    /// ${xxx} 代表从配置源里面 获取属性名称为xxx的值
+    /// #{xxx} 代表启动SPEL表达式，xxx里面可以嵌套${yyy}
+    /// SPEL表达式具体用法可以查看：https://github.com/yuzd/Spring.EL
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter | AttributeTargets.Field)]
     public sealed class Value : ParameterFilterAttribute
@@ -19,12 +22,17 @@ namespace Autofac.Annotation
         /// <summary>
         /// The default placeholder prefix.
         /// </summary>
-        public static readonly string DefaultPlaceholderPrefix = "${";
+        private const string DefaultPlaceholderPrefix = "${";
 
         /// <summary>
         /// The default placeholder suffix.
         /// </summary>
-        public static readonly string DefaultPlaceholderSuffix = "}";
+        private const string DefaultPlaceholderSuffix = "}";
+
+        /// <summary>
+        /// 默认
+        /// </summary>
+        private const EnvironmentVariableMode DefaultEnvironmentVariableMode = EnvironmentVariableMode.Fallback;
 
 
         /// <summary>
@@ -49,7 +57,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 设置是否从环境变量拿 默认是从文件里面拿不到 就从环境里面去拿
         /// </summary>
-        public EnvironmentVariableMode EnvironmentVariableMode { get; set; } = EnvironmentVariableMode.Fallback;
+        public EnvironmentVariableMode EnvironmentVariableMode { get; set; } = DefaultEnvironmentVariableMode;
 
         /// <summary>
         /// 注入
@@ -131,48 +139,9 @@ namespace Autofac.Annotation
                 }
 
                 //先把 ${} 的 placehoder 全部替换掉
-                var parameterValue = ResolveEmbeddedValue(context, classType, this.value, autoConfigurationDetail);
-                int startIndex = parameterValue.ToString().IndexOf("#{", StringComparison.Ordinal);
-                if (startIndex != -1)
-                {
-                    int endIndex = parameterValue.ToString().LastIndexOf(DefaultPlaceholderSuffix, StringComparison.Ordinal);
-                    if (endIndex != -1)
-                    {
-                        Dictionary<string, object> vars = new Dictionary<string, object>
-                        {
-                            ["_sprint_context_resove_"] = new SprintContextResove((type, name) =>
-                            {
-                                if (type != null && !string.IsNullOrEmpty(name)) return context.ResolveKeyed(name, type);
-                                if (type != null) return context.Resolve(type);
-                                if (!string.IsNullOrEmpty(name))
-                                {
-                                    //从当前的Assembly去loadType
-                                    var arr = name.Split('>');
-                                    if (arr.Length == 2)
-                                    {
-                                        var resolveType = classType.Assembly.GetType(classType.Namespace + "." + arr[0]);
-                                        return resolveType == null ? null : context.ResolveKeyed(arr[1], resolveType);
-                                    }
-                                    else
-                                    {
-                                        var resolveType = classType.Assembly.GetType(classType.Namespace + "." + name);
-                                        return resolveType == null ? null : context.Resolve(resolveType);
-                                    }
-                                }
-
-                                return null;
-                            })
-                        };
-                        //El表达式
-
-                        int pos = startIndex + DefaultPlaceholderPrefix.Length;
-                        string expression = parameterValue.ToString().Substring(pos, endIndex - pos);
-                        parameterValue = ExpressionEvaluator.GetValue(null, expression, vars);
-                    }
-                }
-
+                var parameterValue = ResolveSpel(context, classType, this.value, autoConfigurationDetail,
+                    IgnoreUnresolvablePlaceholders, this.EnvironmentVariableMode);
                 if (parameterValue == null) return null;
-
                 return TypeConversionUtils.ConvertValueIfNecessary(memberType, parameterValue, null);
             }
             catch (Exception ex)
@@ -183,8 +152,77 @@ namespace Autofac.Annotation
             }
         }
 
+        #region #{xxx} 代表启动SPEL表达式，xxx里面可以嵌套${yyy}
 
-        private object ResolveEmbeddedValue(IComponentContext context, Type classType, string strVal, AutoConfigurationDetail autoConfigurationDetail = null)
+        /// <summary>
+        /// #{xxx} 代表启动SPEL表达式，xxx里面可以嵌套${yyy}
+        /// </summary>
+        /// <param name="context">容器上下文</param>
+        /// <param name="classType">当前使用的类</param>
+        /// <param name="strVal">值</param>
+        /// <param name="autoConfigurationDetail">propertySource配置</param>
+        /// <param name="ignoreFail">如果需要替换但是没找到是否忽略报错</param>
+        /// <param name="mode"><see cref="EnvironmentVariableMode"/></param>
+        /// <returns></returns>
+        internal static object ResolveSpel(
+            IComponentContext context,
+            Type classType,
+            string strVal,
+            AutoConfigurationDetail autoConfigurationDetail = null,
+            bool ignoreFail = false,
+            EnvironmentVariableMode mode = DefaultEnvironmentVariableMode)
+        {
+            //先把 ${} 的 placehoder 全部替换掉
+            var parameterValue = ResolveEmbeddedValue(mode, context, classType, strVal, autoConfigurationDetail,
+                ignoreFail);
+            int startIndex = parameterValue.ToString().IndexOf("#{", StringComparison.Ordinal);
+            if (startIndex != -1)
+            {
+                int endIndex = parameterValue.ToString().LastIndexOf(DefaultPlaceholderSuffix, StringComparison.Ordinal);
+                if (endIndex != -1)
+                {
+                    Dictionary<string, object> vars = new Dictionary<string, object>
+                    {
+                        ["_sprint_context_resove_"] = new SprintContextResove((type, name) =>
+                        {
+                            if (type != null && !string.IsNullOrEmpty(name)) return context.ResolveKeyed(name, type);
+                            if (type != null) return context.Resolve(type);
+                            if (!string.IsNullOrEmpty(name))
+                            {
+                                //从当前的Assembly去loadType
+                                var arr = name.Split('>');
+                                if (arr.Length == 2)
+                                {
+                                    var resolveType = classType.Assembly.GetType(classType.Namespace + "." + arr[0]);
+                                    return resolveType == null ? null : context.ResolveKeyed(arr[1], resolveType);
+                                }
+                                else
+                                {
+                                    var resolveType = classType.Assembly.GetType(classType.Namespace + "." + name);
+                                    return resolveType == null ? null : context.Resolve(resolveType);
+                                }
+                            }
+
+                            return null;
+                        })
+                    };
+                    //El表达式
+
+                    int pos = startIndex + DefaultPlaceholderPrefix.Length;
+                    string expression = parameterValue.ToString().Substring(pos, endIndex - pos);
+                    parameterValue = ExpressionEvaluator.GetValue(null, expression, vars);
+                }
+            }
+
+            return parameterValue;
+        }
+
+        #endregion
+
+        #region ${xxx} 代表从配置源里面 获取属性名称为xxx的值
+
+        static object ResolveEmbeddedValue(EnvironmentVariableMode mode,
+            IComponentContext context, Type classType, string strVal, AutoConfigurationDetail autoConfigurationDetail = null, bool ignoreFail = false)
         {
             int startIndex = strVal.IndexOf(DefaultPlaceholderPrefix, StringComparison.Ordinal);
             while (startIndex != -1)
@@ -194,13 +232,13 @@ namespace Autofac.Annotation
                 {
                     int pos = startIndex + DefaultPlaceholderPrefix.Length;
                     string placeholder = strVal.Substring(pos, endIndex - pos);
-                    string resolvedValue = ResolvePlaceholder(context, classType, placeholder, autoConfigurationDetail);
+                    string resolvedValue = ResolvePlaceholder(mode, context, classType, placeholder, autoConfigurationDetail);
                     if (resolvedValue != null)
                     {
                         strVal = strVal.Substring(0, startIndex) + resolvedValue + strVal.Substring(endIndex + 1);
                         startIndex = strVal.IndexOf(DefaultPlaceholderPrefix, startIndex + resolvedValue.Length, StringComparison.Ordinal);
                     }
-                    else if (IgnoreUnresolvablePlaceholders)
+                    else if (ignoreFail)
                     {
                         return strVal;
                     }
@@ -219,10 +257,11 @@ namespace Autofac.Annotation
         }
 
 
-        private string ResolvePlaceholder(IComponentContext context, Type classType, string placeholder, AutoConfigurationDetail autoConfigurationDetail = null)
+        static string ResolvePlaceholder(EnvironmentVariableMode mode, IComponentContext context, Type classType, string placeholder,
+            AutoConfigurationDetail autoConfigurationDetail = null)
         {
             string propertyValue = null;
-            if (this.EnvironmentVariableMode == EnvironmentVariableMode.Override)
+            if (mode == EnvironmentVariableMode.Override)
             {
                 propertyValue = Environment.GetEnvironmentVariable(placeholder);
             }
@@ -266,12 +305,14 @@ namespace Autofac.Annotation
                 }
             }
 
-            if (propertyValue == null && EnvironmentVariableMode == EnvironmentVariableMode.Fallback)
+            if (propertyValue == null && mode == EnvironmentVariableMode.Fallback)
             {
                 propertyValue = Environment.GetEnvironmentVariable(placeholder);
             }
 
             return propertyValue;
         }
+
+        #endregion
     }
 }

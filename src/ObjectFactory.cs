@@ -185,9 +185,10 @@ namespace Autofac.Annotation
         /// <param name="classType"></param>
         /// <param name="fieldOrPropertyName"></param>
         /// <param name="Parameters"></param>
+        /// <param name="autoConfigurationDetail"></param>
         /// <returns></returns>
         internal object CreateAutowiredFactory(Autowired autowired, Type type, Type classType, string fieldOrPropertyName,
-            List<Parameter> Parameters)
+            List<Parameter> Parameters,AutoConfigurationDetail autoConfigurationDetail = null)
         {
             var targetType = type.GenericTypeArguments[0];
             var valueType = typeof(AutowiredObjectFactory<>);
@@ -204,8 +205,10 @@ namespace Autofac.Annotation
         /// <param name="classType"></param>
         /// <param name="fieldOrPropertyName"></param>
         /// <param name="Parameters"></param>
-        /// <returns></returns>
-        internal object CreateLazyFactory(Autowired autowired, Type type, Type classType, string fieldOrPropertyName, List<Parameter> Parameters)
+        /// <param name="autoConfigurationDetail">
+        /// </param>/// <returns></returns>
+        internal object CreateLazyFactory(Autowired autowired, Type type, Type classType, string fieldOrPropertyName,
+            List<Parameter> Parameters,AutoConfigurationDetail autoConfigurationDetail = null)
         {
             var targetType = type.GenericTypeArguments[0];
             var valueType = typeof(LazyAutowiredFactory<>);

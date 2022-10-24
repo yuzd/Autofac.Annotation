@@ -66,6 +66,18 @@ namespace Autofac.Annotation
         }
 
         /// <summary>
+        /// AutoConfiguration类的自动装载
+        /// </summary>
+        /// <param name="detail"></param>
+        /// <param name="parameter"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        internal object ResolveParameterWithConfiguration(AutoConfigurationDetail detail, ParameterInfo parameter, IComponentContext context)
+        {
+            return Resolve(context, parameter.Member.DeclaringType, parameter.ParameterType, parameter.Name, null,detail);
+        }
+        
+        /// <summary>
         /// 作为ParameterInfo自动装载
         /// </summary>
         /// <param name="parameter"></param>
@@ -123,18 +135,18 @@ namespace Autofac.Annotation
         }
 
         internal object Resolve(IComponentContext context, Type classType, Type memberType, string fieldOrPropertyName,
-            List<Parameter> Parameters)
+            List<Parameter> Parameters,AutoConfigurationDetail autoConfigurationDetail = null)
         {
             object returnObj = null;
 
             //针对继承 IObjectFactory 的 需要动态创建
             if ((typeof(IObjectFactory).IsAssignableFrom(memberType)))
             {
-                return context.Resolve<ObjectBeanFactory>().CreateAutowiredFactory(this, memberType, classType, fieldOrPropertyName, null);
+                return context.Resolve<ObjectBeanFactory>().CreateAutowiredFactory(this, memberType, classType, fieldOrPropertyName, null,autoConfigurationDetail);
             }
             else if (memberType.IsGenericType && memberType.GetGenericTypeDefinition() == typeof(Lazy<>))
             {
-                return context.Resolve<ObjectBeanFactory>().CreateLazyFactory(this, memberType, classType, fieldOrPropertyName, null);
+                return context.Resolve<ObjectBeanFactory>().CreateLazyFactory(this, memberType, classType, fieldOrPropertyName, null,autoConfigurationDetail);
             }
             else if (string.IsNullOrEmpty(this.Name) && memberType.IsGenericEnumerableInterfaceType())
             {
@@ -154,14 +166,15 @@ namespace Autofac.Annotation
 
                 return returnObj;
             }
-
-
+            var spelName = this.Name;
             Service propertyService = null;
-            if (!string.IsNullOrEmpty(this.Name))
+            if (!string.IsNullOrEmpty(spelName))
             {
-                propertyService = new KeyedService(this.Name, memberType);
+                // spel判断
+                spelName = Value.ResolveSpel(context, classType, spelName,autoConfigurationDetail).ToString(); 
+                propertyService = new KeyedService(spelName, memberType);
             }
-            else
+            else                                                                                    
             {
                 //如果指定Name查找
                 propertyService = new TypedService(memberType);
@@ -214,7 +227,7 @@ namespace Autofac.Annotation
                 {
                     //success
                 }
-                else if (string.IsNullOrEmpty(this.Name) &&
+                else if (string.IsNullOrEmpty(spelName) &&
                          context.TryResolveService(new KeyedService(fieldOrPropertyName, memberType), new Parameter[] { }, out returnObj))
                 {
                     //success
@@ -224,7 +237,7 @@ namespace Autofac.Annotation
             if (returnObj == null && this.Required)
             {
                 throw new DependencyResolutionException($"Autowire error,can not resolve class type:{classType.FullName}.{fieldOrPropertyName} "
-                                                        + (!string.IsNullOrEmpty(this.Name) ? $",with key:[{this.Name}]" : ""));
+                                                        + (!string.IsNullOrEmpty(spelName) ? $",with key:[{spelName}]" : ""));
             }
 
             return returnObj;

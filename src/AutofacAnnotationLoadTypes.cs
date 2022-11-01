@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Autofac.Annotation.Condition;
 using Autofac.Annotation.Config;
 using Autofac.Annotation.Util;
@@ -263,8 +264,7 @@ namespace Autofac.Annotation
 
             //class下的方法包含继承关系
             var myArrayMethodInfo = aspectClass.CurrentType.GetAllInstanceMethod();
-
-            foreach (var method in myArrayMethodInfo)
+            Parallel.ForEach(myArrayMethodInfo, method =>
             {
                 var allAttributes = allAttributesinClass.Concat(method
                     .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
@@ -283,10 +283,8 @@ namespace Autofac.Annotation
                     .GroupBy(r => r.Attribute.GetType().FullName)
                     .Select(r => r.First().Attribute).ToList();
 
-                if (!attributes.Any()) continue;
-
-                aspectClass.AspectAttributeCache.TryAdd(method, attributes);
-            }
+                if (attributes.Any()) aspectClass.AspectAttributeCache.TryAdd(method, attributes);
+            });
 
             if (!aspectClass.AspectAttributeCache.Any()) return false;
             aspectClass.EnableAspect = true;

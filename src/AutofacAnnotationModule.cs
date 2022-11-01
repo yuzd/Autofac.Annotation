@@ -114,7 +114,8 @@ namespace Autofac.Annotation
             DefaultMeaSourceData.Value.Reload = flag;
             var metaSource = DefaultMeaSourceData.Value;
             DefaultMeaSourceData.Value.ConfigurationLazy = new Lazy<IConfiguration>(() =>
-                EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded, flag));
+                EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded,
+                    flag));
             return this;
         }
 
@@ -249,7 +250,8 @@ namespace Autofac.Annotation
         /// </summary>
         /// <param name="componentRegistry"></param>
         /// <param name="registration"></param>
-        protected override void AttachToComponentRegistration(IComponentRegistryBuilder componentRegistry, IComponentRegistration registration)
+        protected override void AttachToComponentRegistration(IComponentRegistryBuilder componentRegistry,
+            IComponentRegistration registration)
         {
             //开关
             if (!AutoAttachFromAutofacRegister) return;
@@ -259,12 +261,15 @@ namespace Autofac.Annotation
 
             var currentType = registration.Activator.LimitType;
 
-            if (typeof(IProxyTargetAccessor).IsAssignableFrom(currentType) && currentType.BaseType != null) currentType = currentType.BaseType;
+            if (typeof(IProxyTargetAccessor).IsAssignableFrom(currentType) && currentType.BaseType != null)
+                currentType = currentType.BaseType;
 
             //过滤掉框架类
-            if (currentType.Assembly == GetType().Assembly || currentType.Assembly == typeof(LifetimeScope).Assembly) return;
+            if (currentType.Assembly == GetType().Assembly ||
+                currentType.Assembly == typeof(LifetimeScope).Assembly) return;
 
-            if (!componentRegistry.Properties.Any() || !componentRegistry.Properties.ContainsKey(_ALL_COMPOMENT)) return;
+            if (!componentRegistry.Properties.Any() ||
+                !componentRegistry.Properties.ContainsKey(_ALL_COMPOMENT)) return;
 
             var allCompoment = componentRegistry.Properties[_ALL_COMPOMENT] as ComponentModelCacheSingleton;
             if (allCompoment == null) return;
@@ -273,7 +278,8 @@ namespace Autofac.Annotation
             if (allCompoment.ComponentModelCache.ContainsKey(currentType)) return;
 
             var isGeneric = currentType.IsGenericType || currentType.GetTypeInfo().IsGenericTypeDefinition;
-            if (isGeneric && allCompoment.DynamicComponentModelCache.ContainsKey(currentType.Namespace + currentType.Name)) return;
+            if (isGeneric &&
+                allCompoment.DynamicComponentModelCache.ContainsKey(currentType.Namespace + currentType.Name)) return;
 
             //过滤掉框架的AutoConfiguration注册的类
             if (registration.Metadata.ContainsKey(_AUTOFAC_SPRING)) return;
@@ -283,7 +289,8 @@ namespace Autofac.Annotation
             var component = CreateCompomentFromAutofac(currentType, registration, allCompoment, isGeneric);
 
             if (isGeneric)
-                allCompoment.DynamicComponentModelCache.TryAdd(currentType.Namespace + currentType.Name, component.Item1);
+                allCompoment.DynamicComponentModelCache.TryAdd(currentType.Namespace + currentType.Name,
+                    component.Item1);
             else
                 allCompoment.ComponentModelCache.TryAdd(component.Item1.CurrentType, component.Item1);
 
@@ -319,7 +326,8 @@ namespace Autofac.Annotation
             {
                 autofacGlobalScope = r;
                 r.TryResolve<IEnumerable<BeanPostProcessor>>(out var beanPostProcessors);
-                if (beanPostProcessors != null) r.ComponentRegistry.Properties[nameof(List<BeanPostProcessor>)] = beanPostProcessors?.ToList();
+                if (beanPostProcessors != null)
+                    r.ComponentRegistry.Properties[nameof(List<BeanPostProcessor>)] = beanPostProcessors?.ToList();
             });
 
             //解析程序集PointCut标签类和方法
@@ -336,7 +344,8 @@ namespace Autofac.Annotation
                     if (component.isDynamicGeneric)
                         cache?.ComponentModelCache?.TryRemove(component.CurrentType, out _);
                     else
-                        cache?.DynamicComponentModelCache?.TryRemove(component.CurrentType.Namespace + component.CurrentType.Name, out _);
+                        cache?.DynamicComponentModelCache?.TryRemove(
+                            component.CurrentType.Namespace + component.CurrentType.Name, out _);
 
                     continue;
                 }
@@ -410,9 +419,14 @@ namespace Autofac.Annotation
                 {
                     registrar.OnActivated(e =>
                     {
-                        var postConstructs = ReflectionExtensions.AssertMethodDynamic<PostConstruct>(e.Instance.GetType());
+                        var postConstructs =
+                            ReflectionExtensions.AssertMethodDynamic<PostConstruct>(e.Instance.GetType());
                         var method = ReflectionExtensions.AssertMethod(e.Instance.GetType(), component.InitMethod);
-                        if (postConstructs.Any()) postConstructs.ForEach(r => { MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context); });
+                        if (postConstructs.Any())
+                            postConstructs.ForEach(r =>
+                            {
+                                MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context);
+                            });
 
                         if (method != null) MethodInvokeHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
                     });
@@ -423,7 +437,11 @@ namespace Autofac.Annotation
                     var method = ReflectionExtensions.AssertMethod(component.CurrentType, component.InitMethod);
                     registrar.OnActivated(e =>
                     {
-                        if (postConstructs.Any()) postConstructs.ForEach(r => { MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context); });
+                        if (postConstructs.Any())
+                            postConstructs.ForEach(r =>
+                            {
+                                MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context);
+                            });
 
                         if (method != null) MethodInvokeHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
                     });
@@ -493,13 +511,15 @@ namespace Autofac.Annotation
             {
                 if (component.CurrentType.GetCustomAttribute<ClassInterceptor>() != null)
                 {
-                    builder.EnableClassInterceptors(component).InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    builder.EnableClassInterceptors(component).InterceptedBy(typeof(PointcutIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
                 if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
                 {
-                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(PointcutIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
@@ -507,23 +527,28 @@ namespace Autofac.Annotation
                 if (component.CurrentType.GetTypeInfo().ImplementedInterfaces
                     .Any(r => r.Assembly.Equals(component.CurrentType.Assembly)))
                 {
-                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(PointcutIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
-                builder.EnableClassInterceptors(component).InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                builder.EnableClassInterceptors(component).InterceptedBy(typeof(PointcutIntercept))
+                    .WithMetadata(_AUTOFAC_SPRING, true);
             }
             else if (component.EnableAspect)
             {
                 if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
                     //打了[InterfaceInterceptor]标签
-                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(AdviceIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                 else if (component.InterceptorType == InterceptorType.Interface)
                     //指定了 interface 拦截器 或
-                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(AdviceIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                 else
                     //默认是class + virtual 拦截器
-                    builder.EnableClassInterceptors(component).InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    builder.EnableClassInterceptors(component).InterceptedBy(typeof(AdviceIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
             }
         }
 
@@ -540,13 +565,15 @@ namespace Autofac.Annotation
             {
                 if (component.CurrentType.GetCustomAttribute<ClassInterceptor>() != null)
                 {
-                    builder.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    builder.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
                 if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
                 {
-                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
@@ -554,23 +581,28 @@ namespace Autofac.Annotation
                 if (component.CurrentType.GetTypeInfo().ImplementedInterfaces
                     .Any(r => r.Assembly.Equals(component.CurrentType.Assembly)))
                 {
-                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
-                builder.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                builder.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept))
+                    .WithMetadata(_AUTOFAC_SPRING, true);
             }
             else if (component.EnableAspect)
             {
                 if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
                     //打了[InterfaceInterceptor]标签
-                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                 else if (component.InterceptorType == InterceptorType.Interface)
                     //指定了 interface 拦截器 或
-                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    builder.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                 else
                     //默认是class + virtual 拦截器
-                    builder.EnableClassInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    builder.EnableClassInterceptors().InterceptedBy(typeof(AdviceIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
             }
         }
 
@@ -583,7 +615,8 @@ namespace Autofac.Annotation
         /// <param name="registrar"></param>
         /// <param name="pointCutCfg"></param>
         private void SetIntercept<TLimit, TConcreteReflectionActivatorData>(ComponentModel component,
-            IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, object> registrar, PointCutConfigurationList pointCutCfg)
+            IRegistrationBuilder<TLimit, TConcreteReflectionActivatorData, object> registrar,
+            PointCutConfigurationList pointCutCfg)
             where TConcreteReflectionActivatorData : ReflectionActivatorData
         {
             if (registrar == null) throw new ArgumentNullException(nameof(registrar));
@@ -598,22 +631,26 @@ namespace Autofac.Annotation
                     case InterceptorType.Interface:
                         if (!string.IsNullOrEmpty(component.InterceptorKey))
                         {
-                            registrar.EnableInterfaceInterceptors().InterceptedBy(new KeyedService(component.InterceptorKey, component.Interceptor))
+                            registrar.EnableInterfaceInterceptors()
+                                .InterceptedBy(new KeyedService(component.InterceptorKey, component.Interceptor))
                                 .WithMetadata(_AUTOFAC_SPRING, true);
                             return;
                         }
 
-                        registrar.EnableInterfaceInterceptors().InterceptedBy(component.Interceptor).WithMetadata(_AUTOFAC_SPRING, true);
+                        registrar.EnableInterfaceInterceptors().InterceptedBy(component.Interceptor)
+                            .WithMetadata(_AUTOFAC_SPRING, true);
                         return;
                     case InterceptorType.Class:
                         if (!string.IsNullOrEmpty(component.InterceptorKey))
                         {
-                            registrar.EnableClassInterceptors().InterceptedBy(new KeyedService(component.InterceptorKey, component.Interceptor))
+                            registrar.EnableClassInterceptors()
+                                .InterceptedBy(new KeyedService(component.InterceptorKey, component.Interceptor))
                                 .WithMetadata(_AUTOFAC_SPRING, true);
                             return;
                         }
 
-                        registrar.EnableClassInterceptors().InterceptedBy(component.Interceptor).WithMetadata(_AUTOFAC_SPRING, true);
+                        registrar.EnableClassInterceptors().InterceptedBy(component.Interceptor)
+                            .WithMetadata(_AUTOFAC_SPRING, true);
                         return;
                     default:
                         throw new InvalidOperationException(
@@ -630,13 +667,15 @@ namespace Autofac.Annotation
             {
                 if (component.CurrentType.GetCustomAttribute<ClassInterceptor>() != null)
                 {
-                    registrar.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    registrar.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
                 if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
                 {
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
@@ -644,23 +683,28 @@ namespace Autofac.Annotation
                 if (component.CurrentType.GetTypeInfo().ImplementedInterfaces
                     .Any(r => r.Assembly.Equals(component.CurrentType.Assembly)))
                 {
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
-                registrar.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                registrar.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept))
+                    .WithMetadata(_AUTOFAC_SPRING, true);
             }
             else if (component.EnableAspect)
             {
                 if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
                     //打了[InterfaceInterceptor]标签
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                 else if (component.InterceptorType == InterceptorType.Interface)
                     //指定了 interface 拦截器 或
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(AdviceIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
                 else
                     //默认是class + virtual 拦截器
-                    registrar.EnableClassInterceptors().InterceptedBy(typeof(AdviceIntercept)).WithMetadata(_AUTOFAC_SPRING, true);
+                    registrar.EnableClassInterceptors().InterceptedBy(typeof(AdviceIntercept))
+                        .WithMetadata(_AUTOFAC_SPRING, true);
             }
         }
 
@@ -672,17 +716,15 @@ namespace Autofac.Annotation
         /// <param name="pointCutCfg"></param>
         /// <param name="isgeneric"></param>
         /// <returns></returns>
-        private bool NeedWarpForPointcut(ComponentModel component, PointCutConfigurationList pointCutCfg, bool isgeneric = false)
+        private bool NeedWarpForPointcut(ComponentModel component, PointCutConfigurationList pointCutCfg,
+            bool isgeneric = false)
         {
             var targetClass = component.CurrentType;
             if (targetClass.IsAbstract || targetClass.IsInterface) return false;
 
-            var result = false;
 
-            if (pointCutCfg == null || pointCutCfg.PointcutConfigurationInfoList == null || !pointCutCfg.PointcutConfigurationInfoList.Any())
-            {
-                return false;
-            }
+            if (pointCutCfg == null || pointCutCfg.PointcutConfigurationInfoList == null ||
+                !pointCutCfg.PointcutConfigurationInfoList.Any()) return false;
 
             if (pointCutCfg.PointcutTypeInfoList.ContainsKey(targetClass)) return true;
 
@@ -699,39 +741,46 @@ namespace Autofac.Annotation
                 if (!aspectClass.Pointcut.IsVaildClass(component, out var pointCutClassInjectAnotation)) continue;
 
                 //查看里面的method是否有满足的 包含查询继承的方法
-                foreach (var method in targetClass.GetAllInstanceMethod(component.EnablePointcutInherited))
+                Parallel.ForEach(targetClass.GetAllInstanceMethod(component.EnablePointcutInherited), method =>
                 {
                     //pointCutMethodInjectAnotation 指的是 这个切面 在method 有没有对应的 如果method没有 class有就用class的
-                    if (!aspectClass.Pointcut.IsVaild(component, method, pointCutClassInjectAnotation, out var pointCutMethodInjectAnotation)) continue;
-
-                    if (component.isDynamicGeneric || isgeneric)
+                    if (aspectClass.Pointcut.IsVaild(component, method, pointCutClassInjectAnotation,
+                            out var pointCutMethodInjectAnotation))
                     {
-                        var uniqKey = method.GetMethodInfoUniqueName();
-                        if (pointCutCfg.DynamicPointcutTargetInfoList.ContainsKey(uniqKey))
-                            pointCutCfg.DynamicPointcutTargetInfoList[uniqKey]
-                                .Add(new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation));
+                        if (component.isDynamicGeneric || isgeneric)
+                        {
+                            var uniqKey = method.GetMethodInfoUniqueName();
+                            if (pointCutCfg.DynamicPointcutTargetInfoList.ContainsKey(uniqKey))
+                                pointCutCfg.DynamicPointcutTargetInfoList[uniqKey]
+                                    .Add(new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation));
+                            else
+                                pointCutCfg.DynamicPointcutTargetInfoList.TryAdd(uniqKey,
+                                    new List<RunTimePointCutConfiguration>
+                                    {
+                                        new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation)
+                                    });
+                            component.DynamicGenricMethodsNeedPointcuts.Add(uniqKey);
+                        }
                         else
-                            pointCutCfg.DynamicPointcutTargetInfoList.TryAdd(uniqKey,
-                                new List<RunTimePointCutConfiguration> { new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation) });
-                        component.DynamicGenricMethodsNeedPointcuts.Add(uniqKey);
+                        {
+                            var key = new ObjectKey(targetClass, method);
+                            if (pointCutCfg.PointcutTargetInfoList.ContainsKey(key))
+                                pointCutCfg.PointcutTargetInfoList[key].Add(
+                                    new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation));
+                            else
+                                pointCutCfg.PointcutTargetInfoList.TryAdd(key,
+                                    new List<RunTimePointCutConfiguration>
+                                    {
+                                        new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation)
+                                    });
+                            component.MethodsNeedPointcuts.Add(key);
+                        }
                     }
-                    else
-                    {
-                        var key = new ObjectKey(targetClass, method);
-                        if (pointCutCfg.PointcutTargetInfoList.ContainsKey(key))
-                            pointCutCfg.PointcutTargetInfoList[key].Add(new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation));
-                        else
-                            pointCutCfg.PointcutTargetInfoList.TryAdd(key,
-                                new List<RunTimePointCutConfiguration> { new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation) });
-                        component.MethodsNeedPointcuts.Add(key);
-                    }
-
-                    result = true;
-                }
+                });
             }
 
             pointCutCfg.PointcutTypeInfoList.TryAdd(targetClass, true);
-            return result;
+            return component.MethodsNeedPointcuts.Any() || component.DynamicGenricMethodsNeedPointcuts.Any();
         }
 
 
@@ -851,9 +900,11 @@ namespace Autofac.Annotation
         ///     解析Import的类
         /// </summary>
         /// <returns></returns>
-        private List<ComponentModel> GetAllComponent(ContainerBuilder builder, PointCutConfigurationList pointCutConfigurationList)
+        private List<ComponentModel> GetAllComponent(ContainerBuilder builder,
+            PointCutConfigurationList pointCutConfigurationList)
         {
-            if (_assemblyList == null || _assemblyList.Count < 1) throw new ArgumentNullException(nameof(_assemblyList));
+            if (_assemblyList == null || _assemblyList.Count < 1)
+                throw new ArgumentNullException(nameof(_assemblyList));
 
             var singleton = new ComponentModelCacheSingleton
             {
@@ -1069,7 +1120,8 @@ namespace Autofac.Annotation
                                     $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType can not dependency on itself!");
                         }
 
-                        bean.BeanMethodInfoList.Add(new Tuple<Bean, MethodInfo, Type>(beanAttribute, beanTypeMethod, returnType));
+                        bean.BeanMethodInfoList.Add(
+                            new Tuple<Bean, MethodInfo, Type>(beanAttribute, beanTypeMethod, returnType));
                     }
 
                     var compoment = new ComponentModel
@@ -1088,7 +1140,8 @@ namespace Autofac.Annotation
                     };
                     cache?.ComponentModelCache.TryAdd(configuration.Type, compoment);
                     //注册为代理类
-                    var rb = builder.RegisterType(configuration.Type).EnableClassInterceptors().InterceptedBy(typeof(AutoConfigurationIntercept))
+                    var rb = builder.RegisterType(configuration.Type).EnableClassInterceptors()
+                        .InterceptedBy(typeof(AutoConfigurationIntercept))
                         .SingleInstance().WithMetadata(_AUTOFAC_SPRING, true); //注册为单例模式
                     list.AutoConfigurationDetailList.Add(bean);
 
@@ -1141,7 +1194,8 @@ namespace Autofac.Annotation
         /// <exception cref="ArgumentNullException"></exception>
         private List<AutofacConfigurationInfo> GetAllAutofacConfiguration()
         {
-            if (_assemblyList == null || _assemblyList.Count < 1) throw new ArgumentNullException(nameof(_assemblyList));
+            if (_assemblyList == null || _assemblyList.Count < 1)
+                throw new ArgumentNullException(nameof(_assemblyList));
 
             var result = new List<AutofacConfigurationInfo>();
             foreach (var assembly in _assemblyList)
@@ -1179,7 +1233,8 @@ namespace Autofac.Annotation
         /// <returns></returns>
         private List<PointcutConfigurationInfo> DoPointcutConfiguration()
         {
-            if (_assemblyList == null || _assemblyList.Count < 1) throw new ArgumentNullException(nameof(_assemblyList));
+            if (_assemblyList == null || _assemblyList.Count < 1)
+                throw new ArgumentNullException(nameof(_assemblyList));
 
             //一个pointcut 对应 一个class 对应多个group method
             var result = new List<PointcutConfigurationInfo>();
@@ -1217,7 +1272,8 @@ namespace Autofac.Annotation
                         var afterAttribute = beanTypeMethod.GetCustomAttribute<After>();
                         var aroundAttribute = beanTypeMethod.GetCustomAttribute<Around>();
                         var throwAttribute = beanTypeMethod.GetCustomAttribute<AfterThrows>();
-                        if (beforeAttribute == null && afterReturnAttribute == null && aroundAttribute == null && throwAttribute == null &&
+                        if (beforeAttribute == null && afterReturnAttribute == null && aroundAttribute == null &&
+                            throwAttribute == null &&
                             afterAttribute == null) continue;
 
                         if (aroundAttribute != null)
@@ -1287,7 +1343,8 @@ namespace Autofac.Annotation
                             {
                                 //查看这个指定的参数有没有在这个方法里面
                                 var parameters = beanTypeMethod.GetParameters();
-                                var returnIngParam = parameters.FirstOrDefault(r => r.Name == afterReturnAttribute.Returing);
+                                var returnIngParam =
+                                    parameters.FirstOrDefault(r => r.Name == afterReturnAttribute.Returing);
                                 if (returnIngParam == null)
                                     throw new InvalidOperationException(
                                         $"The Pointcut class `{configuration.Type.FullName}` after method `{beanTypeMethod.Name}` can not be register without special parameter of `{afterReturnAttribute.Returing}`!");
@@ -1297,7 +1354,8 @@ namespace Autofac.Annotation
                                 throw new InvalidOperationException(
                                     $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
 
-                            afterReturnMethodInfos.Add(key, new Tuple<AfterReturn, MethodInfo>(afterReturnAttribute, beanTypeMethod));
+                            afterReturnMethodInfos.Add(key,
+                                new Tuple<AfterReturn, MethodInfo>(afterReturnAttribute, beanTypeMethod));
                         }
 
                         if (throwAttribute != null)
@@ -1317,7 +1375,8 @@ namespace Autofac.Annotation
                                 throw new InvalidOperationException(
                                     $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
 
-                            throwMethodInfos.Add(key, new Tuple<AfterThrows, MethodInfo>(throwAttribute, beanTypeMethod));
+                            throwMethodInfos.Add(key,
+                                new Tuple<AfterThrows, MethodInfo>(throwAttribute, beanTypeMethod));
                         }
                     }
 
@@ -1389,7 +1448,9 @@ namespace Autofac.Annotation
 
             if (bean.AutofacScope == AutofacScope.Default)
                 //说明没有特别指定
-                result.AutofacScope = DefaultAutofacScope.Equals(AutofacScope.Default) ? AutofacScope.InstancePerDependency : DefaultAutofacScope;
+                result.AutofacScope = DefaultAutofacScope.Equals(AutofacScope.Default)
+                    ? AutofacScope.InstancePerDependency
+                    : DefaultAutofacScope;
             else
                 result.AutofacScope = bean.AutofacScope;
 
@@ -1425,7 +1486,8 @@ namespace Autofac.Annotation
                     //自动注册父类
                     if (iInterface.IsClass && !AutoRegisterParentClass) continue;
 
-                    if (iInterface.IsValueType || iInterface.IsEnum || iInterface == typeof(object) || iInterface.IsGenericEnumerableInterfaceType() ||
+                    if (iInterface.IsValueType || iInterface.IsEnum || iInterface == typeof(object) ||
+                        iInterface.IsGenericEnumerableInterfaceType() ||
                         !ProxyUtil.IsAccessible(iInterface)) continue;
 
                     if (bean.Services == null || !bean.Services.Contains(iInterface))
@@ -1469,7 +1531,8 @@ namespace Autofac.Annotation
                 if (bean.Keys != null && bean.Keys.Length > 0)
                 {
                     if (bean.Keys.Length > bean.Services.Length)
-                        throw new ArgumentOutOfRangeException(currentType.FullName + ":" + nameof(bean.Keys) + "`length is not eq to " + nameof(bean.Services) +
+                        throw new ArgumentOutOfRangeException(currentType.FullName + ":" + nameof(bean.Keys) +
+                                                              "`length is not eq to " + nameof(bean.Services) +
                                                               "`length");
 
                     //Keys和Services是按照一对一的  如果长度不对
@@ -1506,7 +1569,8 @@ namespace Autofac.Annotation
             metaSource.MetaSourceType = MetaSourceType.JSON;
             metaSource.Path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, metaSource.Origin);
             metaSource.ConfigurationLazy =
-                new Lazy<IConfiguration>(() => EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded));
+                new Lazy<IConfiguration>(() =>
+                    EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded));
             metaSource.Reload = true; //默认
             return metaSource;
         }
@@ -1547,9 +1611,12 @@ namespace Autofac.Annotation
                             //单例还是多例交给外面自己控制
                             object sourceProvider = null;
                             if (!string.IsNullOrEmpty(metaSourceAttribute.Key))
-                                autofacGlobalScope?.TryResolveService(new KeyedService(metaSourceAttribute.Key, metaSource.DynamicSource), out sourceProvider);
+                                autofacGlobalScope?.TryResolveService(
+                                    new KeyedService(metaSourceAttribute.Key, metaSource.DynamicSource),
+                                    out sourceProvider);
                             else
-                                autofacGlobalScope?.TryResolveService(new TypedService(metaSource.DynamicSource), out sourceProvider);
+                                autofacGlobalScope?.TryResolveService(new TypedService(metaSource.DynamicSource),
+                                    out sourceProvider);
 
                             if (sourceProvider == null)
                                 //如果没有配置那么只能是多例
@@ -1559,11 +1626,13 @@ namespace Autofac.Annotation
                                 throw new InvalidOperationException(
                                     $"'{classType.FullName}' can not load DynamicSource:'{metaSource.DynamicSource.FullName}',Must implement interface:IConfigurationProvider");
 
-                            if (sourceProvider is IDynamicSourceProvider dynamicSource) dynamicSource.setPropertySource(metaSourceAttribute);
+                            if (sourceProvider is IDynamicSourceProvider dynamicSource)
+                                dynamicSource.setPropertySource(metaSourceAttribute);
 
                             if (sourceProvider is IConfigurationProvider configurationProvider)
                             {
-                                var config = new ConfigurationRoot(new List<IConfigurationProvider> { configurationProvider });
+                                var config = new ConfigurationRoot(new List<IConfigurationProvider>
+                                    { configurationProvider });
                                 return config;
                             }
 
@@ -1586,10 +1655,12 @@ namespace Autofac.Annotation
                         metaSource.Path = metaSource.Origin;
                     else
                         metaSource.Path = metaSource.Origin.StartsWith("/")
-                            ? Path.Combine(GetAssemblyLocation(), metaSource.Origin.Substring(1, metaSource.Origin.Length - 1))
+                            ? Path.Combine(GetAssemblyLocation(),
+                                metaSource.Origin.Substring(1, metaSource.Origin.Length - 1))
                             : metaSource.Origin;
 
-                    metaSource.ConfigurationLazy = new Lazy<IConfiguration>(() => EmbeddedConfiguration.Load(classType, metaSource.Path,
+                    metaSource.ConfigurationLazy = new Lazy<IConfiguration>(() => EmbeddedConfiguration.Load(classType,
+                        metaSource.Path,
                         metaSource.MetaSourceType,
                         metaSourceAttribute.Embedded, metaSource.Reload));
 
@@ -1636,7 +1707,8 @@ namespace Autofac.Annotation
                 }
             ).ToArray();
             var referencedPaths = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll");
-            var toLoad = referencedPaths.Where(r => !loadedPaths.Contains(r, StringComparer.InvariantCultureIgnoreCase)).ToList();
+            var toLoad = referencedPaths.Where(r => !loadedPaths.Contains(r, StringComparer.InvariantCultureIgnoreCase))
+                .ToList();
             toLoad.ForEach(
                 path =>
                 {
@@ -1723,9 +1795,11 @@ namespace Autofac.Annotation
         /// <param name="assemblyNameList"></param>
         public AutofacAnnotationModule(params string[] assemblyNameList)
         {
-            if (assemblyNameList == null || assemblyNameList.Length == 0) throw new ArgumentException(nameof(assemblyNameList));
+            if (assemblyNameList == null || assemblyNameList.Length == 0)
+                throw new ArgumentException(nameof(assemblyNameList));
 
-            _assemblyList = getCurrentDomainAssemblies().Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).ToList();
+            _assemblyList = getCurrentDomainAssemblies()
+                .Where(assembly => assemblyNameList.Contains(assembly.GetName().Name)).ToList();
         }
 
 
@@ -1782,7 +1856,8 @@ namespace Autofac.Annotation
                     let va = p.GetCustomAttribute<Autowired>()
                     where va != null && !typeInfo.IsValueType && !typeInfo.IsEnum
                           && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
-                          && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
+                          && (!propertyType.IsGenericEnumerableInterfaceType() ||
+                              !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
                     select new Tuple<PropertyInfo, Autowired, PropertyInfo>(p, va, p))
                 .ToList();
 
@@ -1792,7 +1867,8 @@ namespace Autofac.Annotation
                     let va = p.GetCustomAttribute<Autowired>()
                     where va != null && !typeInfo.IsValueType && !typeInfo.IsEnum
                           && (!propertyType.IsArray || !propertyType.GetElementType().GetTypeInfo().IsValueType)
-                          && (!propertyType.IsGenericEnumerableInterfaceType() || !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
+                          && (!propertyType.IsGenericEnumerableInterfaceType() ||
+                              !typeInfo.GenericTypeArguments[0].GetTypeInfo().IsValueType)
                     select new Tuple<FieldInfo, Autowired, FieldInfo>(p, va, p))
                 .ToList();
 
@@ -1802,7 +1878,8 @@ namespace Autofac.Annotation
                     select new Tuple<MethodInfo, Autowired>(p, va))
                 .ToList();
 
-            if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any() && !component.AutowiredMethodInfoList.Any()) return false;
+            if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any() &&
+                !component.AutowiredMethodInfoList.Any()) return false;
 
             //初始化 AllowCircularDependencies 参数
             component.AutowiredPropertyInfoList.ForEach(r =>
@@ -1877,7 +1954,8 @@ namespace Autofac.Annotation
             var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
             if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(instanceType, out var model))
             {
-                if (!componentModelCacheSingleton.DynamicComponentModelCache.TryGetValue(instanceType.Namespace + instanceType.Name, out var mode1)) return;
+                if (!componentModelCacheSingleton.DynamicComponentModelCache.TryGetValue(
+                        instanceType.Namespace + instanceType.Name, out var mode1)) return;
 
                 model = mode1;
             }
@@ -1943,7 +2021,9 @@ namespace Autofac.Annotation
                         if (property.Item2.Required)
                             throw new DependencyResolutionException(
                                 $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
-                                + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""));
+                                + (!string.IsNullOrEmpty(property.Item2.Name)
+                                    ? $",with key:{property.Item2.Name}"
+                                    : ""));
 
                         continue;
                     }
@@ -1962,15 +2042,14 @@ namespace Autofac.Annotation
                     {
                         throw new DependencyResolutionException(
                             $"Autowire error,can not resolve class type:{instanceType.FullName},property name:{property.Item1.Name} "
-                            + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""), ex);
+                            + (!string.IsNullOrEmpty(property.Item2.Name) ? $",with key:{property.Item2.Name}" : ""),
+                            ex);
                     }
                 }
 
                 //方法注入
                 foreach (var method in model.AutowiredMethodInfoList)
-                {
                     MethodInvokeHelper.InvokeInstanceMethod(RealInstance, method.Item1, context);
-                }
             }
             finally
             {
@@ -2067,7 +2146,8 @@ namespace Autofac.Annotation
             var componentModelCacheSingleton = e.Resolve<ComponentModelCacheSingleton>();
             if (!componentModelCacheSingleton.ComponentModelCache.TryGetValue(instanceType, out var model))
             {
-                if (!componentModelCacheSingleton.DynamicComponentModelCache.TryGetValue(instanceType.Namespace + instanceType.Name,
+                if (!componentModelCacheSingleton.DynamicComponentModelCache.TryGetValue(
+                        instanceType.Namespace + instanceType.Name,
                         out var mode1))
                     return;
 
@@ -2091,7 +2171,8 @@ namespace Autofac.Annotation
                 catch (Exception ex)
                 {
                     throw new DependencyResolutionException(
-                        $"Value set error,can not resolve class type:{instanceType.FullName} =====>" + $" ,fail resolve field value:{field.Item1.Name} " +
+                        $"Value set error,can not resolve class type:{instanceType.FullName} =====>" +
+                        $" ,fail resolve field value:{field.Item1.Name} " +
                         (!string.IsNullOrEmpty(field.Item2.value) ? $",with value:[{field.Item2.value}]" : ""), ex);
                 }
             }
@@ -2115,7 +2196,8 @@ namespace Autofac.Annotation
                     throw new DependencyResolutionException(
                         $"Value set error,can not resolve class type:{instanceType.FullName} =====>" +
                         $" ,fail resolve property value:{property.Item1.Name} " +
-                        (!string.IsNullOrEmpty(property.Item2.value) ? $",with value:[{property.Item2.value}]" : ""), ex);
+                        (!string.IsNullOrEmpty(property.Item2.value) ? $",with value:[{property.Item2.value}]" : ""),
+                        ex);
                 }
             }
         }

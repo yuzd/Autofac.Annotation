@@ -57,7 +57,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 是否Pointcut要拦截继承(比如抽象父类)的方法 默认为true
         /// </summary>
-        public bool EnablePointcutInherited { get; set; }
+        public bool EnablePointcutInherited { get; set; } = true;
 
         /// <summary>
         ///     如果同一个类型的拦截器有多个 可以指定Key

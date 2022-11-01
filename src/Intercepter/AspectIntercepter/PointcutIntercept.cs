@@ -36,17 +36,22 @@ namespace Autofac.AspectIntercepter
         {
             if (!_configuration.CacheList.TryGetValue(new ObjectKey(invocation.TargetType,invocation.Method), out var pointCut))
             {
-                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
-                    !_configuration.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(),
-                        out var pointCutDynamic))
+                if (!_configuration.CacheList.TryGetValue(new ObjectKey(invocation.TargetType, invocation.MethodInvocationTarget), out var pointCutInherited))
                 {
-                    //该方法不需要拦截
-                    _adviceIntercept.InterceptInternal(invocation);
-                    // invocation.Proceed();
-                    return;
+                    if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
+                        !_configuration.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(),
+                            out var pointCutDynamic))
+                    {
+                        //该方法不需要拦截
+                        _adviceIntercept.InterceptInternal(invocation);
+                        // invocation.Proceed();
+                        return;
+                    }
+
+                    pointCutInherited = pointCutDynamic;
                 }
 
-                pointCut = pointCutDynamic;
+                pointCut = pointCutInherited;
             }
 
             var catpture = invocation.CaptureProceedInfo();
@@ -78,17 +83,22 @@ namespace Autofac.AspectIntercepter
         {
             if (!_configuration.CacheList.TryGetValue(new ObjectKey(invocation.TargetType,invocation.Method), out var pointCut))
             {
-                if (!invocation.TargetMethod.DeclaringType.GetTypeInfo().IsGenericType ||
-                    !_configuration.DynamicCacheList.TryGetValue(invocation.TargetMethod.GetMethodInfoUniqueName(),
-                        out var pointCutDynamic))
+                if (!_configuration.CacheList.TryGetValue(new ObjectKey(invocation.TargetType, invocation.TargetMethod), out var pointCutInherited))
                 {
-                    //该方法不需要拦截
-                    await _adviceIntercept.InterceptInternalAsync(invocation);
-                    // await invocation.ProceedAsync();
-                    return;
+                    if (!invocation.TargetMethod.DeclaringType.GetTypeInfo().IsGenericType ||
+                        !_configuration.DynamicCacheList.TryGetValue(invocation.TargetMethod.GetMethodInfoUniqueName(),
+                            out var pointCutDynamic))
+                    {
+                        //该方法不需要拦截
+                        await _adviceIntercept.InterceptInternalAsync(invocation);
+                        // await invocation.ProceedAsync();
+                        return;
+                    }
+
+                    pointCutInherited = pointCutDynamic;
                 }
 
-                pointCut = pointCutDynamic;
+                pointCut = pointCutInherited;
             }
 
 

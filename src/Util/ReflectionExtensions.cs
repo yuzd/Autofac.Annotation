@@ -20,27 +20,25 @@ namespace Autofac.Annotation.Util
         /// <exception cref="DependencyResolutionException"></exception>
         internal static List<MethodInfo> AssertMethodDynamic<T>(Type type) where T : Attribute
         {
-            List<MethodInfo> method = new List<MethodInfo>();
+            var method = new List<MethodInfo>();
             try
             {
-                BindingFlags flags = BindingFlags.Public |
-                                     BindingFlags.NonPublic |
-                                     BindingFlags.Static |
-                                     BindingFlags.Instance;
+                var flags = BindingFlags.Public |
+                            BindingFlags.NonPublic |
+                            BindingFlags.Static |
+                            BindingFlags.Instance;
                 var methods = type.GetMethods(flags);
                 foreach (var method2 in methods)
                 {
                     var post = method2.GetCustomAttribute<T>();
-                    if (post != null)
-                    {
-                        method.Add(method2);
-                    }
+                    if (post != null) method.Add(method2);
                 }
             }
             catch (Exception)
             {
                 //如果有多个就抛出异常
-                throw new DependencyResolutionException($"find method with [${typeof(T).Name}] in type:{type.FullName} have more then one");
+                throw new DependencyResolutionException(
+                    $"find method with [${typeof(T).Name}] in type:{type.FullName} have more then one");
             }
 
             return method;
@@ -55,25 +53,23 @@ namespace Autofac.Annotation.Util
         /// <exception cref="DependencyResolutionException"></exception>
         internal static MethodInfo AssertMethod(Type type, string methodName)
         {
-            if (string.IsNullOrEmpty(methodName))
-            {
-                return null;
-            }
+            if (string.IsNullOrEmpty(methodName)) return null;
 
             var emethodName = methodName.Contains(".") ? methodName.Split('.').LastOrDefault() : methodName;
             MethodInfo method = null;
             try
             {
-                BindingFlags flags = BindingFlags.Public |
-                                     BindingFlags.NonPublic |
-                                     BindingFlags.Static |
-                                     BindingFlags.Instance ;
+                var flags = BindingFlags.Public |
+                            BindingFlags.NonPublic |
+                            BindingFlags.Static |
+                            BindingFlags.Instance;
                 method = type.GetMethod(emethodName, flags);
             }
             catch (Exception)
             {
                 //如果有多个就抛出异常
-                throw new DependencyResolutionException($"find method: {methodName} in type:{type.FullName} have more then one");
+                throw new DependencyResolutionException(
+                    $"find method: {methodName} in type:{type.FullName} have more then one");
             }
 
             return method;
@@ -98,25 +94,43 @@ namespace Autofac.Annotation.Util
         }
 
         /// <summary>
+        /// 判断当前方式和parentMethod是否是实现关系
+        /// </summary>
+        /// <param name="mi"></param>
+        /// <param name="parentMethod"></param>
+        /// <returns></returns>
+        public static bool IsAssignableFromInterfaceMethod(this MethodInfo mi, MethodInfo parentMethod)
+        {
+            var signatureString1 = mi.ReturnType.FullName +
+                                   string.Join(",", mi.GetParameters().Select(p => p.ParameterType.FullName).ToArray());
+            var signatureString2 = parentMethod.ReturnType.FullName + string.Join(",",
+                parentMethod.GetParameters().Select(p => p.ParameterType.FullName).ToArray());
+            return signatureString1.Length == signatureString2.Length && signatureString1 == signatureString2;
+        }
+
+        /// <summary>
         /// 获取方法的唯一string
         /// </summary>
         /// <param name="mi"></param>
         /// <returns></returns>
-        public static String GetMethodInfoUniqueName(this MethodInfo mi)
+        public static string GetMethodInfoUniqueName(this MethodInfo mi)
         {
-            String signatureString = String.Join(",", mi.GetParameters().Select(p => p.ParameterType.Name).ToArray());
-            String returnTypeName = mi.ReturnType.Name;
+            var signatureString = string.Join(",", mi.GetParameters().Select(p => p.ParameterType.Name).ToArray());
+            var returnTypeName = mi.ReturnType.Name;
 
             if (mi.IsGenericMethod)
             {
-                String typeParamsString = String.Join(",", mi.GetGenericArguments().Select(g => g.AssemblyQualifiedName).ToArray());
+                var typeParamsString = string.Join(",",
+                    mi.GetGenericArguments().Select(g => g.AssemblyQualifiedName).ToArray());
 
 
                 // returns a string like this: "Assembly.YourSolution.YourProject.YourClass:YourMethod(Param1TypeName,...,ParamNTypeName):ReturnTypeName
-                return $"{mi.DeclaringType.Namespace + mi.DeclaringType.Name}:{mi.Name}<{typeParamsString}>({signatureString}):{returnTypeName}";
+                return
+                    $"{mi.DeclaringType.Namespace + mi.DeclaringType.Name}:{mi.Name}<{typeParamsString}>({signatureString}):{returnTypeName}";
             }
 
-            return $"{mi.DeclaringType.Namespace + mi.DeclaringType.Name}:{mi.Name}({signatureString}):{returnTypeName}";
+            return
+                $"{mi.DeclaringType.Namespace + mi.DeclaringType.Name}:{mi.Name}({signatureString}):{returnTypeName}";
         }
 
         /// <summary>
@@ -141,7 +155,8 @@ namespace Autofac.Annotation.Util
         public static bool TryGetDeclaringProperty(this ParameterInfo pi, out PropertyInfo prop)
         {
             var mi = pi.Member as MethodInfo;
-            if (mi != null && mi.DeclaringType != null && mi.IsSpecialName && mi.Name.StartsWith("set_", StringComparison.Ordinal))
+            if (mi != null && mi.DeclaringType != null && mi.IsSpecialName &&
+                mi.Name.StartsWith("set_", StringComparison.Ordinal))
             {
                 prop = mi.DeclaringType.GetProperty(mi.Name.Substring(4));
                 return true;
@@ -159,15 +174,12 @@ namespace Autofac.Annotation.Util
         /// <returns></returns>
         public static IEnumerable<MethodInfo> GetAllInstanceMethod(this Type type, bool getBaseType = true)
         {
-            if (type == null)
-            {
-                return Enumerable.Empty<MethodInfo>();
-            }
+            if (type == null) return Enumerable.Empty<MethodInfo>();
 
-            BindingFlags flags = BindingFlags.Public |
-                                 BindingFlags.NonPublic |
-                                 BindingFlags.Instance |
-                                 BindingFlags.DeclaredOnly;
+            var flags = BindingFlags.Public |
+                        BindingFlags.NonPublic |
+                        BindingFlags.Instance |
+                        BindingFlags.DeclaredOnly;
 
             if (!getBaseType) return type.GetMethods(flags).Where(m => !m.IsSpecialName);
             return type.GetMethods(flags).Where(m => !m.IsSpecialName).Union(GetAllMethod(type.BaseType));
@@ -181,16 +193,13 @@ namespace Autofac.Annotation.Util
         /// <returns></returns>
         public static IEnumerable<MethodInfo> GetAllMethod(this Type type, bool getBaseType = true)
         {
-            if (type == null || type == typeof(object))
-            {
-                return Enumerable.Empty<MethodInfo>();
-            }
+            if (type == null || type == typeof(object)) return Enumerable.Empty<MethodInfo>();
 
-            BindingFlags flags = BindingFlags.Public |
-                                 BindingFlags.NonPublic |
-                                 BindingFlags.Static |
-                                 BindingFlags.Instance |
-                                 BindingFlags.DeclaredOnly;
+            var flags = BindingFlags.Public |
+                        BindingFlags.NonPublic |
+                        BindingFlags.Static |
+                        BindingFlags.Instance |
+                        BindingFlags.DeclaredOnly;
 
             if (!getBaseType) return type.GetMethods(flags).Where(m => !m.IsSpecialName);
             return type.GetMethods(flags).Where(m => !m.IsSpecialName).Union(GetAllMethod(type.BaseType));
@@ -204,22 +213,16 @@ namespace Autofac.Annotation.Util
         /// <returns></returns>
         public static MethodInfo GetMethod(this Type type, string methodName)
         {
-            if (type == null)
-            {
-                return null;
-            }
+            if (type == null) return null;
 
-            BindingFlags flags = BindingFlags.Public |
-                                 BindingFlags.NonPublic |
-                                 BindingFlags.Static |
-                                 BindingFlags.Instance |
-                                 BindingFlags.DeclaredOnly;
+            var flags = BindingFlags.Public |
+                        BindingFlags.NonPublic |
+                        BindingFlags.Static |
+                        BindingFlags.Instance |
+                        BindingFlags.DeclaredOnly;
 
             var method = type.GetMethod(methodName, flags);
-            if (method != null)
-            {
-                return method;
-            }
+            if (method != null) return method;
 
             return GetMethod(type.BaseType, methodName);
         }
@@ -231,16 +234,13 @@ namespace Autofac.Annotation.Util
         /// <returns></returns>
         public static IEnumerable<FieldInfo> GetAllFields(this Type type)
         {
-            if (type == null || type == typeof(object))
-            {
-                return Enumerable.Empty<FieldInfo>();
-            }
+            if (type == null || type == typeof(object)) return Enumerable.Empty<FieldInfo>();
 
-            BindingFlags flags = BindingFlags.Public |
-                                 BindingFlags.NonPublic |
-                                 BindingFlags.Static |
-                                 BindingFlags.Instance |
-                                 BindingFlags.DeclaredOnly;
+            var flags = BindingFlags.Public |
+                        BindingFlags.NonPublic |
+                        BindingFlags.Static |
+                        BindingFlags.Instance |
+                        BindingFlags.DeclaredOnly;
 
             return type.GetFields(flags).Union(GetAllFields(type.BaseType));
         }
@@ -252,16 +252,13 @@ namespace Autofac.Annotation.Util
         /// <returns></returns>
         public static IEnumerable<PropertyInfo> GetAllProperties(this Type type)
         {
-            if (type == null || type == typeof(object))
-            {
-                return Enumerable.Empty<PropertyInfo>();
-            }
+            if (type == null || type == typeof(object)) return Enumerable.Empty<PropertyInfo>();
 
-            BindingFlags flags = BindingFlags.Public |
-                                 BindingFlags.NonPublic |
-                                 BindingFlags.Static |
-                                 BindingFlags.Instance |
-                                 BindingFlags.DeclaredOnly;
+            var flags = BindingFlags.Public |
+                        BindingFlags.NonPublic |
+                        BindingFlags.Static |
+                        BindingFlags.Instance |
+                        BindingFlags.DeclaredOnly;
 
             return type.GetProperties(flags).Union(GetAllProperties(type.BaseType));
         }
@@ -291,14 +288,14 @@ namespace Autofac.Annotation.Util
 
         private static bool IsSelfEnumerable(this Type type)
         {
-            bool isDirectly = type == typeof(IEnumerable<>);
+            var isDirectly = type == typeof(IEnumerable<>);
             return isDirectly;
         }
 
         private static bool IsTypeDefinitionEnumerable(this Type type)
         {
-            bool isViaInterfaces = type.IsGenericType &&
-                                   type.GetGenericTypeDefinition().IsSelfEnumerable();
+            var isViaInterfaces = type.IsGenericType &&
+                                  type.GetGenericTypeDefinition().IsSelfEnumerable();
             return isViaInterfaces;
         }
 
@@ -311,16 +308,10 @@ namespace Autofac.Annotation.Util
         public static IEnumerable<Type> GetParentTypes(this Type type)
         {
             // is there any base type?
-            if (type == null)
-            {
-                yield break;
-            }
+            if (type == null) yield break;
 
             // return all implemented or inherited interfaces
-            foreach (var i in GetImplementedInterfaces(type))
-            {
-                yield return i;
-            }
+            foreach (var i in GetImplementedInterfaces(type)) yield return i;
 
             // return all inherited types
             var currentBaseType = type.BaseType;
@@ -332,7 +323,7 @@ namespace Autofac.Annotation.Util
         }
 
 
-        private static Type[] GetImplementedInterfaces(Type type)
+        public static Type[] GetImplementedInterfaces(this Type type)
         {
             var interfaces = type.GetTypeInfo().ImplementedInterfaces.Where(i => i != typeof(IDisposable));
             return type.GetTypeInfo().IsInterface ? interfaces.AppendItem(type).ToArray() : interfaces.ToArray();

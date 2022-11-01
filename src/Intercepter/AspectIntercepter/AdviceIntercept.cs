@@ -40,15 +40,22 @@ namespace Autofac.AspectIntercepter
 
             if (!_cache.CacheList.TryGetValue(invocation.Method, out var attribute))
             {
-                //动态泛型类
-                if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
-                    !_cache.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(), out var AttributesDynamic))
+                if (!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget, out var attributeInherited))
                 {
-                    invocation.Proceed();
-                    return;
+                    //动态泛型类
+                    if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
+                        !_cache.DynamicCacheList.TryGetValue(
+                            invocation.MethodInvocationTarget.GetMethodInfoUniqueName(),
+                            out var AttributesDynamic))
+                    {
+                        invocation.Proceed();
+                        return;
+                    }
+
+                    attributeInherited = AttributesDynamic;
                 }
 
-                attribute = AttributesDynamic;
+                attribute = attributeInherited;
             }
 
             #endregion
@@ -88,15 +95,21 @@ namespace Autofac.AspectIntercepter
 
             if (!_cache.CacheList.TryGetValue(invocation.Method, out var attribute))
             {
-                //动态泛型类
-                if (!invocation.TargetMethod.DeclaringType.GetTypeInfo().IsGenericType ||
-                    !_cache.DynamicCacheList.TryGetValue(invocation.TargetMethod.GetMethodInfoUniqueName(), out var AttributesDynamic))
+                if (!_cache.CacheList.TryGetValue(invocation.TargetMethod, out var attributeInherited))
                 {
-                    await invocation.ProceedAsync();
-                    return;
+                    //动态泛型类
+                    if (!invocation.TargetMethod.DeclaringType.GetTypeInfo().IsGenericType ||
+                        !_cache.DynamicCacheList.TryGetValue(invocation.TargetMethod.GetMethodInfoUniqueName(),
+                            out var AttributesDynamic))
+                    {
+                        await invocation.ProceedAsync();
+                        return;
+                    }
+
+                    attributeInherited = AttributesDynamic;
                 }
 
-                attribute = AttributesDynamic;
+                attribute = attributeInherited;
             }
 
             #endregion

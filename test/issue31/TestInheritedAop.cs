@@ -7,14 +7,13 @@
 // <summary></summary>
 //-----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Autofac.AspectIntercepter.Advice;
 using Xunit;
 
 namespace Autofac.Annotation.Test.issue31;
-
-using System;
 
 public class TestInheritedAop
 {
@@ -95,7 +94,7 @@ public class TestInheritedAop
 
         Assert.Equal(2, ApiPationInfoController.result6.Count);
     }
-    
+
     [Fact]
     public void Test_Type_05()
     {
@@ -114,21 +113,84 @@ public class TestInheritedAop
 
         Assert.Equal(2, ApiPationInfoController.result7.Count);
     }
+
+    [Fact]
+    public void Test_Type_06()
+    {
+        var builder = new ContainerBuilder();
+
+        // autofac打标签模式
+        builder.RegisterModule(new AutofacAnnotationModule(typeof(TestInheritedAop).Assembly));
+
+        var container = builder.Build();
+
+        var test = container.Resolve<ApiPationInfoController>();
+
+        Assert.NotNull(test.Test33);
+
+        test.Test3Send();
+
+        Assert.Equal(2, ApiPationInfoController.result8.Count);
+    }
+
+    [Fact]
+    public void Test_Type_07()
+    {
+        var builder = new ContainerBuilder();
+
+        // autofac打标签模式
+        builder.RegisterModule(new AutofacAnnotationModule(typeof(TestInheritedAop).Assembly));
+
+        var container = builder.Build();
+
+        var test = container.Resolve<ApiPationInfoController>();
+
+        Assert.NotNull(test.Test4);
+
+        test.Test4Send();
+
+        Assert.Equal(2, ApiPationInfoController.result9.Count);
+    }
+
+    [Fact]
+    public void Test_Type_08()
+    {
+        var builder = new ContainerBuilder();
+
+        // autofac打标签模式
+        builder.RegisterModule(new AutofacAnnotationModule(typeof(TestInheritedAop).Assembly));
+
+        var container = builder.Build();
+
+        var test = container.Resolve<ApiPationInfoController>();
+
+        Assert.NotNull(test.Test5);
+
+        test.Test5Send();
+
+        Assert.Equal(2, ApiPationInfoController.result10.Count);
+    }
 }
 
 [Component]
 public class ApiPationInfoController
 {
-    public static List<string> result = new List<string>();
-    public static List<string> result2 = new List<string>();
-    public static List<string> result3 = new List<string>();
-    public static List<string> result4 = new List<string>();
-    public static List<string> result5 = new List<string>();
-    public static List<string> result6 = new List<string>();
-    public static List<string> result7 = new List<string>();
+    public static List<string> result = new();
+    public static List<string> result2 = new();
+    public static List<string> result3 = new();
+    public static List<string> result4 = new();
+    public static List<string> result5 = new();
+    public static List<string> result6 = new();
+    public static List<string> result7 = new();
+    public static List<string> result8 = new();
+    public static List<string> result9 = new();
+    public static List<string> result10 = new();
 
     [Autowired("test1")] public ICommunication test3 { get; set; }
     [Autowired("test2")] public AbTest1 AbTest1 { get; set; }
+    [Autowired("test3")] public ICommunication2 Test33 { get; set; }
+    [Autowired("test4")] public ICommunication3 Test4 { get; set; }
+    [Autowired("test5")] public ICommunication4 Test5 { get; set; }
 
     public void test()
     {
@@ -149,13 +211,79 @@ public class ApiPationInfoController
     {
         AbTest1.Send("hello");
     }
+
     public void test2Virtual()
     {
         AbTest1.SendVirtual("hello");
     }
+
+    public void Test3Send()
+    {
+        Test33.Send("hello");
+    }
+
+    public void Test4Send()
+    {
+        Test4.Send("hello");
+    }
+
+    public void Test5Send()
+    {
+        Test5.Send("hello");
+    }
 }
 
+public interface ICommunication2
+{
+    [Exception3Attribute]
+    void Send(string data);
+}
 
+[Component("test3")]
+[InterfaceInterceptor]
+public class Test3 : ICommunication2
+{
+    public void Send(string data)
+    {
+        ApiPationInfoController.result8.Add("data");
+    }
+}
+
+public interface ICommunication3
+{
+    [Exception4Attribute]
+    void Send(string data);
+}
+
+[Component("test4")]
+public class Test4 : ICommunication3
+{
+    public virtual void Send(string data)
+    {
+        ApiPationInfoController.result9.Add("data");
+    }
+}
+
+public interface ICommunication4
+{
+    [Exception5Attribute]
+    void Send(string data);
+}
+
+public abstract class Abclass4 : ICommunication4
+{
+    public abstract void Send(string data);
+}
+
+[Component("test5")]
+[InterfaceInterceptor]
+public class Test5 : Abclass4
+{
+    public override void Send(string data)
+    {
+        ApiPationInfoController.result10.Add("data");
+    }
+}
 
 public interface ICommunication
 {
@@ -249,7 +377,6 @@ public abstract class Test2
     [Exception2Attribute]
     public virtual void SendVirtual(string data)
     {
-        
     }
 }
 
@@ -260,7 +387,7 @@ public class AbTest1 : Test2
     {
         ApiPationInfoController.result6.Add(data);
     }
-    
+
     public override void SendVirtual(string data)
     {
         ApiPationInfoController.result7.Add(data);
@@ -281,6 +408,33 @@ public class Exception2Attribute : AspectAfter
     public override async Task After(AspectContext aspectContext, object result)
     {
         ApiPationInfoController.result7.Add("Exception2Attribute.After");
+        await Task.Delay(100);
+    }
+}
+
+public class Exception3Attribute : AspectAfter
+{
+    public override async Task After(AspectContext aspectContext, object result)
+    {
+        ApiPationInfoController.result8.Add("Exception3Attribute.After");
+        await Task.Delay(100);
+    }
+}
+
+public class Exception4Attribute : AspectAfter
+{
+    public override async Task After(AspectContext aspectContext, object result)
+    {
+        ApiPationInfoController.result9.Add("Exception4Attribute.After");
+        await Task.Delay(100);
+    }
+}
+
+public class Exception5Attribute : AspectAfter
+{
+    public override async Task After(AspectContext aspectContext, object result)
+    {
+        ApiPationInfoController.result10.Add("Exception4Attribute.After");
         await Task.Delay(100);
     }
 }

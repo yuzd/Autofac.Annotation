@@ -127,7 +127,8 @@ namespace Autofac.Annotation
         [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
         private void DoBeforeBeanPostProcessor(ResolveRequestContext context)
         {
-            if (!context.ComponentRegistry.Properties.TryGetValue(nameof(List<BeanPostProcessor>), out var temp)) return;
+            if (!context.ComponentRegistry.Properties.TryGetValue(nameof(List<BeanPostProcessor>), out var temp))
+                return;
 
             var beanPostProcessors = temp as List<BeanPostProcessor>;
             //context.TryResolve<IEnumerable<BeanPostProcessor>>(out var beanPostProcessors);
@@ -145,7 +146,8 @@ namespace Autofac.Annotation
         [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
         private void DoAfterBeanPostProcessor(ResolveRequestContext context)
         {
-            if (!context.ComponentRegistry.Properties.TryGetValue(nameof(List<BeanPostProcessor>), out var temp)) return;
+            if (!context.ComponentRegistry.Properties.TryGetValue(nameof(List<BeanPostProcessor>), out var temp))
+                return;
 
             var beanPostProcessors = temp as List<BeanPostProcessor>;
             if (beanPostProcessors == null || !beanPostProcessors.Any()) return;
@@ -236,7 +238,8 @@ namespace Autofac.Annotation
                 p.Use(PipelinePhase.RegistrationPipelineStart, (context, next) =>
                 {
                     foreach (var dependsType in compoment.DependsOn)
-                        new Autowired(false).Resolve(context, compoment.CurrentType, dependsType, dependsType.Name, context.Parameters.ToList());
+                        new Autowired(false).Resolve(context, compoment.CurrentType, dependsType, dependsType.Name,
+                            context.Parameters.ToList());
 
                     next(context);
                 });
@@ -267,8 +270,15 @@ namespace Autofac.Annotation
                     .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
                     .Select(r => new { IsClass = false, Attribute = r, Index = r.OrderIndex }));
 
+                var allAttributesInculdeFromInterface = allAttributes.Concat(
+                    from i in aspectClass.CurrentType.GetImplementedInterfaces()
+                    from p in i.GetMethods()
+                    where method.IsAssignableFromInterfaceMethod(p)
+                    from a in p.GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
+                    select new { IsClass = false, Attribute = a, Index = a.OrderIndex });
+
                 //如果class上也打了 method上也打了 优先用method上的
-                var attributes = allAttributes
+                var attributes = allAttributesInculdeFromInterface
                     .OrderBy(r => r.IsClass).ThenByDescending(r => r.Index)
                     .GroupBy(r => r.Attribute.GetType().FullName)
                     .Select(r => r.First().Attribute).ToList();

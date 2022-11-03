@@ -851,24 +851,31 @@ namespace Autofac.Annotation
 
             if (registrar == null) throw new ArgumentNullException(nameof(registrar));
 
-            if (component.ComponentServiceList != null && component.ComponentServiceList.Any())
-                foreach (var componentServiceModel in component.ComponentServiceList)
-                    if (!string.IsNullOrEmpty(componentServiceModel.Key))
-                    {
-                        registrar.Keyed(componentServiceModel.Key, componentServiceModel.Type)
-                            .Named("`1System.Collections.Generic.IEnumerable`1" + componentServiceModel.Type.FullName,
-                                componentServiceModel.Type); //通过集合注入Autowired拿到所有
-                    }
-                    else
-                    {
-                        if (component.isDynamicGeneric && !componentServiceModel.Type.IsGenericTypeDefinition)
-                            throw new InvalidOperationException(
-                                $"The class `{component.CurrentType.FullName}` must register as genericTypeDefinition, please use `[Component(typeOf(xxx<>))]` ");
+            if (component.ComponentServiceList == null || !component.ComponentServiceList.Any()) return;
+            foreach (var componentServiceModel in component.ComponentServiceList)
+            {
+                if (!string.IsNullOrEmpty(componentServiceModel.Key))
+                {
+                    registrar.Keyed(componentServiceModel.Key, componentServiceModel.Type)
+                        .Named("`1System.Collections.Generic.IEnumerable`1" + componentServiceModel.Type.FullName,
+                            componentServiceModel.Type); //通过集合注入Autowired拿到所有
+                }
+                else
+                {
+                    if (component.isDynamicGeneric && !componentServiceModel.Type.IsGenericTypeDefinition)
+                        throw new InvalidOperationException(
+                            $"The class `{component.CurrentType.FullName}` must register as genericTypeDefinition, please use `[Component(typeOf(xxx<>))]` ");
 
-                        registrar.As(componentServiceModel.Type)
-                            .Named("`1System.Collections.Generic.IEnumerable`1" + componentServiceModel.Type.FullName,
-                                componentServiceModel.Type); //通过集合注入Autowired拿到所有
-                    }
+                    registrar.As(componentServiceModel.Type)
+                        .Named("`1System.Collections.Generic.IEnumerable`1" + componentServiceModel.Type.FullName,
+                            componentServiceModel.Type); //通过集合注入Autowired拿到所有
+
+                    // 默认也使用类的className作为其中的一个key
+                    registrar.As(componentServiceModel.Type)
+                        .Named(component.CurrentType.Name,
+                            componentServiceModel.Type);
+                }
+            }
         }
 
 

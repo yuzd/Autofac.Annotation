@@ -434,10 +434,10 @@ public class TestCircular1
 [Component]
 public class TestCircular2
 {
-    [Autowired("test7", CircularDependencies = true)]
+    [Autowired("test7")]
     public ICommunication6 _test7;
 
-    [Autowired(CircularDependencies = true)]
+    [Autowired]
     public TestCircular1 TestCircular1;
 }
 

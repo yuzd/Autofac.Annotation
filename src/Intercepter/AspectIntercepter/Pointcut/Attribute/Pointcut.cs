@@ -211,13 +211,7 @@ namespace Autofac.Annotation
                         break;
                     }
 
-                var fromInterfaceAttributes = from i in methodInfoCache.DeclaringType.GetImplementedInterfaces()
-                    from p in i.GetMethods()
-                    where methodInfoCache.IsAssignableFromInterfaceMethod(p)
-                    from a in p.GetCustomAttributes()
-                    select a;
-
-                foreach (var attr in fromInterfaceAttributes)
+                foreach (var attr in methodInfoCache.GetCustomAttributesByImplementedInterfaces<Attribute>())
                     if (AttributeType == attr.GetType())
                     {
                         annotation = attr;

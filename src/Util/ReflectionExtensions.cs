@@ -322,6 +322,17 @@ namespace Autofac.Annotation.Util
             }
         }
 
+        /**
+         * 获取一个Method上面的所有注解 包括父类接口的
+         */
+        public static IEnumerable<T> GetCustomAttributesByImplementedInterfaces<T>(this MethodInfo methodInfo) where T : Attribute
+        {
+            return from i in methodInfo.DeclaringType.GetImplementedInterfaces()
+                from p in i.GetMethods()
+                where methodInfo.IsAssignableFromInterfaceMethod(p)
+                from a in p.GetCustomAttributes(typeof(T)).OfType<T>()
+                select a;
+        }
 
         public static Type[] GetImplementedInterfaces(this Type type)
         {

@@ -271,10 +271,7 @@ namespace Autofac.Annotation
                     .Select(r => new { IsClass = false, Attribute = r, Index = r.OrderIndex }));
 
                 var allAttributesInculdeFromInterface = allAttributes.Concat(
-                    from i in aspectClass.CurrentType.GetImplementedInterfaces()
-                    from p in i.GetMethods()
-                    where method.IsAssignableFromInterfaceMethod(p)
-                    from a in p.GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
+                    from a in method.GetCustomAttributesByImplementedInterfaces<AspectInvokeAttribute>()
                     select new { IsClass = false, Attribute = a, Index = a.OrderIndex });
 
                 //如果class上也打了 method上也打了 优先用method上的

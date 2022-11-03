@@ -21,7 +21,7 @@ namespace Autofac.Annotation
         /// <param name="groupName">名称 唯一</param>
         public Pointcut(string groupName)
         {
-            this.GroupName = groupName;
+            GroupName = groupName;
         }
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace Autofac.Annotation
             { typeof(Before), false },
             { typeof(Pointcut), false },
             { typeof(AfterThrows), false },
-            { typeof(DependsOn), false },
+            { typeof(DependsOn), false }
         };
 
         /// <summary>
@@ -153,49 +153,33 @@ namespace Autofac.Annotation
             var classType = component.CurrentType;
 
             //如果没有设定clasname的匹配  也没有设置标签拦截指定 就不继续往下了
-            if ((string.IsNullOrEmpty(Class) && AttributeType == null))
-            {
-                throw new InvalidOperationException($"PointCut:`{this.GetType().FullName}` -> `Class` or `AttributeType` One of them must be set ! ");
-            }
+            if (string.IsNullOrEmpty(Class) && AttributeType == null)
+                throw new InvalidOperationException($"PointCut:`{GetType().FullName}` -> `Class` or `AttributeType` One of them must be set ! ");
 
-            if (!SqlLikeStringUtilities.SqlLike(this.NameSpace, classType.Namespace))
-            {
-                return false;
-            }
+            if (!SqlLikeStringUtilities.SqlLike(NameSpace, classType.Namespace)) return false;
 
             //配置了class
-            if (!string.IsNullOrEmpty(this.Class) && !SqlLikeStringUtilities.SqlLike(this.Class, classType.Name))
-            {
-                return false;
-            }
+            if (!string.IsNullOrEmpty(Class) && !SqlLikeStringUtilities.SqlLike(Class, classType.Name)) return false;
 
-            if (this.AttributeType != null)
+            if (AttributeType != null)
             {
                 //框架内部的不可
-                if (IgnoreAttributeType.ContainsKey(this.AttributeType))
-                {
+                if (IgnoreAttributeType.ContainsKey(AttributeType))
                     throw new InvalidOperationException(
-                        $"PointCut:`{this.GetType().FullName}` -> `AttributeType` can not be set to special type: `${AttributeType.Name}` ! ");
-                }
+                        $"PointCut:`{GetType().FullName}` -> `AttributeType` can not be set to special type: `${AttributeType.Name}` ! ");
 
                 //继承了AspectInvokeAttribute的不可
-                else if (typeof(AspectInvokeAttribute).IsAssignableFrom(this.AttributeType))
-                {
+                else if (typeof(AspectInvokeAttribute).IsAssignableFrom(AttributeType))
                     throw new InvalidOperationException(
-                        $"PointCut:`{this.GetType().FullName}` -> `AttributeType` can not be set to  instance of `AspectInvokeAttribute` ! ");
-                }
+                        $"PointCut:`{GetType().FullName}` -> `AttributeType` can not be set to  instance of `AspectInvokeAttribute` ! ");
 
                 if (component.CurrentClassTypeAttributes != null && component.CurrentClassTypeAttributes.Any())
-                {
                     foreach (var classAttribute in component.CurrentClassTypeAttributes)
-                    {
-                        if (classAttribute.GetType() == this.AttributeType)
+                        if (classAttribute.GetType() == AttributeType)
                         {
                             pointCutClassInjectAnotation = classAttribute;
                             break;
                         }
-                    }
-                }
             }
 
             return true;
@@ -213,32 +197,34 @@ namespace Autofac.Annotation
             injectPointcutAnnotationCache = null;
             //如果本身带了_的话
             //test_a  
-            if (!SqlLikeStringUtilities.SqlLike(this.RetType, methodInfo.ReturnType.Name))
-            {
-                return false;
-            }
+            if (!SqlLikeStringUtilities.SqlLike(RetType, methodInfo.ReturnType.Name)) return false;
 
-            if (!SqlLikeStringUtilities.SqlLike(this.Method, methodInfo.Name))
-            {
-                return false;
-            }
+            if (!SqlLikeStringUtilities.SqlLike(Method, methodInfo.Name)) return false;
 
-            if (this.AttributeType != null)
+            if (AttributeType != null)
             {
                 Attribute annotation = null;
                 foreach (var attr in methodInfoCache.GetCustomAttributes())
-                {
                     if (AttributeType == attr.GetType())
                     {
                         annotation = attr;
                         break;
                     }
-                }
 
-                if (annotation == null && parentClassinjectPointcutAnnotationCache != null)
-                {
-                    annotation = parentClassinjectPointcutAnnotationCache;
-                }
+                var fromInterfaceAttributes = from i in methodInfoCache.DeclaringType.GetImplementedInterfaces()
+                    from p in i.GetMethods()
+                    where methodInfoCache.IsAssignableFromInterfaceMethod(p)
+                    from a in p.GetCustomAttributes()
+                    select a;
+
+                foreach (var attr in fromInterfaceAttributes)
+                    if (AttributeType == attr.GetType())
+                    {
+                        annotation = attr;
+                        break;
+                    }
+
+                if (annotation == null && parentClassinjectPointcutAnnotationCache != null) annotation = parentClassinjectPointcutAnnotationCache;
 
                 if (annotation != null)
                 {

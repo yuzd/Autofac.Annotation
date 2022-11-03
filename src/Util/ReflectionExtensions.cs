@@ -101,9 +101,9 @@ namespace Autofac.Annotation.Util
         /// <returns></returns>
         public static bool IsAssignableFromInterfaceMethod(this MethodInfo mi, MethodInfo parentMethod)
         {
-            var signatureString1 = mi.ReturnType.FullName +
+            var signatureString1 = mi.ReturnType.FullName + mi.Name +
                                    string.Join(",", mi.GetParameters().Select(p => p.ParameterType.FullName).ToArray());
-            var signatureString2 = parentMethod.ReturnType.FullName + string.Join(",",
+            var signatureString2 = parentMethod.ReturnType.FullName + parentMethod.Name + string.Join(",",
                 parentMethod.GetParameters().Select(p => p.ParameterType.FullName).ToArray());
             return signatureString1.Length == signatureString2.Length && signatureString1 == signatureString2;
         }

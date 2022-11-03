@@ -47,11 +47,6 @@ namespace Autofac.Annotation
         public AutofacScope DefaultAutofacScope { get; private set; } = AutofacScope.Default;
 
         /// <summary>
-        ///     是否启用Autowired的循环注入
-        /// </summary>
-        public bool AllowCircularDependencies { get; private set; }
-
-        /// <summary>
         ///     容器注册完开始找AutofacConfiguration标签的class 有多个的时候指定Key
         /// </summary>
         public string AutofacConfigurationKey { get; private set; }
@@ -211,16 +206,6 @@ namespace Autofac.Annotation
         public AutofacAnnotationModule SetDefaultAutofacScopeToInstancePerRequest()
         {
             DefaultAutofacScope = AutofacScope.InstancePerRequest;
-            return this;
-        }
-
-        /// <summary>
-        ///     设置是否启用循环Autowired
-        /// </summary>
-        /// <returns></returns>
-        public AutofacAnnotationModule SetAllowCircularDependencies(bool flag)
-        {
-            AllowCircularDependencies = flag;
             return this;
         }
 
@@ -1874,24 +1859,6 @@ namespace Autofac.Annotation
 
             if (!component.AutowiredPropertyInfoList.Any() && !component.AutowiredFieldInfoList.Any() &&
                 !component.AutowiredMethodInfoList.Any()) return false;
-
-            //初始化 AllowCircularDependencies 参数
-            component.AutowiredPropertyInfoList.ForEach(r =>
-            {
-                if (r.Item2.AllowCircularDependencies == null) //如果自己指定了的话 就不管了
-                    r.Item2.AllowCircularDependencies = AllowCircularDependencies;
-            });
-
-            component.AutowiredFieldInfoList.ForEach(r =>
-            {
-                if (r.Item2.AllowCircularDependencies == null) //如果自己指定了的话 就不管了
-                    r.Item2.AllowCircularDependencies = AllowCircularDependencies;
-            });
-            component.AutowiredMethodInfoList.ForEach(r =>
-            {
-                if (r.Item2.AllowCircularDependencies == null) //如果自己指定了的话 就不管了
-                    r.Item2.AllowCircularDependencies = AllowCircularDependencies;
-            });
             return true;
         }
 

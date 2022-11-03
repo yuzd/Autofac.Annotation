@@ -50,20 +50,6 @@ namespace Autofac.Annotation
         /// </summary>
         public bool Required { get; set; } = true;
 
-        /// <summary>
-        /// 默认是false
-        /// </summary>
-        internal bool? AllowCircularDependencies { get; set; }
-
-
-        /// <summary>
-        /// 是否支持循环注入 默认是false 不支持
-        /// </summary>
-        public bool CircularDependencies
-        {
-            get => AllowCircularDependencies != null && AllowCircularDependencies.Value;
-            set => AllowCircularDependencies = value;
-        }
 
         /// <summary>
         /// AutoConfiguration类的自动装载
@@ -97,9 +83,6 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public override bool CanResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
-            //构造方法不支持配置循环注入
-            if (AllowCircularDependencies != null && AllowCircularDependencies.Value) return false;
-
             return true;
         }
 
@@ -178,19 +161,9 @@ namespace Autofac.Annotation
 
             if (Parameters != null && Parameters.Any() && Parameters.Last() is AutowiredParmeterStack AutowiredParmeter)
             {
-                if (!AutowiredParmeter.AllowCircularDependencies && AllowCircularDependencies.HasValue && AllowCircularDependencies.Value)
-                    AutowiredParmeter.AllowCircularDependencies = true;
-
                 //先检查是否已注册过
                 if (AutowiredParmeter.CircularDetected(propertyService, out returnObj))
                 {
-                    if (AutowiredParmeter.AllowCircularDependencies)
-                    {
-                    }
-                    else if (AllowCircularDependencies == null || !AllowCircularDependencies.Value)
-                    {
-                        throw new DependencyResolutionException(AutowiredParmeter.GetCircualrChains(propertyService));
-                    }
                 }
                 else if (context.TryResolveService(propertyService, new Parameter[] { AutowiredParmeter }, out returnObj))
                 {
@@ -201,13 +174,6 @@ namespace Autofac.Annotation
                     propertyService = new KeyedService(fieldOrPropertyName, memberType);
                     if (AutowiredParmeter.CircularDetected(propertyService, out returnObj))
                     {
-                        if (AutowiredParmeter.AllowCircularDependencies)
-                        {
-                        }
-                        else if (AllowCircularDependencies == null || !AllowCircularDependencies.Value)
-                        {
-                            throw new DependencyResolutionException(AutowiredParmeter.GetCircualrChains(propertyService));
-                        }
                     }
                     else if (context.TryResolveService(propertyService, new Parameter[] { AutowiredParmeter }, out returnObj))
                     {

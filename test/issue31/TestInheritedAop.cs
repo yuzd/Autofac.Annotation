@@ -404,8 +404,7 @@ public class Test6 : ICommunication5
 public class Test7 : ICommunication6
 {
     // 这里为啥非代理类
-    [Autowired("test7", CircularDependencies = true)]
-    public ICommunication6 _test7;
+    [Autowired("test7")] public ICommunication6 _test7;
 
     public void Send(string data)
     {
@@ -423,8 +422,7 @@ public class Test7 : ICommunication6
 [Exception7Attribute]
 public class TestCircular1
 {
-    [Autowired(CircularDependencies = true)]
-    public TestCircular2 TestCircular2;
+    [Autowired] public TestCircular2 TestCircular2;
 
     public virtual void test()
     {
@@ -434,11 +432,9 @@ public class TestCircular1
 [Component]
 public class TestCircular2
 {
-    [Autowired("test7")]
-    public ICommunication6 _test7;
+    [Autowired("test7")] public ICommunication6 _test7;
 
-    [Autowired]
-    public TestCircular1 TestCircular1;
+    [Autowired] public TestCircular1 TestCircular1;
 }
 
 public interface ICommunication

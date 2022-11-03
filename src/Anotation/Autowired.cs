@@ -74,9 +74,9 @@ namespace Autofac.Annotation
         /// <returns></returns>
         internal object ResolveParameterWithConfiguration(AutoConfigurationDetail detail, ParameterInfo parameter, IComponentContext context)
         {
-            return Resolve(context, parameter.Member.DeclaringType, parameter.ParameterType, parameter.Name, null,detail);
+            return Resolve(context, parameter.Member.DeclaringType, parameter.ParameterType, parameter.Name, null, detail);
         }
-        
+
         /// <summary>
         /// 作为ParameterInfo自动装载
         /// </summary>
@@ -98,10 +98,7 @@ namespace Autofac.Annotation
         public override bool CanResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
             //构造方法不支持配置循环注入
-            if (this.AllowCircularDependencies != null && this.AllowCircularDependencies.Value)
-            {
-                return false;
-            }
+            if (AllowCircularDependencies != null && AllowCircularDependencies.Value) return false;
 
             return true;
         }
@@ -135,57 +132,54 @@ namespace Autofac.Annotation
         }
 
         internal object Resolve(IComponentContext context, Type classType, Type memberType, string fieldOrPropertyName,
-            List<Parameter> Parameters,AutoConfigurationDetail autoConfigurationDetail = null)
+            List<Parameter> Parameters, AutoConfigurationDetail autoConfigurationDetail = null)
         {
             object returnObj = null;
 
             //针对继承 IObjectFactory 的 需要动态创建
-            if ((typeof(IObjectFactory).IsAssignableFrom(memberType)))
+            if (typeof(IObjectFactory).IsAssignableFrom(memberType))
             {
-                return context.Resolve<ObjectBeanFactory>().CreateAutowiredFactory(this, memberType, classType, fieldOrPropertyName, null,autoConfigurationDetail);
+                return context.Resolve<ObjectBeanFactory>()
+                    .CreateAutowiredFactory(this, memberType, classType, fieldOrPropertyName, null, autoConfigurationDetail);
             }
             else if (memberType.IsGenericType && memberType.GetGenericTypeDefinition() == typeof(Lazy<>))
             {
-                return context.Resolve<ObjectBeanFactory>().CreateLazyFactory(this, memberType, classType, fieldOrPropertyName, null,autoConfigurationDetail);
+                return context.Resolve<ObjectBeanFactory>()
+                    .CreateLazyFactory(this, memberType, classType, fieldOrPropertyName, null, autoConfigurationDetail);
             }
-            else if (string.IsNullOrEmpty(this.Name) && memberType.IsGenericEnumerableInterfaceType())
+            else if (string.IsNullOrEmpty(Name) && memberType.IsGenericEnumerableInterfaceType())
             {
                 var genericType = memberType.GenericTypeArguments[0];
                 if (genericType.FullName != null && genericType.FullName.StartsWith("System.Lazy`1"))
-                {
                     genericType = genericType.GenericTypeArguments[0];
-                }
 
                 context.TryResolveKeyed("`1System.Collections.Generic.IEnumerable`1" + genericType.FullName, memberType, out returnObj);
 
-                if (returnObj == null && this.Required)
-                {
+                if (returnObj == null && Required)
                     throw new DependencyResolutionException($"Autowire error,can not resolve class type:{classType.FullName}:{fieldOrPropertyName} "
-                                                            + (!string.IsNullOrEmpty(this.Name) ? $",with key:[{this.Name}]" : ""));
-                }
+                                                            + (!string.IsNullOrEmpty(Name) ? $",with key:[{Name}]" : ""));
 
                 return returnObj;
             }
-            var spelName = this.Name;
+
+            var spelName = Name;
             Service propertyService = null;
             if (!string.IsNullOrEmpty(spelName))
             {
                 // spel判断
-                spelName = Value.ResolveSpel(context, classType, spelName,autoConfigurationDetail).ToString(); 
+                spelName = Value.ResolveSpel(context, classType, spelName, autoConfigurationDetail).ToString();
                 propertyService = new KeyedService(spelName, memberType);
             }
-            else                                                                                    
+            else
             {
                 //如果指定Name查找
                 propertyService = new TypedService(memberType);
             }
 
-            if (Parameters != null && Parameters.Any() && ((Parameters.First() is AutowiredParmeterStack AutowiredParmeter)))
+            if (Parameters != null && Parameters.Any() && Parameters.Last() is AutowiredParmeterStack AutowiredParmeter)
             {
-                if (!AutowiredParmeter.AllowCircularDependencies && this.AllowCircularDependencies.HasValue && this.AllowCircularDependencies.Value)
-                {
+                if (!AutowiredParmeter.AllowCircularDependencies && AllowCircularDependencies.HasValue && AllowCircularDependencies.Value)
                     AutowiredParmeter.AllowCircularDependencies = true;
-                }
 
                 //先检查是否已注册过
                 if (AutowiredParmeter.CircularDetected(propertyService, out returnObj))
@@ -193,7 +187,7 @@ namespace Autofac.Annotation
                     if (AutowiredParmeter.AllowCircularDependencies)
                     {
                     }
-                    else if (this.AllowCircularDependencies == null || !this.AllowCircularDependencies.Value)
+                    else if (AllowCircularDependencies == null || !AllowCircularDependencies.Value)
                     {
                         throw new DependencyResolutionException(AutowiredParmeter.GetCircualrChains(propertyService));
                     }
@@ -202,7 +196,7 @@ namespace Autofac.Annotation
                 {
                 }
                 //先判断根据Type来找是否能找得到 发现Type没有就尝试用当前的属性定义的名称去找
-                else if (string.IsNullOrEmpty(this.Name))
+                else if (string.IsNullOrEmpty(Name))
                 {
                     propertyService = new KeyedService(fieldOrPropertyName, memberType);
                     if (AutowiredParmeter.CircularDetected(propertyService, out returnObj))
@@ -210,7 +204,7 @@ namespace Autofac.Annotation
                         if (AutowiredParmeter.AllowCircularDependencies)
                         {
                         }
-                        else if (this.AllowCircularDependencies == null || !this.AllowCircularDependencies.Value)
+                        else if (AllowCircularDependencies == null || !AllowCircularDependencies.Value)
                         {
                             throw new DependencyResolutionException(AutowiredParmeter.GetCircualrChains(propertyService));
                         }
@@ -234,11 +228,9 @@ namespace Autofac.Annotation
                 }
             }
 
-            if (returnObj == null && this.Required)
-            {
+            if (returnObj == null && Required)
                 throw new DependencyResolutionException($"Autowire error,can not resolve class type:{classType.FullName}.{fieldOrPropertyName} "
                                                         + (!string.IsNullOrEmpty(spelName) ? $",with key:[{spelName}]" : ""));
-            }
 
             return returnObj;
         }

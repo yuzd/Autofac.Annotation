@@ -36,10 +36,7 @@ namespace Autofac.Annotation
         /// </summary>
         public void Dispose()
         {
-            while (this.chainList.Count > 0)
-            {
-                chainList.Pop();
-            }
+            chainList.Pop();
         }
 
         /// <summary>
@@ -51,13 +48,11 @@ namespace Autofac.Annotation
         public bool CircularDetected(Service service, out object instance)
         {
             foreach (var requestEntry in chainList)
-            {
                 if (requestEntry.Item1 == service)
                 {
                     instance = requestEntry.Item2;
                     return true;
                 }
-            }
 
             instance = null;
             return false;
@@ -70,7 +65,7 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public string GetCircualrChains(Service service)
         {
-            var err = "Circular component dependency detected:" + string.Join("->", (from obj in this.chainList
+            var err = "Circular component dependency detected:" + string.Join("->", (from obj in chainList
                     let ob = obj.Item2.GetType()
                     select ob.Namespace + "." + ob.Name
                 ).Reverse()) + "->" + service?.Description;

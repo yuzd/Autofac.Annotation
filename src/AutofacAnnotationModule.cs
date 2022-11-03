@@ -379,14 +379,14 @@ namespace Autofac.Annotation
                 //设置Ownership
                 SetComponentOwnership(component, registrar);
 
+                //拦截器
+                SetIntercept(component, registrar, pointCutCfg);
+
                 //属性依赖注入
                 SetInjectProperties(component, registrar);
 
                 //activation
                 SetAutoActivate(component, registrar);
-
-                //拦截器
-                SetIntercept(component, registrar, pointCutCfg);
 
                 //方法注册
                 RegisterMethods(component, registrar);
@@ -423,10 +423,7 @@ namespace Autofac.Annotation
                             ReflectionExtensions.AssertMethodDynamic<PostConstruct>(e.Instance.GetType());
                         var method = ReflectionExtensions.AssertMethod(e.Instance.GetType(), component.InitMethod);
                         if (postConstructs.Any())
-                            postConstructs.ForEach(r =>
-                            {
-                                MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context);
-                            });
+                            postConstructs.ForEach(r => { MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context); });
 
                         if (method != null) MethodInvokeHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
                     });
@@ -438,10 +435,7 @@ namespace Autofac.Annotation
                     registrar.OnActivated(e =>
                     {
                         if (postConstructs.Any())
-                            postConstructs.ForEach(r =>
-                            {
-                                MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context);
-                            });
+                            postConstructs.ForEach(r => { MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context); });
 
                         if (method != null) MethodInvokeHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
                     });
@@ -1760,8 +1754,8 @@ namespace Autofac.Annotation
             {
                 RegisterBeforeBeanPostProcessor(component, registration);
                 RegisterComponentValues(component, registration);
-                SetInjectProperties(component, registration);
                 SetIntercept(component, registration, needPointCut);
+                SetInjectProperties(component, registration);
                 RegisterAfterBeanPostProcessor(component, registration);
                 return (component, null);
             }
@@ -1769,8 +1763,8 @@ namespace Autofac.Annotation
             var builder = RegistrationBuilder.ForType(component.CurrentType);
             RegisterBeforeBeanPostProcessor(component, builder);
             RegisterComponentValues(component, builder);
-            SetInjectProperties(component, builder);
             SetIntercept(component, builder, needPointCut);
+            SetInjectProperties(component, builder);
             RegisterAfterBeanPostProcessor(component, builder);
             return (component, builder);
         }
@@ -1964,15 +1958,16 @@ namespace Autofac.Annotation
             // context.Service
             if (Parameters != null)
             {
-                if (!Parameters.Any() || !(Parameters.First() is AutowiredParmeterStack AutowiredParmeter))
+                if (!Parameters.Any() || !(Parameters.Last() is AutowiredParmeterStack AutowiredParmeter))
                 {
                     firstStack = new AutowiredParmeterStack();
-                    firstStack.Push(context.Service, RealInstance);
+                    firstStack.Push(context.Service, instance);
                     Parameters.Add(firstStack);
                 }
                 else
                 {
-                    AutowiredParmeter.Push(context.Service, RealInstance);
+                    firstStack = AutowiredParmeter;
+                    AutowiredParmeter.Push(context.Service, instance);
                 }
             }
 

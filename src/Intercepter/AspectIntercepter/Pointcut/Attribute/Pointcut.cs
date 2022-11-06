@@ -204,19 +204,28 @@ namespace Autofac.Annotation
             if (AttributeType != null)
             {
                 Attribute annotation = null;
+                //先优先自身
                 foreach (var attr in methodInfoCache.GetCustomAttributes())
+                {
                     if (AttributeType == attr.GetType())
                     {
                         annotation = attr;
                         break;
                     }
+                }
 
-                foreach (var attr in methodInfoCache.GetCustomAttributesByImplementedInterfaces<Attribute>())
-                    if (AttributeType == attr.GetType())
+                if (annotation == null)
+                {
+                    // 自身没有的检查接口上有没有
+                    foreach (var attr in methodInfoCache.GetCustomAttributesByImplementedInterfaces<Attribute>())
                     {
-                        annotation = attr;
-                        break;
+                        if (AttributeType == attr.GetType())
+                        {
+                            annotation = attr;
+                            break;
+                        }
                     }
+                }
 
                 if (annotation == null && parentClassinjectPointcutAnnotationCache != null) annotation = parentClassinjectPointcutAnnotationCache;
 

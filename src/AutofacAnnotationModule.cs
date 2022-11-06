@@ -494,8 +494,7 @@ namespace Autofac.Annotation
                         .WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
-
-                if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
+                else if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
                 {
                     builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(PointcutIntercept))
                         .WithMetadata(_AUTOFAC_SPRING, true);
@@ -503,13 +502,13 @@ namespace Autofac.Annotation
                 }
 
                 //找寻它的继承的接口列表下是否存在相同的namespace下的接口
-                if (component.CurrentType.GetTypeInfo().ImplementedInterfaces
-                    .Any(r => r.Assembly.Equals(component.CurrentType.Assembly)))
-                {
-                    builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(PointcutIntercept))
-                        .WithMetadata(_AUTOFAC_SPRING, true);
-                    return;
-                }
+                // if (component.CurrentType.GetTypeInfo().ImplementedInterfaces
+                //     .Any(r => r.Assembly.Equals(component.CurrentType.Assembly)))
+                // {
+                //     builder.EnableInterfaceInterceptors(component).InterceptedBy(typeof(PointcutIntercept))
+                //         .WithMetadata(_AUTOFAC_SPRING, true);
+                //     return;
+                // }
 
                 builder.EnableClassInterceptors(component).InterceptedBy(typeof(PointcutIntercept))
                     .WithMetadata(_AUTOFAC_SPRING, true);
@@ -650,22 +649,13 @@ namespace Autofac.Annotation
                         .WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
-
-                if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
+                else if (component.CurrentType.GetCustomAttribute<InterfaceInterceptor>() != null)
                 {
                     registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept))
                         .WithMetadata(_AUTOFAC_SPRING, true);
                     return;
                 }
 
-                //找寻它的继承的接口列表下是否存在相同的namespace下的接口
-                if (component.CurrentType.GetTypeInfo().ImplementedInterfaces
-                    .Any(r => r.Assembly.Equals(component.CurrentType.Assembly)))
-                {
-                    registrar.EnableInterfaceInterceptors().InterceptedBy(typeof(PointcutIntercept))
-                        .WithMetadata(_AUTOFAC_SPRING, true);
-                    return;
-                }
 
                 registrar.EnableClassInterceptors().InterceptedBy(typeof(PointcutIntercept))
                     .WithMetadata(_AUTOFAC_SPRING, true);

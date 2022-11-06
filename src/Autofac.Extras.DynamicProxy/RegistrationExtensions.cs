@@ -139,31 +139,45 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(registration));
             }
 
+
             if (registration.ActivatorData.ImplementationType.IsGenericTypeDefinition)
             {
                 registration.ConfigurePipeline(p => p.Use(PipelinePhase.Activation, MiddlewareInsertionMode.StartOfPhase, (ctxt, next) =>
                 {
                     next(ctxt);
 
-
                     var interceptors = GetInterceptorServices(ctxt.Registration, ctxt.Instance.GetType())
                         .Select(ctxt.ResolveService)
                         .Cast<IInterceptor>()
                         .ToArray();
 
+                    var additionalInterface = ctxt.Instance.GetType()
+                        .GetInterfaces()
+                        .Where(ProxyUtil.IsAccessible)
+                        .ToArray();
+
                     //这里需要改一下
                     //https://github.com/JSkimming/Castle.Core.AsyncInterceptor/blob/master/src/Castle.Core.AsyncInterceptor/ProxyGeneratorExtensions.cs
                     ctxt.Instance = options == null
-                        ? ProxyGenerator.CreateClassProxyWithTarget(ctxt.Instance.GetType(), ctxt.Instance, interceptors)
-                        : ProxyGenerator.CreateClassProxyWithTarget(ctxt.Instance.GetType(), ctxt.Instance, options, interceptors);
+                        ? ProxyGenerator.CreateClassProxyWithTarget(ctxt.Instance.GetType(), additionalInterface, ctxt.Instance, interceptors)
+                        : ProxyGenerator.CreateClassProxyWithTarget(ctxt.Instance.GetType(), additionalInterface, ctxt.Instance, options, interceptors);
                 }));
                 return registration;
+            }
+
+
+            if (!additionalInterfaces.Any())
+            {
+                additionalInterfaces = registration.ActivatorData.ImplementationType
+                    .GetInterfaces()
+                    .Where(ProxyUtil.IsAccessible)
+                    .ToArray();
             }
 
             registration.ActivatorData.ImplementationType =
                 ProxyGenerator.ProxyBuilder.CreateClassProxyType(
                     registration.ActivatorData.ImplementationType,
-                    additionalInterfaces ?? Type.EmptyTypes,
+                    additionalInterfaces,
                     options);
 
             var interceptorServices = GetInterceptorServicesFromAttributes(registration.ActivatorData.ImplementationType);
@@ -231,10 +245,17 @@ namespace Autofac.Annotation
                     .Cast<IInterceptor>()
                     .ToArray();
 
+                var proxiedInterfaces = ctxt.Instance
+                    .GetType()
+                    .GetInterfaces()
+                    .Where(ProxyUtil.IsAccessible)
+                    .ToArray();
+
+
                 //这里需要改一下
                 ctxt.Instance = options == null
-                    ? ProxyGenerator.CreateClassProxyWithTarget(ctxt.Instance.GetType(), ctxt.Instance, interceptors)
-                    : ProxyGenerator.CreateClassProxyWithTarget(ctxt.Instance.GetType(), ctxt.Instance, options, interceptors);
+                    ? ProxyGenerator.CreateClassProxyWithTarget(ctxt.Instance.GetType(), proxiedInterfaces, ctxt.Instance, interceptors)
+                    : ProxyGenerator.CreateClassProxyWithTarget(ctxt.Instance.GetType(), proxiedInterfaces, ctxt.Instance, options, interceptors);
             }));
             return registration;
         }

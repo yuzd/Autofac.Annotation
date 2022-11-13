@@ -713,36 +713,44 @@ namespace Autofac.Annotation
                 Parallel.ForEach(targetClass.GetAllInstanceMethod(component.EnablePointcutInherited), method =>
                 {
                     //pointCutMethodInjectAnotation 指的是 这个切面 在method 有没有对应的 如果method没有 class有就用class的
-                    if (aspectClass.Pointcut.IsVaild(component, method, pointCutClassInjectAnotation,
+                    if (aspectClass.Pointcut.IsVaild(aspectClass, method, pointCutClassInjectAnotation,
                             out var pointCutMethodInjectAnotation))
                     {
                         if (component.isDynamicGeneric || isgeneric)
                         {
                             var uniqKey = method.GetMethodInfoUniqueName();
                             if (pointCutCfg.DynamicPointcutTargetInfoList.ContainsKey(uniqKey))
+                            {
                                 pointCutCfg.DynamicPointcutTargetInfoList[uniqKey]
                                     .Add(new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation));
+                            }
                             else
+                            {
                                 pointCutCfg.DynamicPointcutTargetInfoList.TryAdd(uniqKey,
                                     new List<RunTimePointCutConfiguration>
                                     {
                                         new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation)
                                     });
-                            component.DynamicGenricMethodsNeedPointcuts.Add(uniqKey);
+                                component.DynamicGenricMethodsNeedPointcuts.Add(uniqKey);
+                            }
                         }
                         else
                         {
                             var key = new ObjectKey(targetClass, method);
                             if (pointCutCfg.PointcutTargetInfoList.ContainsKey(key))
+                            {
                                 pointCutCfg.PointcutTargetInfoList[key].Add(
                                     new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation));
+                            }
                             else
+                            {
                                 pointCutCfg.PointcutTargetInfoList.TryAdd(key,
                                     new List<RunTimePointCutConfiguration>
                                     {
                                         new RunTimePointCutConfiguration(aspectClass, pointCutMethodInjectAnotation)
                                     });
-                            component.MethodsNeedPointcuts.Add(key);
+                                component.MethodsNeedPointcuts.Add(key);
+                            }
                         }
                     }
                 });

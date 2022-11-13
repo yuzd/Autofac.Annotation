@@ -280,6 +280,20 @@ namespace Autofac.Annotation
                     .GroupBy(r => r.Attribute.GetType().FullName)
                     .Select(r => r.First().Attribute).ToList();
 
+                // 看是否有设置了要Ignore的
+                var ignore = method.GetCustomAttribute<IgnoreAop>();
+                if (ignore != null && (IgnoreFlags.Advice & ignore.IgnoreFlags) != 0)
+                {
+                    if (ignore.Target == null || !ignore.Target.Any())
+                    {
+                        attributes = new List<AspectInvokeAttribute>(1);
+                    }
+                    else if (attributes.Any())
+                    {
+                        attributes = attributes.Where(r => !ignore.Target.Contains(r.GetType())).ToList();
+                    }
+                }
+
                 if (attributes.Any()) aspectClass.AspectAttributeCache.TryAdd(method, attributes);
             });
 

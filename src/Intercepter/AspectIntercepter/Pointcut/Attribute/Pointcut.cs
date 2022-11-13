@@ -5,6 +5,7 @@ using System.Reflection;
 using Autofac.Annotation.Condition;
 using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter.Advice;
+using Autofac.AspectIntercepter.Pointcut;
 
 namespace Autofac.Annotation
 {
@@ -125,7 +126,8 @@ namespace Autofac.Annotation
             { typeof(Before), false },
             { typeof(Pointcut), false },
             { typeof(AfterThrows), false },
-            { typeof(DependsOn), false }
+            { typeof(DependsOn), false },
+            { typeof(IgnoreAop), false }
         };
 
         /// <summary>
@@ -174,12 +176,16 @@ namespace Autofac.Annotation
                         $"PointCut:`{GetType().FullName}` -> `AttributeType` can not be set to  instance of `AspectInvokeAttribute` ! ");
 
                 if (component.CurrentClassTypeAttributes != null && component.CurrentClassTypeAttributes.Any())
+                {
                     foreach (var classAttribute in component.CurrentClassTypeAttributes)
+                    {
                         if (classAttribute.GetType() == AttributeType)
                         {
                             pointCutClassInjectAnotation = classAttribute;
                             break;
                         }
+                    }
+                }
             }
 
             return true;
@@ -190,7 +196,7 @@ namespace Autofac.Annotation
         /// 是否可用
         /// </summary>
         /// <returns></returns>
-        internal bool IsVaild(ComponentModel component, MethodInfo methodInfoCache,
+        internal bool IsVaild(PointcutConfigurationInfo pointcut, MethodInfo methodInfoCache,
             Attribute parentClassinjectPointcutAnnotationCache, out Attribute injectPointcutAnnotationCache)
         {
             var methodInfo = methodInfoCache;
@@ -201,43 +207,62 @@ namespace Autofac.Annotation
 
             if (!SqlLikeStringUtilities.SqlLike(Method, methodInfo.Name)) return false;
 
-            if (AttributeType != null)
+            if (AttributeType == null) return true;
+            Attribute annotation = null;
+            var ignore = methodInfoCache.GetCustomAttribute<IgnoreAop>();
+            Type[] ignoreTarget = null;
+            if (ignore != null && (IgnoreFlags.PointCut & ignore.IgnoreFlags) != 0)
             {
-                Attribute annotation = null;
-                //先优先自身
-                foreach (var attr in methodInfoCache.GetCustomAttributes())
+                ignoreTarget = ignore.Target;
+                if ((ignoreTarget == null || !ignoreTarget.Any()))
                 {
-                    if (AttributeType == attr.GetType())
-                    {
-                        annotation = attr;
-                        break;
-                    }
+                    // 没有配置Target认为是过滤所有Pointcut类别的aop
+                    injectPointcutAnnotationCache = null;
+                    return false;
                 }
-
-                if (annotation == null)
+                else if (ignoreTarget.Contains(pointcut.PointClass))
                 {
-                    // 自身没有的检查接口上有没有
-                    foreach (var attr in methodInfoCache.GetCustomAttributesByImplementedInterfaces<Attribute>())
-                    {
-                        if (AttributeType == attr.GetType())
-                        {
-                            annotation = attr;
-                            break;
-                        }
-                    }
+                    // 指定要过滤了某个PointCut的类
+                    injectPointcutAnnotationCache = null;
+                    return false;
                 }
-
-                if (annotation == null && parentClassinjectPointcutAnnotationCache != null) annotation = parentClassinjectPointcutAnnotationCache;
-
-                if (annotation != null)
-                {
-                    injectPointcutAnnotationCache = annotation;
-                    return true;
-                }
-
-                return false;
             }
 
+            //先优先自身
+            foreach (var attr in methodInfoCache.GetCustomAttributes())
+            {
+                var isIgnore = ignoreTarget?.Contains(attr.GetType()) ?? false;
+                if (isIgnore || AttributeType != attr.GetType()) continue;
+                annotation = attr;
+                break;
+            }
+
+            if (annotation == null)
+            {
+                // 自身没有的检查接口上有没有
+                foreach (var attr in methodInfoCache.GetCustomAttributesByImplementedInterfaces<Attribute>())
+                {
+                    var isIgnore = ignoreTarget?.Contains(attr.GetType()) ?? false;
+                    if (isIgnore || AttributeType != attr.GetType()) continue;
+                    annotation = attr;
+                    break;
+                }
+            }
+
+            // 用打在class上的
+            if (annotation == null && parentClassinjectPointcutAnnotationCache != null)
+            {
+                if (ignoreTarget != null
+                    && ignoreTarget.Contains(parentClassinjectPointcutAnnotationCache.GetType()))
+                {
+                    return false;
+                }
+
+                annotation = parentClassinjectPointcutAnnotationCache;
+            }
+
+            if (annotation == null) return false;
+            injectPointcutAnnotationCache = annotation;
             return true;
         }
     }

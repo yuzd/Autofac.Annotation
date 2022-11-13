@@ -7,3 +7,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Autofac.Annotation")]
 [assembly: ComVisible(false)]
 [assembly: NeutralResourcesLanguage("en-US")]
+[assembly:InternalsVisibleTo("Autofac.Configuration.Test")]

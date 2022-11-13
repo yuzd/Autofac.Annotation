@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Autofac.Annotation.Util
 {
@@ -15,6 +17,7 @@ namespace Autofac.Annotation.Util
         /// <returns></returns>
         public static bool SqlLike(string pattern, string str)
         {
+            pattern = pattern.Replace("*", "%");
             bool isMatch = true,
                 isWildCardOn = false,
                 isCharWildCardOn = false,
@@ -24,12 +27,15 @@ namespace Autofac.Annotation.Util
             int lastWildCard = -1;
             int patternIndex = 0;
             List<char> set = new List<char>();
+            // 专门处理 ^()
+            List<string> kuo = new List<string>();
+            var kuoStr = "";
             char p = '\0';
 
             for (int i = 0; i < str.Length; i++)
             {
                 char c = str[i];
-                endOfPattern = (patternIndex >= pattern.Length);
+                endOfPattern = ( !string.IsNullOrEmpty(kuoStr) || patternIndex >= pattern.Length);
                 if (!endOfPattern)
                 {
                     p = pattern[patternIndex];
@@ -61,7 +67,27 @@ namespace Autofac.Annotation.Util
                         }
                         else isCharSetOn = true;
 
+                        kuo.Clear();
+                        kuoStr = "";
+                        while (pattern[patternIndex] == '(')
+                        {
+                            var indexKu = 1;
+                            while (pattern[patternIndex + indexKu] != ')')
+                            {
+                                indexKu++;
+                            }
+                            string d = pattern.Substring(patternIndex + 1, indexKu -1);
+                            patternIndex += d.Length+2;
+                            kuo.Add(d);
+                        }
+
+                        if (kuo.Any() && kuo.Select(r => r.Length).Distinct().Count() > 1)
+                        {
+                            throw new InvalidOperationException($"pattern:{pattern} is invaild");
+                        }
+                        
                         set.Clear();
+                        // 如果是 [A-D] 那么就是把A B C D 都加进去
                         if (pattern[patternIndex + 1] == '-' && pattern[patternIndex + 3] == ']')
                         {
                             char start = (pattern[patternIndex]);
@@ -103,7 +129,15 @@ namespace Autofac.Annotation.Util
                 }
                 else if (isCharSetOn || isNotCharSetOn)
                 {
-                    bool charMatch = (set.Contains(c));
+                    if (kuo.Any())
+                    {
+                        if(kuoStr.Length!=kuo.First().Length)
+                        {
+                            kuoStr += c;
+                            continue;
+                        }
+                    }
+                    bool charMatch = !string.IsNullOrEmpty(kuoStr) ? kuo.Contains(kuoStr) : (set.Contains(c));
                     if ((isNotCharSetOn && charMatch) || (isCharSetOn && !charMatch))
                     {
                         if (lastWildCard >= 0) patternIndex = lastWildCard;
@@ -114,6 +148,7 @@ namespace Autofac.Annotation.Util
                         }
                     }
 
+                    kuoStr = "";
                     isNotCharSetOn = isCharSetOn = false;
                 }
                 else

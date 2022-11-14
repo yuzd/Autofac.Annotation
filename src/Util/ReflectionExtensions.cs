@@ -322,6 +322,22 @@ namespace Autofac.Annotation.Util
             }
         }
 
+
+        /// <summary>
+        /// 获取一个class上的所有的注解，包括父类，和接口上的
+        /// </summary>
+        /// <param name="type"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IEnumerable<T> GetCustomAttributesIncludingBaseInterfaces<T>(this Type type)
+        {
+            var attributeType = typeof(T);
+            return type.GetCustomAttributes(attributeType, true)
+                .Union(type.GetInterfaces().SelectMany(interfaceType =>
+                    interfaceType.GetCustomAttributes(attributeType, true)))
+                .Cast<T>();
+        }
+
         /**
          * 获取一个Method上面的所有注解 包括父类接口的
          */

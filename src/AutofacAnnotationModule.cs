@@ -1426,7 +1426,7 @@ namespace Autofac.Annotation
                 EnableAspect = bean.EnableAspect,
                 EnablePointcutInherited = bean.EnablePointcutInherited,
                 IsBenPostProcessor = typeof(BeanPostProcessor).IsAssignableFrom(currentType),
-                CurrentClassTypeAttributes = currentType.GetCustomAttributes().OfType<Attribute>().ToList(),
+                CurrentClassTypeAttributes = currentType.GetCustomAttributesIncludingBaseInterfaces<Attribute>().ToList(),
                 DependsOn = currentType.GetCustomAttribute<DependsOn>()?.dependsOn
             };
 
@@ -1731,7 +1731,7 @@ namespace Autofac.Annotation
                 InterceptorType = InterceptorType.Class,
                 InjectPropertyType = InjectPropertyType.Autowired,
                 IsBenPostProcessor = typeof(BeanPostProcessor).IsAssignableFrom(currentType),
-                CurrentClassTypeAttributes = currentType.GetCustomAttributes().OfType<Attribute>().ToList()
+                CurrentClassTypeAttributes = currentType.GetCustomAttributesIncludingBaseInterfaces<Attribute>().ToList()
             };
 
             component.MetaSourceList = new List<MetaSourceData>();

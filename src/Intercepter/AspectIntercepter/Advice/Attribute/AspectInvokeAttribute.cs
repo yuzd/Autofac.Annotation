@@ -5,7 +5,7 @@ namespace Autofac.AspectIntercepter.Advice
     /// <summary>
     ///     AOP拦截器 默认包含继承关系
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Interface)]
     public class AspectInvokeAttribute : Attribute
     {
         /// <summary>

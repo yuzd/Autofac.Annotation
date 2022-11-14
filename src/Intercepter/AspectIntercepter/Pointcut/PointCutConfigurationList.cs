@@ -34,10 +34,11 @@ namespace Autofac.AspectIntercepter.Pointcut
 
     internal class RunTimePointCutConfiguration
     {
-        public RunTimePointCutConfiguration(PointcutConfigurationInfo configurationInfo, Attribute methodInjectPointcutAttribute)
+        public RunTimePointCutConfiguration(PointcutConfigurationInfo configurationInfo, Tuple<Attribute, int> methodInjectPointcutAttribute)
         {
             PointcutConfigurationInfo = configurationInfo;
-            MethodInjectPointcutAttribute = methodInjectPointcutAttribute;
+            MethodInjectPointcutAttribute = methodInjectPointcutAttribute?.Item1;
+            OrderIndex = methodInjectPointcutAttribute?.Item2 ?? 0;
         }
 
         /// <summary>
@@ -49,6 +50,11 @@ namespace Autofac.AspectIntercepter.Pointcut
         /// 方法运行时 有识别到 需要注入 指定注解
         /// </summary>
         public Attribute MethodInjectPointcutAttribute { get; set; }
-        
+
+        /// <summary>
+        /// 在继承关系下 方法上的注解继承顺序为：
+        /// 方法上 -> 父类方法 -> 接口方法 -> class -> 父类class -> 接口上
+        /// </summary>
+        public int OrderIndex { get; set; }
     }
 }

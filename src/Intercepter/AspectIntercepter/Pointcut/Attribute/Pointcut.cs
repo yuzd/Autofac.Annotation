@@ -147,10 +147,12 @@ namespace Autofac.Annotation
 
         /// <summary>
         /// 是否当前class满足
+        /// pointCutClassInjectAnotation.Item2 = true代表是class的注解
         /// </summary>
         /// <returns></returns>
-        internal bool IsVaildClass(ComponentModel component, out Attribute pointCutClassInjectAnotation)
+        internal bool IsVaildClass(ComponentModel component, out Tuple<Attribute, int> pointCutClassInjectAnotation)
         {
+            int orderIndex = 10000;
             pointCutClassInjectAnotation = null;
             var classType = component.CurrentType;
 
@@ -179,9 +181,10 @@ namespace Autofac.Annotation
                 {
                     foreach (var classAttribute in component.CurrentClassTypeAttributes)
                     {
+                        orderIndex++;
                         if (classAttribute.GetType() == AttributeType)
                         {
-                            pointCutClassInjectAnotation = classAttribute;
+                            pointCutClassInjectAnotation = Tuple.Create(classAttribute, orderIndex);
                             break;
                         }
                     }
@@ -197,8 +200,9 @@ namespace Autofac.Annotation
         /// </summary>
         /// <returns></returns>
         internal bool IsVaild(PointcutConfigurationInfo pointcut, MethodInfo methodInfoCache,
-            Attribute parentClassinjectPointcutAnnotationCache, out Attribute injectPointcutAnnotationCache)
+            Tuple<Attribute, int> parentClassinjectPointcutAnnotationCache, out Tuple<Attribute, int> injectPointcutAnnotationCache)
         {
+            int orderIndex = 0;
             var methodInfo = methodInfoCache;
             injectPointcutAnnotationCache = null;
             //如果本身带了_的话
@@ -208,7 +212,7 @@ namespace Autofac.Annotation
             if (!SqlLikeStringUtilities.SqlLike(Method, methodInfo.Name)) return false;
 
             if (AttributeType == null) return true;
-            Attribute annotation = null;
+            Tuple<Attribute, int> annotation = null;
             var ignore = methodInfoCache.GetCustomAttribute<IgnoreAop>();
             Type[] ignoreTarget = null;
             if (ignore != null && (IgnoreFlags.PointCut & ignore.IgnoreFlags) != 0)
@@ -231,9 +235,10 @@ namespace Autofac.Annotation
             //先优先自身
             foreach (var attr in methodInfoCache.GetCustomAttributes())
             {
+                orderIndex++;
                 var isIgnore = ignoreTarget?.Contains(attr.GetType()) ?? false;
                 if (isIgnore || AttributeType != attr.GetType()) continue;
-                annotation = attr;
+                annotation = Tuple.Create(attr, orderIndex);
                 break;
             }
 
@@ -242,9 +247,10 @@ namespace Autofac.Annotation
                 // 自身没有的检查接口上有没有
                 foreach (var attr in methodInfoCache.GetCustomAttributesByImplementedInterfaces<Attribute>())
                 {
+                    orderIndex++;
                     var isIgnore = ignoreTarget?.Contains(attr.GetType()) ?? false;
                     if (isIgnore || AttributeType != attr.GetType()) continue;
-                    annotation = attr;
+                    annotation = Tuple.Create(attr, orderIndex);
                     break;
                 }
             }
@@ -253,7 +259,7 @@ namespace Autofac.Annotation
             if (annotation == null && parentClassinjectPointcutAnnotationCache != null)
             {
                 if (ignoreTarget != null
-                    && ignoreTarget.Contains(parentClassinjectPointcutAnnotationCache.GetType()))
+                    && ignoreTarget.Contains(parentClassinjectPointcutAnnotationCache.Item1.GetType()))
                 {
                     return false;
                 }

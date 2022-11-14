@@ -69,7 +69,7 @@ namespace Autofac.Annotation
 
 
         /// <summary>
-        ///     当前Class的所有的标签
+        ///     当前Class的所有的标签 包括父类 包括接口
         /// </summary>
         internal List<Attribute> CurrentClassTypeAttributes { get; set; }
 

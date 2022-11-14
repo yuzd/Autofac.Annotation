@@ -32,13 +32,13 @@ namespace Autofac.AspectIntercepter.Pointcut
             //每个方法维度的 每个方法对应的是一组pointcut 每个pointcut 就是一个切面 一个切面里面会有多组 拦截器方法
             foreach (var methodCache in pointCutConfigurationList.PointcutTargetInfoList)
             {
-                AddCacheInter(methodCache.Key, methodCache.Value);
+                AddCacheInter(methodCache.Key, methodCache.Value.OrderBy(r => r.OrderIndex).ToList());
             }
 
 
             foreach (var methodCache in pointCutConfigurationList.DynamicPointcutTargetInfoList)
             {
-                AddDynamicCacheInter(methodCache.Key, methodCache.Value);
+                AddDynamicCacheInter(methodCache.Key, methodCache.Value.OrderBy(r => r.OrderIndex).ToList());
             }
         }
 
@@ -55,7 +55,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                 {
                     if (pointCutConfigurationList.DynamicPointcutTargetInfoList.TryGetValue(key, out var value))
                     {
-                        AddDynamicCacheInter(key, value);
+                        AddDynamicCacheInter(key, value.OrderBy(r => r.OrderIndex).ToList());
                     }
                 }
 
@@ -63,7 +63,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                 {
                     if (pointCutConfigurationList.PointcutTargetInfoList.TryGetValue(key, out var value))
                     {
-                        AddCacheInter(key, value);
+                        AddCacheInter(key, value.OrderBy(r => r.OrderIndex).ToList());
                     }
                 }
 

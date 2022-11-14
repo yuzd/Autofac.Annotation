@@ -257,17 +257,18 @@ namespace Autofac.Annotation
             if (aspectClass.CurrentType.IsInterface || aspectClass.CurrentType.IsAbstract) return false;
             if (aspectClass.AspectAttributeCache.Any()) return true;
 
-            //class上的标签也是包含继承关系
-            var allAttributesinClass = aspectClass.CurrentType
-                .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
-                .Select(r => new { IsClass = true, Attribute = r, Index = r.OrderIndex }).ToList();
+            //class上的标签（包括父类，接口上的）也是包含继承关系
+            var allAttributesinClass = from item in aspectClass.CurrentClassTypeAttributes
+                let att = item as AspectInvokeAttribute
+                where att != null
+                select new { IsClass = true, Attribute = att, Index = att.OrderIndex };
 
             //class下的方法包含继承关系
             var myArrayMethodInfo = aspectClass.CurrentType.GetAllInstanceMethod();
             Parallel.ForEach(myArrayMethodInfo, method =>
             {
                 var allAttributes = allAttributesinClass.Concat(method
-                    .GetCustomAttributes(typeof(AspectInvokeAttribute)).OfType<AspectInvokeAttribute>()
+                    .GetCustomAttributes(typeof(AspectInvokeAttribute), true).OfType<AspectInvokeAttribute>()
                     .Select(r => new { IsClass = false, Attribute = r, Index = r.OrderIndex }));
 
                 var allAttributesInculdeFromInterface = allAttributes.Concat(
@@ -275,6 +276,7 @@ namespace Autofac.Annotation
                     select new { IsClass = false, Attribute = a, Index = a.OrderIndex });
 
                 //如果class上也打了 method上也打了 优先用method上的
+                //如果method上打了 父类的method或者接口方法上打了 优先用本类的method上的
                 var attributes = allAttributesInculdeFromInterface
                     .OrderBy(r => r.IsClass).ThenByDescending(r => r.Index)
                     .GroupBy(r => r.Attribute.GetType().FullName)

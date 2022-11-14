@@ -53,7 +53,7 @@ namespace Autofac.AspectIntercepter.Pointcut
         /// <summary>
         ///     被拦截实例
         /// </summary>
-        public object Instance { get; set; }
+        public dynamic Instance { get; set; }
 
         /// <summary>
         ///     被拦截方法

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -99,9 +100,10 @@ namespace Autofac.AspectIntercepter.Pointcut
                 };
 
                 pointCutMethodChain.PointcutMethodChainList.Add(pointCutMethod);
-
+                var lazyOf = typeof(Lazy<>);
+                var lazyOfPointCutClassType = lazyOf.MakeGenericType(pointcut.PointClass);
                 //每个切换先拿到对应的实例 重复拿也没关系 因为是单例的
-                var instance = _context.Resolve(pointcut.PointClass);
+                var instance = _context.Resolve(lazyOfPointCutClassType);
 
                 if (pointcut.BeforeMethod != null)
                     pointCutMethod.BeforeMethod = new RunTimePointcutMethod<Before>
@@ -193,8 +195,10 @@ namespace Autofac.AspectIntercepter.Pointcut
 
                 pointCutMethodChain.PointcutMethodChainList.Add(pointCutMethod);
 
+                var lazyOf = typeof(Lazy<>);
+                var lazyOfPointCutClassType = lazyOf.MakeGenericType(pointcut.PointClass);
                 //每个切换先拿到对应的实例 重复拿也没关系 因为是单例的
-                var instance = _context.Resolve(pointcut.PointClass);
+                var instance = _context.Resolve(lazyOfPointCutClassType);
 
                 if (pointcut.BeforeMethod != null)
                     pointCutMethod.BeforeMethod = new RunTimePointcutMethod<Before>

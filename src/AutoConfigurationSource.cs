@@ -143,6 +143,11 @@ namespace Autofac.Annotation
             AspectContext invocation = null, AspectDelegate _next = null, object returnValue = null, string returnParam = null,
             Attribute injectAnotation = null)
         {
+            if (instance.GetType().IsGenericType && typeof(Lazy<>) == instance.GetType().GetGenericTypeDefinition())
+            {
+                instance = ((dynamic)instance).Value;
+            }
+            
             if (parameters == null || parameters.Length == 0)
             {
                 return methodInfo.Invoke(instance, null);

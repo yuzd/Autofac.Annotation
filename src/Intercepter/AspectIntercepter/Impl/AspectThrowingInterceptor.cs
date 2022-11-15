@@ -45,10 +45,7 @@ namespace Autofac.AspectIntercepter.Impl
                         ex = targetInvocationException.InnerException;
                     }
 
-                    if (ex == null)
-                    {
-                        ex = aspectContext.Exception;
-                    }
+                    ex ??= aspectContext.Exception;
 
                     var currentExType = ex.GetType();
 

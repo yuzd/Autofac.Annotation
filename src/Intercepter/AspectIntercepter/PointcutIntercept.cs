@@ -55,11 +55,13 @@ namespace Autofac.AspectIntercepter
             }
 
             var catpture = invocation.CaptureProceedInfo();
-            var aspectContext = new AspectContext(_component, invocation);
-            aspectContext.Proceed = () =>
+            var aspectContext = new AspectContext(_component, invocation)
             {
-                catpture.Invoke();
-                return new ValueTask();
+                Proceed = () =>
+                {
+                    catpture.Invoke();
+                    return new ValueTask();
+                }
             };
 
             var runTask = pointCut.AspectFunc.Value;
@@ -69,7 +71,7 @@ namespace Autofac.AspectIntercepter
                 // Need to use Task.Run() to prevent deadlock in .NET Framework ASP.NET requests.
                 // GetAwaiter().GetResult() prevents a thrown exception being wrapped in a AggregateException.
                 // See https://stackoverflow.com/a/17284612
-                Task.Run(() => task).GetAwaiter().GetResult();
+                Task.Run(() => task.ConfigureAwait(false)).ConfigureAwait(false).GetAwaiter().GetResult();
 
             task.RethrowIfFaulted();
         }
@@ -102,8 +104,10 @@ namespace Autofac.AspectIntercepter
             }
 
 
-            var aspectContext = new AspectContext(_component, invocation);
-            aspectContext.Proceed = async () => { await invocation.ProceedAsync(); };
+            var aspectContext = new AspectContext(_component, invocation)
+            {
+                Proceed = async () => { await invocation.ProceedAsync(); }
+            };
             var runTask = pointCut.AspectFunc.Value;
             await runTask(aspectContext);
         }

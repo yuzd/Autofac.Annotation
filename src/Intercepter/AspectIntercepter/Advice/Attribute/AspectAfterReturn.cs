@@ -9,10 +9,10 @@ namespace Autofac.AspectIntercepter.Advice
     public abstract class AspectAfterReturn : AspectInvokeAttribute
     {
         /// <summary>
-        /// 后置执行
+        /// 后置执行，没有出现异常
         /// </summary>
-        /// <param name="aspectContext"></param>
-        /// <param name="result"></param>
+        /// <param name="aspectContext">上下文</param>
+        /// <param name="result">方法运行结果，如果没有的话就是null</param>
         public abstract Task AfterReturn(AspectContext aspectContext, object result);
     }
 }

@@ -11,7 +11,7 @@ namespace Autofac.AspectIntercepter.Advice
         /// <summary>
         /// 前置执行
         /// </summary>
-        /// <param name="aspectContext"></param>
+        /// <param name="aspectContext">上下文</param>
         public abstract Task Before(AspectContext aspectContext);
     }
 }

@@ -1,10 +1,5 @@
-using System.Reflection;
 using System.Threading.Tasks;
 using Autofac.Annotation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autofac.AspectIntercepter.Advice;
 using Autofac.AspectIntercepter.Pointcut;
 
@@ -32,7 +27,7 @@ namespace Autofac.AspectIntercepter.Impl
         {
             if (_beforeAttribute != null)
             {
-                await this._beforeAttribute.Before(aspectContext);
+                await _beforeAttribute.Before(aspectContext);
             }
             else
             {

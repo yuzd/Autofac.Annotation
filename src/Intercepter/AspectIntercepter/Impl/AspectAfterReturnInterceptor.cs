@@ -43,7 +43,7 @@ namespace Autofac.AspectIntercepter.Impl
 
             if (_afterAttribute != null)
             {
-                await this._afterAttribute.AfterReturn(aspectContext, aspectContext.ReturnValue);
+                await _afterAttribute.AfterReturn(aspectContext, aspectContext.ReturnValue);
             }
             else
             {

@@ -1,9 +1,5 @@
 using System.Threading.Tasks;
 using Autofac.Annotation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 
 namespace Autofac.AspectIntercepter.Advice
@@ -16,8 +12,8 @@ namespace Autofac.AspectIntercepter.Advice
         /// <summary>
         /// 后置执行
         /// </summary>
-        /// <param name="aspectContext"></param>
-        /// <param name="result"></param>
+        /// <param name="aspectContext">上下文</param>
+        /// <param name="result">方法运行结果，如果没有的话就是null</param>
         public abstract Task After(AspectContext aspectContext, object result);
     }
 }

@@ -38,7 +38,7 @@ namespace Autofac.AspectIntercepter.Impl
                 //不管成功还是失败都会执行的 
                 if (_afterAttribute != null)
                 {
-                    await this._afterAttribute.After(aspectContext, aspectContext.Exception ?? aspectContext.ReturnValue);
+                    await _afterAttribute.After(aspectContext, aspectContext.Exception ?? aspectContext.ReturnValue);
                 }
                 else
                 {

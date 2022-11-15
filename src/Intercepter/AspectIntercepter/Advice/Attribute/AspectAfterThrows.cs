@@ -17,8 +17,8 @@ namespace Autofac.AspectIntercepter.Advice
         /// <summary>
         /// 后置执行
         /// </summary>
-        /// <param name="aspectContext"></param>
-        /// <param name="exception"></param>
+        /// <param name="aspectContext">上下文</param>
+        /// <param name="exception">异常</param>
         public abstract Task AfterThrows(AspectContext aspectContext, Exception exception);
     }
 }

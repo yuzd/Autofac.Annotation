@@ -126,11 +126,11 @@ namespace Autofac.Annotation.Util
 
                 // returns a string like this: "Assembly.YourSolution.YourProject.YourClass:YourMethod(Param1TypeName,...,ParamNTypeName):ReturnTypeName
                 return
-                    $"{mi.DeclaringType.Namespace + mi.DeclaringType.Name}:{mi.Name}<{typeParamsString}>({signatureString}):{returnTypeName}";
+                    $"{mi.DeclaringType.Namespace+"," + mi.DeclaringType.Name}:{mi.Name}<{typeParamsString}>({signatureString}):{returnTypeName}";
             }
 
             return
-                $"{mi.DeclaringType.Namespace + mi.DeclaringType.Name}:{mi.Name}({signatureString}):{returnTypeName}";
+                $"{mi.DeclaringType.Namespace +","+ mi.DeclaringType.Name}:{mi.Name}({signatureString}):{returnTypeName}";
         }
 
         /// <summary>

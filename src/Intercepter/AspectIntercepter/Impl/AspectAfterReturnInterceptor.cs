@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter.Advice;
 using Autofac.AspectIntercepter.Pointcut;
 
@@ -15,13 +16,15 @@ namespace Autofac.AspectIntercepter.Impl
     /// </summary>
     internal class AspectAfterReturnInterceptor : IAdvice
     {
-        private readonly AspectAfterReturn _afterAttribute;
+        private readonly AspectAfterReturn _afterReturnAttribute;
+        private readonly string _afterReturnMethodName;
 
         private readonly RunTimePointcutMethod<AfterReturn> _pointCutMethod;
 
         public AspectAfterReturnInterceptor(AspectAfterReturn afterAttribute)
         {
-            _afterAttribute = afterAttribute;
+            _afterReturnAttribute = afterAttribute;
+            _afterReturnMethodName = afterAttribute.GetType().FullName + ".AfterReturn()";
         }
 
         public AspectAfterReturnInterceptor(RunTimePointcutMethod<AfterReturn> pointCutMethod)
@@ -41,25 +44,31 @@ namespace Autofac.AspectIntercepter.Impl
             }
 
 
-            if (_afterAttribute != null)
+            if (_afterReturnAttribute != null)
             {
-                await _afterAttribute.AfterReturn(aspectContext, aspectContext.ReturnValue);
+                using (DeadLockCheck.Enable(_afterReturnMethodName))
+                {
+                    await _afterReturnAttribute.AfterReturn(aspectContext, aspectContext.ReturnValue);
+                }
             }
             else
             {
-                var rt = MethodInvokeHelper.InvokeInstanceMethod(
-                    _pointCutMethod.Instance,
-                    _pointCutMethod.MethodInfo,
-                    _pointCutMethod.MethodParameters,
-                    aspectContext.ComponentContext,
-                    aspectContext,
-                    returnValue: aspectContext.ReturnValue,
-                    returnParam: _pointCutMethod.PointcutBasicAttribute.Returing,
-                    injectAnotation: _pointCutMethod.PointcutInjectAnotation);
-
-                if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
+                using (DeadLockCheck.Enable(_pointCutMethod.MethodInfo.GetMethodInfoUniqueName()))
                 {
-                    await ((Task)rt).ConfigureAwait(false);
+                    var rt = MethodInvokeHelper.InvokeInstanceMethod(
+                        _pointCutMethod.Instance,
+                        _pointCutMethod.MethodInfo,
+                        _pointCutMethod.MethodParameters,
+                        aspectContext.ComponentContext,
+                        aspectContext,
+                        returnValue: aspectContext.ReturnValue,
+                        returnParam: _pointCutMethod.PointcutBasicAttribute.Returing,
+                        injectAnotation: _pointCutMethod.PointcutInjectAnotation);
+
+                    if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
+                    {
+                        await ((Task)rt).ConfigureAwait(false);
+                    }
                 }
             }
         }

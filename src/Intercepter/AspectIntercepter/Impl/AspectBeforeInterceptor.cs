@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Autofac.Annotation;
+using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter.Advice;
 using Autofac.AspectIntercepter.Pointcut;
 
@@ -11,11 +12,13 @@ namespace Autofac.AspectIntercepter.Impl
     internal class AspectBeforeInterceptor : IAdvice
     {
         private readonly AspectBefore _beforeAttribute;
+        private readonly string _beforeAttributeMethodName;
         private readonly RunTimePointcutMethod<Before> _pointCutMethod;
 
         public AspectBeforeInterceptor(AspectBefore beforeAttribute)
         {
             _beforeAttribute = beforeAttribute;
+            _beforeAttributeMethodName = beforeAttribute.GetType().FullName + ".Before()";
         }
 
         public AspectBeforeInterceptor(RunTimePointcutMethod<Before> pointCutMethod)
@@ -27,18 +30,24 @@ namespace Autofac.AspectIntercepter.Impl
         {
             if (_beforeAttribute != null)
             {
-                await _beforeAttribute.Before(aspectContext);
+                using (DeadLockCheck.Enable(_beforeAttributeMethodName))
+                {
+                    await _beforeAttribute.Before(aspectContext);
+                }
             }
             else
             {
-                var rt = MethodInvokeHelper.InvokeInstanceMethod(
-                    _pointCutMethod.Instance,
-                    _pointCutMethod.MethodInfo,
-                    _pointCutMethod.MethodParameters,
-                    aspectContext.ComponentContext, aspectContext, injectAnotation: _pointCutMethod.PointcutInjectAnotation);
-                if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
+                using (DeadLockCheck.Enable(_pointCutMethod.MethodInfo.GetMethodInfoUniqueName()))
                 {
-                    await ((Task)rt).ConfigureAwait(false);
+                    var rt = MethodInvokeHelper.InvokeInstanceMethod(
+                        _pointCutMethod.Instance,
+                        _pointCutMethod.MethodInfo,
+                        _pointCutMethod.MethodParameters,
+                        aspectContext.ComponentContext, aspectContext, injectAnotation: _pointCutMethod.PointcutInjectAnotation);
+                    if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
+                    {
+                        await ((Task)rt).ConfigureAwait(false);
+                    }
                 }
             }
 

@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Autofac.Annotation;
 using System;
+using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter.Advice;
 using Autofac.AspectIntercepter.Pointcut;
 
@@ -12,14 +13,15 @@ namespace Autofac.AspectIntercepter.Impl
     internal class AspectAroundInterceptor : IAdvice
     {
         private readonly AspectArround _aroundAttribute;
+        private readonly string _aroundAttributeMethodName;
         private readonly AspectAfterInterceptor _aspectAfter;
         private readonly AspectAfterThrowsInterceptor _aspectThrows;
-
         private readonly RunTimePointcutMethod<Around> _pointCutMethod;
 
         public AspectAroundInterceptor(AspectArround aroundAttribute, AspectAfter aspectAfter, AspectAfterThrows chainAspectAfterThrows)
         {
             _aroundAttribute = aroundAttribute;
+            _aroundAttributeMethodName = aroundAttribute.GetType().FullName + ".Around()";
             if (aspectAfter != null)
             {
                 _aspectAfter = new AspectAfterInterceptor(aspectAfter, true);
@@ -46,22 +48,28 @@ namespace Autofac.AspectIntercepter.Impl
             {
                 if (_aroundAttribute != null)
                 {
-                    await _aroundAttribute.OnInvocation(aspectContext, next);
+                    using (DeadLockCheck.Enable(_aroundAttributeMethodName))
+                    {
+                        await _aroundAttribute.OnInvocation(aspectContext, next);
+                    }
+
                     return;
                 }
 
-                var rt = MethodInvokeHelper.InvokeInstanceMethod(
-                    _pointCutMethod.Instance,
-                    _pointCutMethod.MethodInfo,
-                    _pointCutMethod.MethodParameters,
-                    aspectContext.ComponentContext,
-                    aspectContext,
-                    next,
-                    injectAnotation: _pointCutMethod.PointcutInjectAnotation);
-
-                if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
+                using (DeadLockCheck.Enable(_pointCutMethod.MethodInfo.GetMethodInfoUniqueName()))
                 {
-                    await ((Task)rt).ConfigureAwait(false);
+                    var rt = MethodInvokeHelper.InvokeInstanceMethod(
+                        _pointCutMethod.Instance,
+                        _pointCutMethod.MethodInfo,
+                        _pointCutMethod.MethodParameters,
+                        aspectContext.ComponentContext,
+                        aspectContext,
+                        next,
+                        injectAnotation: _pointCutMethod.PointcutInjectAnotation);
+                    if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
+                    {
+                        await ((Task)rt).ConfigureAwait(false);
+                    }
                 }
             }
             catch (Exception ex)
@@ -70,7 +78,10 @@ namespace Autofac.AspectIntercepter.Impl
             }
             finally
             {
-                if (exception == null && _aspectAfter != null) await _aspectAfter.OnInvocation(aspectContext, next);
+                if (exception == null && _aspectAfter != null)
+                {
+                    await _aspectAfter.OnInvocation(aspectContext, next);
+                }
             }
 
             try

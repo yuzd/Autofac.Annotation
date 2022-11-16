@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using Autofac.Annotation;
+using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter.Advice;
 using Autofac.AspectIntercepter.Pointcut;
 
@@ -13,12 +14,14 @@ namespace Autofac.AspectIntercepter.Impl
     internal class AspectAfterThrowsInterceptor : IAdvice
     {
         private readonly AspectAfterThrows _aspectThrowing;
+        private readonly string _aspectThrowingMethodName;
         private readonly bool _isFromAround;
         private readonly RunTimePointcutMethod<AfterThrows> _pointcutThrowin;
 
         public AspectAfterThrowsInterceptor(AspectAfterThrows throwAttribute, bool isFromAround = false)
         {
             _aspectThrowing = throwAttribute;
+            _aspectThrowingMethodName = throwAttribute.GetType().FullName + ".AfterThrows()";
             _isFromAround = isFromAround;
         }
 
@@ -54,18 +57,21 @@ namespace Autofac.AspectIntercepter.Impl
                         if (_pointcutThrowin.PointcutBasicAttribute.ExceptionType == null ||
                             _pointcutThrowin.PointcutBasicAttribute.ExceptionType == currentExType)
                         {
-                            var rt = MethodInvokeHelper.InvokeInstanceMethod(
-                                _pointcutThrowin.Instance,
-                                _pointcutThrowin.MethodInfo,
-                                _pointcutThrowin.MethodParameters,
-                                aspectContext.ComponentContext,
-                                aspectContext,
-                                returnValue: ex,
-                                returnParam: _pointcutThrowin.PointcutBasicAttribute.Throwing,
-                                injectAnotation: _pointcutThrowin.PointcutInjectAnotation);
-                            if (typeof(Task).IsAssignableFrom(_pointcutThrowin.MethodReturnType))
+                            using (DeadLockCheck.Enable(_pointcutThrowin.MethodInfo.GetMethodInfoUniqueName()))
                             {
-                                await ((Task)rt).ConfigureAwait(false);
+                                var rt = MethodInvokeHelper.InvokeInstanceMethod(
+                                    _pointcutThrowin.Instance,
+                                    _pointcutThrowin.MethodInfo,
+                                    _pointcutThrowin.MethodParameters,
+                                    aspectContext.ComponentContext,
+                                    aspectContext,
+                                    returnValue: ex,
+                                    returnParam: _pointcutThrowin.PointcutBasicAttribute.Throwing,
+                                    injectAnotation: _pointcutThrowin.PointcutInjectAnotation);
+                                if (typeof(Task).IsAssignableFrom(_pointcutThrowin.MethodReturnType))
+                                {
+                                    await ((Task)rt).ConfigureAwait(false);
+                                }
                             }
                         }
                     }
@@ -73,7 +79,10 @@ namespace Autofac.AspectIntercepter.Impl
                     {
                         if (_aspectThrowing.ExceptionType == null || _aspectThrowing.ExceptionType == currentExType)
                         {
-                            await _aspectThrowing.AfterThrows(aspectContext, aspectContext.Exception);
+                            using (DeadLockCheck.Enable(_aspectThrowingMethodName))
+                            {
+                                await _aspectThrowing.AfterThrows(aspectContext, aspectContext.Exception);
+                            }
                         }
                     }
                 }

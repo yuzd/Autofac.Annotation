@@ -69,7 +69,7 @@ namespace Autofac.Annotation.Util
     [SecurityPermission(SecurityAction.InheritanceDemand, Flags = SecurityPermissionFlag.ControlPolicy | SecurityPermissionFlag.ControlEvidence)]
     internal class DeadlockDetectionSynchronizationContext : SynchronizationContext
     {
-        private string _caller;
+        private readonly string _caller;
         private readonly object _sync = new object();
         private bool _isBlocking;
         private Thread _currentThread;

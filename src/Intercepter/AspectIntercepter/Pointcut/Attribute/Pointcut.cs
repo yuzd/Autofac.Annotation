@@ -70,6 +70,10 @@ namespace Autofac.Annotation
         /// 用于匹配包类型
         /// </summary>
         private string _nameSpace = "%";
+        /// <summary>
+        /// 是否设置过
+        /// </summary>
+        private bool _nameSpaceSetted = false;
 
         /// <summary>
         /// 用于匹配包类型 支持sql的like表达式
@@ -77,7 +81,11 @@ namespace Autofac.Annotation
         public string NameSpace
         {
             get => _nameSpace;
-            set => _nameSpace = value.Replace("*", "%").Replace("?", "_");
+            set
+            {
+                _nameSpace = value.Replace("*", "%").Replace("?", "_");
+                _nameSpaceSetted = true;
+            }
         }
 
 
@@ -160,7 +168,7 @@ namespace Autofac.Annotation
             if (string.IsNullOrEmpty(Class) && AttributeType == null)
                 throw new InvalidOperationException($"PointCut:`{GetType().FullName}` -> `Class` or `AttributeType` One of them must be set ! ");
 
-            if (!SqlLikeStringUtilities.SqlLike(NameSpace, classType.Namespace)) return false;
+            if (_nameSpaceSetted && !SqlLikeStringUtilities.SqlLike(NameSpace, classType.Namespace)) return false;
 
             //配置了class
             if (!string.IsNullOrEmpty(Class) && !SqlLikeStringUtilities.SqlLike(Class, classType.Name)) return false;

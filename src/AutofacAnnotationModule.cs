@@ -1221,10 +1221,9 @@ namespace Autofac.Annotation
                 throw new ArgumentNullException(nameof(_assemblyList));
 
             //一个pointcut 对应 一个class 对应多个group method
-            var result = new List<PointcutConfigurationInfo>();
-            foreach (var assembly in _assemblyList)
+            var result = new ConcurrentBag<PointcutConfigurationInfo>();
+            Parallel.ForEach(_assemblyList.Where(r=>!r.IsDynamic), assembly =>
             {
-                if (assembly.IsDynamic) continue;
                 var types = assembly.GetExportedTypes();
                 //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
                 var typeList = (from type in types
@@ -1238,9 +1237,9 @@ namespace Autofac.Annotation
                         Bean = bean.Where(r => !string.IsNullOrEmpty(r.Class) || r.AttributeType != null).ToList()
                     }).OrderBy(r => r.Index).ThenBy(r => r.Type.Name).ToList();
 
-                foreach (var configuration in typeList)
+                Parallel.ForEach(typeList, configuration =>
                 {
-                    //解析方法 pointcut配置类不支持继承的方法
+                     //解析方法 pointcut配置类不支持继承的方法
                     var beanTypeMethodList = configuration.Type.GetAllInstanceMethod(false);
 
                     //一个point标签下 class里面 最多一组 
@@ -1393,10 +1392,9 @@ namespace Autofac.Annotation
 
                         result.Add(rr);
                     }
-                }
-            }
-
-            return result;
+                });
+            });
+            return result.ToList();
         }
 
         /// <summary>

@@ -12,7 +12,7 @@ namespace Autofac.Annotation.Condition
     /// </summary>
     internal class OnProperty : ICondition
     {
-        private static readonly IConfiguration DefaultJsonConfiguration;
+        private static readonly Lazy<IConfiguration> DefaultJsonConfiguration;
 
         static OnProperty()
         {
@@ -24,7 +24,7 @@ namespace Autofac.Annotation.Condition
 
             try
             {
-                DefaultJsonConfiguration = EmbeddedConfiguration.LoadJson(json);
+                DefaultJsonConfiguration = new Lazy<IConfiguration>(EmbeddedConfiguration.LoadJson(json));
             }
             catch (Exception)
             {
@@ -67,7 +67,7 @@ namespace Autofac.Annotation.Condition
                 string value = null;
                 try
                 {
-                    value = DefaultJsonConfiguration[temp];
+                    value = DefaultJsonConfiguration.Value[temp];
                 }
                 catch (Exception)
                 {
@@ -92,7 +92,7 @@ namespace Autofac.Annotation.Condition
             string value = null;
             try
             {
-                value = DefaultJsonConfiguration[metaConfig.name];
+                value = DefaultJsonConfiguration.Value[metaConfig.name];
             }
             catch (Exception)
             {

@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac.Annotation;
 using Autofac.Annotation.Util;
@@ -74,10 +75,18 @@ namespace Autofac.AspectIntercepter
             var task = runTask(aspectContext);
             // If the intercept task has yet to complete, wait for it.
             if (!task.IsCompleted)
-                // Need to use Task.Run() to prevent deadlock in .NET Framework ASP.NET requests.
-                // GetAwaiter().GetResult() prevents a thrown exception being wrapped in a AggregateException.
-                // See https://stackoverflow.com/a/17284612
-                Task.Run(() => task.ConfigureAwait(false)).ConfigureAwait(false).GetAwaiter().GetResult();
+            {
+                if (SynchronizationContext.Current == null)
+                {
+                    // 针对console 或者 aspnetcore类型的应用
+                    task.GetAwaiter().GetResult();
+                }
+                else
+                {
+                    // 针对winform wpf aspnetframework类型的应用
+                    Task.Run(() => task.ConfigureAwait(false)).ConfigureAwait(false).GetAwaiter().GetResult();
+                }
+            }
 
             task.RethrowIfFaulted();
         }

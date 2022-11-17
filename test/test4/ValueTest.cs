@@ -56,7 +56,6 @@ namespace Autofac.Configuration.Test.test4
             var a1 = ioc.Resolve<ValueModel5>();
 
             var ss = a1.ParentName;
-            Thread.Sleep(10000);
             
             Assert.Equal("yuzd", a1.ParentName);
             
@@ -80,7 +79,6 @@ namespace Autofac.Configuration.Test.test4
             
             Assert.NotEmpty(ss);
             
-            Thread.Sleep(10000);
             
             var ss2 =a1.ParentName.Value;
             var sss2 = a1.GetTest();

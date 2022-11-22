@@ -131,11 +131,9 @@ namespace Autofac.Annotation
             if (!context.ComponentRegistry.Properties.TryGetValue(nameof(List<BeanPostProcessor>), out var temp))
                 return;
 
-            var beanPostProcessors = temp as List<BeanPostProcessor>;
-            //context.TryResolve<IEnumerable<BeanPostProcessor>>(out var beanPostProcessors);
-            if (beanPostProcessors == null || !beanPostProcessors.Any()) return;
+            if (!(temp is List<BeanPostProcessor> beanPostProcessors) || !beanPostProcessors.Any()) return;
 
-            foreach (var beanPostProcessor in beanPostProcessors.ToList())
+            foreach (var beanPostProcessor in beanPostProcessors)
                 context.Instance = beanPostProcessor.PostProcessBeforeInitialization(context.Instance);
         }
 
@@ -150,10 +148,9 @@ namespace Autofac.Annotation
             if (!context.ComponentRegistry.Properties.TryGetValue(nameof(List<BeanPostProcessor>), out var temp))
                 return;
 
-            var beanPostProcessors = temp as List<BeanPostProcessor>;
-            if (beanPostProcessors == null || !beanPostProcessors.Any()) return;
+            if (!(temp is List<BeanPostProcessor> beanPostProcessors) || !beanPostProcessors.Any()) return;
 
-            foreach (var beanPostProcessor in beanPostProcessors.ToList())
+            foreach (var beanPostProcessor in beanPostProcessors)
                 context.Instance = beanPostProcessor.PostProcessAfterInitialization(context.Instance);
         }
 

@@ -6,6 +6,7 @@ using Autofac.Annotation.Condition;
 using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter.Advice;
 using Autofac.AspectIntercepter.Pointcut;
+using Type = System.Type;
 
 namespace Autofac.Annotation
 {
@@ -20,7 +21,7 @@ namespace Autofac.Annotation
         /// 构造方法
         /// </summary>
         /// <param name="groupName">名称 唯一</param>
-        public Pointcut(string groupName)
+        public Pointcut(string groupName):this()
         {
             GroupName = groupName;
         }
@@ -30,6 +31,7 @@ namespace Autofac.Annotation
         /// </summary>
         public Pointcut()
         {
+            AttributeTypeArrLazy  = new Lazy<Type[]>(getAttributeTypeArrLazy);
         }
 
         /// <summary>
@@ -108,6 +110,38 @@ namespace Autofac.Annotation
         /// </summary>
         public Type AttributeType { get; set; }
 
+        /// <summary>
+        /// 指定拦截的Attribute类指定继承还是实现
+        /// 默认就是自己 不指定需要扫描继承它 还是实现它
+        /// </summary>
+        public AssignableFlag AttributeFlag { get; set; } = AssignableFlag.NONE;
+
+        /// <summary>
+        ///  <seealso cref="AttributeType"/> 如果AttributeInherited=true 那么字段AttributeType的继承父类也同样纳入扫描
+        /// </summary>
+        private readonly Lazy<Type[]> AttributeTypeArrLazy;
+
+        private Type[] getAttributeTypeArrLazy()
+        {
+            if (AttributeType == null)
+            {
+                return null;
+            }
+
+            if (AttributeFlag == AssignableFlag.NONE)
+            {
+                return new[] { AttributeType };
+            }
+
+            if (AttributeFlag == AssignableFlag.AssignableFrom)
+            {
+                var rt = new List<Type>{AttributeType};
+                rt.AddRange(AttributeType.GetParentTypes(false).Where(r=>!r.IsAbstract).ToList());
+                return rt.Distinct().ToArray();
+            }
+            // 也包括是我的子类的话 需要特殊判断
+            return new[] { AttributeType };
+        }
 
         /// <summary>
         /// 不能注入尽量的切面注解
@@ -175,23 +209,35 @@ namespace Autofac.Annotation
 
             if (AttributeType != null)
             {
-                //框架内部的不可
-                if (IgnoreAttributeType.ContainsKey(AttributeType))
-                    throw new InvalidOperationException(
-                        $"PointCut:`{GetType().FullName}` -> `AttributeType` can not be set to special type: `${AttributeType.Name}` ! ");
+                foreach (var type in AttributeTypeArrLazy.Value)
+                {
+                    //框架内部的不可
+                    if (IgnoreAttributeType.ContainsKey(type))
+                        throw new InvalidOperationException(
+                            $"PointCut:`{GetType().FullName}` -> `AttributeType` can not be set to special type: `${type.Name}` ! ");
 
-                //继承了AspectInvokeAttribute的不可
-                else if (typeof(AspectInvokeAttribute).IsAssignableFrom(AttributeType))
-                    throw new InvalidOperationException(
-                        $"PointCut:`{GetType().FullName}` -> `AttributeType` can not be set to  instance of `AspectInvokeAttribute` ! ");
+                    //继承了AspectInvokeAttribute的不可
+                    else if (typeof(AspectInvokeAttribute).IsAssignableFrom(type))
+                        throw new InvalidOperationException(
+                            $"PointCut:`{GetType().FullName}` -> `AttributeType`:{type.Name} can not be set to  instance of `AspectInvokeAttribute` ! ");
+                }
+
+               
+               
 
                 if (component.CurrentClassTypeAttributes != null && component.CurrentClassTypeAttributes.Any())
                 {
                     foreach (var classAttribute in component.CurrentClassTypeAttributes)
                     {
                         orderIndex++;
-                        if (classAttribute.GetType() == AttributeType)
+                        if (AttributeTypeArrLazy.Value.Contains(classAttribute.GetType()))
                         {
+                            pointCutClassInjectAnotation = Tuple.Create(classAttribute, orderIndex);
+                            break;
+                        }
+                        else if (AttributeFlag == AssignableFlag.AssignableTo && AttributeType.IsInstanceOfType(classAttribute))
+                        {
+                            // classAttribute 是 AttributeType 的实现类
                             pointCutClassInjectAnotation = Tuple.Create(classAttribute, orderIndex);
                             break;
                         }
@@ -245,9 +291,17 @@ namespace Autofac.Annotation
             {
                 orderIndex++;
                 var isIgnore = ignoreTarget?.Contains(attr.GetType()) ?? false;
-                if (isIgnore || AttributeType != attr.GetType()) continue;
-                annotation = Tuple.Create(attr, orderIndex);
-                break;
+                if (isIgnore) continue;
+                if (AttributeTypeArrLazy.Value.Contains(attr.GetType()))
+                {
+                    annotation = Tuple.Create(attr, orderIndex);
+                    break;
+                }
+                else if (AttributeFlag == AssignableFlag.AssignableTo && AttributeType.IsInstanceOfType(attr))
+                {
+                    annotation = Tuple.Create(attr, orderIndex);
+                    break;
+                }
             }
 
             if (annotation == null)
@@ -257,9 +311,17 @@ namespace Autofac.Annotation
                 {
                     orderIndex++;
                     var isIgnore = ignoreTarget?.Contains(attr.GetType()) ?? false;
-                    if (isIgnore || AttributeType != attr.GetType()) continue;
-                    annotation = Tuple.Create(attr, orderIndex);
-                    break;
+                    if (isIgnore) continue;
+                    if (AttributeTypeArrLazy.Value.Contains(attr.GetType()))
+                    {
+                        annotation = Tuple.Create(attr, orderIndex);
+                        break;
+                    } 
+                    else if (AttributeFlag == AssignableFlag.AssignableTo && AttributeType.IsInstanceOfType(attr))
+                    {
+                        annotation = Tuple.Create(attr, orderIndex);
+                        break;
+                    }
                 }
             }
 
@@ -279,5 +341,24 @@ namespace Autofac.Annotation
             injectPointcutAnnotationCache = annotation;
             return true;
         }
+    }
+
+    /// <summary>
+    /// 继承还是实现
+    /// </summary>
+    public enum AssignableFlag
+    {
+        /// <summary>
+        /// 没有
+        /// </summary>
+        NONE,
+        /// <summary>
+        /// 也包括是我的父类
+        /// </summary>
+        AssignableFrom,
+        /// <summary>
+        /// 也包括是我的实现类
+        /// </summary>
+        AssignableTo
     }
 }

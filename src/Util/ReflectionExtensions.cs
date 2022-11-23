@@ -304,14 +304,18 @@ namespace Autofac.Annotation.Util
         /// 获取一个类型所有的父类和继承的接口
         /// </summary>
         /// <param name="type"></param>
+        /// <param name="includInterface">true代表也获取到接口</param>
         /// <returns></returns>
-        public static IEnumerable<Type> GetParentTypes(this Type type)
+        public static IEnumerable<Type> GetParentTypes(this Type type,bool includInterface = true)
         {
             // is there any base type?
             if (type == null) yield break;
 
-            // return all implemented or inherited interfaces
-            foreach (var i in GetImplementedInterfaces(type)) yield return i;
+            if (includInterface)
+            {
+                // return all implemented or inherited interfaces
+                foreach (var i in GetImplementedInterfaces(type)) yield return i;
+            }
 
             // return all inherited types
             var currentBaseType = type.BaseType;

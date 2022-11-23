@@ -8,3 +8,4 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 [assembly: NeutralResourcesLanguage("en-US")]
 [assembly:InternalsVisibleTo("Autofac.Configuration.Test")]
+[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]

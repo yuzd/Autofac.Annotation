@@ -233,7 +233,7 @@ namespace Autofac.Annotation
 
         /// <summary>
         /// </summary>
-        /// <param name="componentRegistry"></param>
+        /// <param name="componentRegistry">are not thread-safe </param>
         /// <param name="registration"></param>
         protected override void AttachToComponentRegistration(IComponentRegistryBuilder componentRegistry,
             IComponentRegistration registration)
@@ -287,7 +287,7 @@ namespace Autofac.Annotation
         /// <summary>
         ///     autofac加载
         /// </summary>
-        /// <param name="builder">注意这个builder是被Module类new出来的 不是最外层的</param>
+        /// <param name="builder">注意这个builder是被Module类new出来的 不是最外层的(ContainerBuilder are not thread-safe https://autofac.readthedocs.io/en/latest/advanced/concurrency.html)</param>
         protected override void Load(ContainerBuilder builder)
         {
             if (builder == null) throw new ArgumentNullException(nameof(builder));
@@ -1222,7 +1222,7 @@ namespace Autofac.Annotation
 
             //一个pointcut 对应 一个class 对应多个group method
             var result = new ConcurrentBag<PointcutConfigurationInfo>();
-            Parallel.ForEach(_assemblyList.Where(r=>!r.IsDynamic), assembly =>
+            Parallel.ForEach(_assemblyList.Where(r => !r.IsDynamic), assembly =>
             {
                 var types = assembly.GetExportedTypes();
                 //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
@@ -1239,7 +1239,7 @@ namespace Autofac.Annotation
 
                 Parallel.ForEach(typeList, configuration =>
                 {
-                     //解析方法 pointcut配置类不支持继承的方法
+                    //解析方法 pointcut配置类不支持继承的方法
                     var beanTypeMethodList = configuration.Type.GetAllInstanceMethod(false);
 
                     //一个point标签下 class里面 最多一组 

@@ -92,24 +92,26 @@ namespace Autofac.Annotation
                         {
                             return typeof(Task<>).MakeGenericType(instanceType).GetProperty("Result")?.GetValue(instance);
                         }
-
                         return instance;
-                    })).ConfigurePipeline(p =>
+                    }));
+                    
+                    if (compoment.DependsOn != null)
                     {
-                        //DepondsOn注入
-                        p.Use(PipelinePhase.RegistrationPipelineStart, (context, next) =>
+                        rb.ConfigurePipeline(p =>
                         {
-                            if (compoment.DependsOn != null && compoment.DependsOn.Any())
+                            //DepondsOn注入
+                            p.Use(PipelinePhase.RegistrationPipelineStart, (context, next) =>
                             {
-                                foreach (var dependsType in compoment.DependsOn)
+                                foreach (var dependsType in compoment.DependsOn.DependsOnLazy.Value)
                                 {
                                     new Autowired(false).Resolve(context, compoment.CurrentType, dependsType, dependsType.Name, context.Parameters.ToList());
                                 }
-                            }
 
-                            next(context);
+                                next(context);
+                            });
                         });
-                    });
+                    }
+
                     rb.WithMetadata(AutofacAnnotationModule._AUTOFAC_SPRING, true);
                     if (!string.IsNullOrEmpty(beanMethod.Item1.Key))
                     {

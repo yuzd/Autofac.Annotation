@@ -75,11 +75,6 @@ namespace Autofac.Annotation
         public string DestroyMethod { get; set; }
 
         /// <summary>
-        ///     依赖的 是用来表示一个bean A的实例化依赖另一个bean B的实例化， 但是A并不需要持有一个B的对象
-        /// </summary>
-        public Type[] DependsOn { get; set; }
-
-        /// <summary>
         ///     注册类型
         /// </summary>
         internal RegisterType RegisterType { get; set; } = RegisterType.Compoment;

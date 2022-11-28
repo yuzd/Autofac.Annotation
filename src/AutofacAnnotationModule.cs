@@ -1099,10 +1099,13 @@ namespace Autofac.Annotation
                         var dependsOnAttribute = beanTypeMethod.GetCustomAttribute<DependsOn>();
                         if (dependsOnAttribute != null)
                         {
-                            beanAttribute.DependsOn = dependsOnAttribute.dependsOn;
-                            if (beanAttribute.DependsOn.Contains(returnType))
+                            beanAttribute.DependsOn = dependsOnAttribute;
+                            if (beanAttribute.DependsOn.DependsOnLazy.Value.Contains(returnType))
+                            {
                                 throw new InvalidOperationException(
                                     $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType can not dependency on itself!");
+                            }
+                            
                         }
 
                         bean.BeanMethodInfoList.Add(
@@ -1426,7 +1429,7 @@ namespace Autofac.Annotation
                 EnablePointcutInherited = bean.EnablePointcutInherited,
                 IsBenPostProcessor = typeof(BeanPostProcessor).IsAssignableFrom(currentType),
                 CurrentClassTypeAttributes = currentType.GetCustomAttributesIncludingBaseInterfaces<Attribute>().ToList(),
-                DependsOn = currentType.GetCustomAttribute<DependsOn>()?.dependsOn
+                DependsOn = currentType.GetCustomAttribute<DependsOn>(),
             };
 
             if (bean.AutofacScope == AutofacScope.Default)

@@ -58,4 +58,14 @@ public class DependsOnTest
         Assert.Equal("get15",Test12Models.result[4]);
         Assert.Equal("get13",Test12Models.result[5]);
     }
+    
+    [Fact]
+    public void Test4()
+    {
+        var builder = new ContainerBuilder();
+        builder.RegisterSpring(r => r.RegisterAssembly(typeof(ConditionTest).Assembly));
+        var container = builder.Build();
+        var a1 = container.Resolve<Test12Bean9>();
+        Assert.Equal(2,Test12Models.result2.Count);
+    }
 }

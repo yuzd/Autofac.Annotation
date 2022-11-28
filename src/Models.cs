@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using Autofac.Annotation.Util;
 using Autofac.AspectIntercepter.Advice;
 using Autofac.AspectIntercepter.Pointcut;
 using Microsoft.Extensions.Configuration;
@@ -174,10 +176,14 @@ namespace Autofac.Annotation
         /// </summary>
         internal RegisterType RegisterType { get; set; } = RegisterType.Compoment;
 
+        #region DependsOn
+
         /// <summary>
         ///     依赖的 是用来表示一个bean A的实例化依赖另一个bean B的实例化， 但是A并不需要持有一个B的对象
         /// </summary>
-        internal Type[] DependsOn { get; set; }
+        internal DependsOn DependsOn { get; set; }
+
+        #endregion
 
 
         /// <summary>

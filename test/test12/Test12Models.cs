@@ -23,6 +23,7 @@ namespace Autofac.Annotation.Test.test12;
 public class Test12Models
 {
     public static List<String> result = new List<string>();
+    public static List<String> result2 = new List<string>();
     
     [Bean(AutofacScope = AutofacScope.InstancePerDependency)]
     public Test12Bean1 get12()
@@ -118,6 +119,27 @@ public class Test12Bean8
     public Test12Bean8()
     {
         Test12Models.result.Add("get18"); 
+    }
+    public string Hello { get; set; }
+}
+
+[Component]
+[DependsOn("Autofac.Annotation.Test.test12.Test12Bean10,Autofac.Configuration.Test")]
+public class Test12Bean9
+{
+    public Test12Bean9()
+    {
+        Test12Models.result2.Add("Test12Bean9");
+    }
+    public string Hello { get; set; }
+}
+
+[Component]
+public class Test12Bean10
+{
+    public Test12Bean10()
+    {
+        Test12Models.result2.Add("Test12Bean9");
     }
     public string Hello { get; set; }
 }

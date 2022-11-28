@@ -228,17 +228,16 @@ namespace Autofac.Annotation
             IRegistrationBuilder<object, TReflectionActivatorData, object> registrar)
             where TReflectionActivatorData : ReflectionActivatorData
         {
-            if (compoment.DependsOn == null || !compoment.DependsOn.Any()) return;
+            if (compoment.DependsOn == null) return;
 
             registrar.ConfigurePipeline(p =>
             {
                 //DepondsOn注入
                 p.Use(PipelinePhase.RegistrationPipelineStart, (context, next) =>
                 {
-                    foreach (var dependsType in compoment.DependsOn)
+                    foreach (var dependsType in compoment.DependsOn.DependsOnLazy.Value)
                         new Autowired(false).Resolve(context, compoment.CurrentType, dependsType, dependsType.Name,
                             context.Parameters.ToList());
-
                     next(context);
                 });
             });

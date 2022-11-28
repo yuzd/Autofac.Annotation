@@ -92,6 +92,23 @@ namespace Autofac.Annotation.Util
                 return false;
             }
         }
+        /// <summary>
+        /// 判断是否存在class
+        /// </summary>
+        /// <param name="classPath"></param>
+        /// <returns></returns>
+        internal static Type FindClassIgnoreErr(this string classPath)
+        {
+            try
+            {
+                return Type.GetType(classPath);
+            }
+            catch (Exception)
+            {
+                return default;
+            }
+        }
+
 
         /// <summary>
         /// 判断当前方式和parentMethod是否是实现关系

@@ -30,9 +30,9 @@ namespace Autofac.Annotation
         public string Key { get; private set; }
 
         /// <summary>
-        /// 作用域
+        /// 作用域 bean的作用域默认是单例的
         /// </summary>
-        public AutofacScope AutofacScope { get; set; } = AutofacScope.SingleInstance;
+        public AutofacScope AutofacScope { get; set; } = AutofacScope.Default;
 
         /// <summary>
         /// 被创建后执行的方法

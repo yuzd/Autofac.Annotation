@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Formats.Asn1;
 using System.Text;
 using System.Threading.Tasks;
 using Autofac.Annotation;
@@ -12,7 +13,7 @@ namespace Autofac.Configuration.Test.test3
     [Import(typeof(TestImportSelector))]
     public class TestConfiguration
     {
-        [Bean]
+        [Bean(AutofacScope = AutofacScope.SingleInstance)]
         public virtual TestModel3 getTest3()
         {
             return new TestModel3
@@ -21,7 +22,7 @@ namespace Autofac.Configuration.Test.test3
             };
         }
 
-        [Bean("getTest31")]
+        [Bean("getTest31",AutofacScope = AutofacScope.SingleInstance)]
         public virtual TestModel3 getTest31()
         {
             return new TestModel3
@@ -30,7 +31,7 @@ namespace Autofac.Configuration.Test.test3
             };
         }
 
-        [Bean]
+        [Bean(AutofacScope = AutofacScope.SingleInstance)]
         public virtual TestModel4Parent getTest4()
         {
             return new TestModel4
@@ -84,7 +85,7 @@ namespace Autofac.Configuration.Test.test3
             });
         }
         
-        [Bean]
+        [Bean(AutofacScope = AutofacScope.SingleInstance)]
         public virtual TestModel1000 getTestModel1000()
         {
             return new TestModel1000()
@@ -93,7 +94,7 @@ namespace Autofac.Configuration.Test.test3
             };
         }
         
-        [Bean]
+        [Bean(AutofacScope = AutofacScope.SingleInstance)]
         public virtual TestModel1001 getTestModel10001()
         {
             var model = getTestModel1000();//不会实例化2次的！

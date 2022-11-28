@@ -33,6 +33,7 @@ namespace Autofac.Annotation
         private static void RegisterConfiguration(ContainerBuilder builder, AutoConfigurationDetail autoConfigurationDetail)
         {
             var cache = builder.Properties[AutofacAnnotationModule._ALL_COMPOMENT] as ComponentModelCacheSingleton;
+            var defaultScope = (AutofacScope)builder.Properties[AutofacAnnotationModule._DEFAULT_SCOPE];
             //注册为工厂
             foreach (var beanMethod in autoConfigurationDetail.BeanMethodInfoList.OrderBy(r => r.Item3.Name))
             {
@@ -62,13 +63,19 @@ namespace Autofac.Annotation
                         return;
                     }
 
+                    var scope = beanMethod.Item1.AutofacScope;
+                    if (scope == AutofacScope.Default)
+                        //说明没有特别指定 看全局配置的是啥 ，全局没配置就用瞬时
+                        scope = defaultScope.Equals(AutofacScope.Default)
+                            ? AutofacScope.InstancePerDependency
+                            : defaultScope;
                     //注册到统一缓存
                     var compoment = new ComponentModel
                     {
                         CurrentType = beanMethod.Item3,
                         InjectProperties = true,
                         InjectPropertyType = InjectPropertyType.Autowired,
-                        AutofacScope = beanMethod.Item1.AutofacScope,
+                        AutofacScope = scope,
                         InitMethod = beanMethod.Item1.InitMethod,
                         DestroyMethod = beanMethod.Item1.DestroyMethod,
                         RegisterType = RegisterType.Bean,
@@ -147,7 +154,7 @@ namespace Autofac.Annotation
             {
                 instance = ((dynamic)instance).Value;
             }
-            
+
             if (parameters == null || parameters.Length == 0)
             {
                 return methodInfo.Invoke(instance, null);
@@ -344,7 +351,7 @@ namespace Autofac.Annotation
                     var autowired = parameter.GetCustomAttribute<Autowired>();
                     if (autowired != null)
                     {
-                        parameterObj.Add(autowired.ResolveParameterWithConfiguration(autoConfigurationDetail,parameter, context));
+                        parameterObj.Add(autowired.ResolveParameterWithConfiguration(autoConfigurationDetail, parameter, context));
                         continue;
                     }
 

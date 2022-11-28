@@ -30,6 +30,7 @@ namespace Autofac.Annotation
     public partial class AutofacAnnotationModule : Module
     {
         internal const string _ALL_COMPOMENT = "_ALL_COMPOMENT";
+        internal const string _DEFAULT_SCOPE = "_DEFAULT_SCOPE";
         internal const string _AUTOFAC_SPRING = "autofac_spring";
 
         /// <summary>
@@ -314,7 +315,7 @@ namespace Autofac.Annotation
                 if (beanPostProcessors != null)
                     r.ComponentRegistry.Properties[nameof(List<BeanPostProcessor>)] = beanPostProcessors?.ToList();
             });
-
+            builder.Properties[_DEFAULT_SCOPE] = DefaultAutofacScope;
             //解析程序集PointCut标签类和方法
             var pointCutCfg = GetPointCutConfiguration(builder);
             //解析程序集拿到打了pointcut的类 打了Compoment的类 解析Import的类

@@ -169,7 +169,8 @@ namespace Autofac.Annotation
             { typeof(Pointcut), false },
             { typeof(AfterThrows), false },
             { typeof(DependsOn), false },
-            { typeof(IgnoreAop), false }
+            { typeof(IgnoreAop), false },
+            { typeof(AliasFor), false }
         };
 
         /// <summary>

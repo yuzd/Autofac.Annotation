@@ -154,8 +154,8 @@ namespace Autofac.Annotation
             var targetType = memberType.GenericTypeArguments[0];
             var valueType = typeof(ValueObjectFactory<>);
             var valueFactoryType = valueType.MakeGenericType(targetType);
-            Func<object> function = () => value.Resolve(_context, classType, targetType, parameterInfo, autoConfigurationDetail);
-            return Activator.CreateInstance(valueFactoryType, new object[] { function });
+            object Function() => value.Resolve(_context, classType, targetType, parameterInfo, autoConfigurationDetail);
+            return Activator.CreateInstance(valueFactoryType, (Func<object>)Function);
         }
 
 

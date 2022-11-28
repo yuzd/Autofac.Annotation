@@ -7,7 +7,7 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
     [AutoConfiguration("Test")]
     public class MyConfig
     {
-        [Bean]
+        [Bean(AutofacScope = AutofacScope.SingleInstance)]
         public virtual MyModel GetMyModel()
         {
             return new MyModel
@@ -16,7 +16,7 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
             };
         }
 
-        [Bean]
+        [Bean(AutofacScope = AutofacScope.SingleInstance)]
         public virtual MyModel2 GetMyModel2()
         {
             return new MyModel2
@@ -29,7 +29,7 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
     [AutoConfiguration("Test2")]
     public class MyConfig2
     {
-        [Bean]
+        [Bean(AutofacScope = AutofacScope.SingleInstance)]
         public virtual MyModel GetMyModel()
         {
             return new MyModel
@@ -38,7 +38,8 @@ namespace Autofac.Configuration.Test.AutoConfiguration_Bean
             };
         }
 
-        [Bean]
+        [Bean(AutofacScope = AutofacScope.SingleInstance)]
+
         public virtual MyModel2 GetMyModel2()
         {
             return new MyModel2

@@ -13,7 +13,7 @@ namespace Autofac.Annotation
     {
         /// <summary>
         ///     A Boolean indicating if the component should auto-activate.
-        ///     SingleInstance Scope default is true
+        ///     true的话 autofac容器在构建后自动触发该类的初始化
         /// </summary>
         public bool AutoActivate { get; set; }
 

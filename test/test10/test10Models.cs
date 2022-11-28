@@ -222,4 +222,17 @@ namespace Autofac.Annotation.Test.test10
     public class AutoConfTest12
     {
     }
+    
+    [Component]
+    [ConditionOnClass("Autofac.Annotation.Test.test10.Test10Model2,Autofac.Configuration.Test")]
+    public class AutoConfTest13
+    {
+        
+    }
+    
+    [Component]
+    [ConditionOnMissingClass("Autofac.Annotation.Test.test10.Test10Model2,Autofac.Configuration.Test")]
+    public class AutoConfTest14
+    {
+    }
 }

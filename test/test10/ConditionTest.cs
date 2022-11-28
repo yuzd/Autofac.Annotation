@@ -164,5 +164,17 @@ namespace Autofac.Annotation.Test.test10
             Assert.False(isRegisterd2);
             Assert.False(isRegisterd3);
         }
+        
+        [Fact]
+        public void Test13()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterSpring(r => r.RegisterAssembly(typeof(ConditionTest).Assembly));
+            var container = builder.Build();
+            var isRegisterd = container.TryResolve(out AutoConfTest13 model1);
+            var isRegisterd2 = container.TryResolve(out AutoConfTest14 model12);
+            Assert.True(isRegisterd);
+            Assert.False(isRegisterd2);
+        }
     }
 }

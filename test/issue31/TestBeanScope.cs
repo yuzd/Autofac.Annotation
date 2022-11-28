@@ -54,7 +54,7 @@ public class TestBeanScopeCfg1
         return new TestBeanScopeCls1();
     }
 
-    // Bean的注册默认是单例的,可以指定为单例的
+    // Bean的注册默认是瞬时的,可以指定为单例的
     [Bean(AutofacScope = AutofacScope.SingleInstance)]
     public TestBeanScopeCls2 initTestBeanScopeCls2()
     {

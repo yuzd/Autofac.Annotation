@@ -182,7 +182,8 @@ namespace Autofac.Annotation
                 }
 
                 if (injectAnotation != null && (parameter.ParameterType == injectAnotation.GetType() ||
-                                                parameter.ParameterType.IsInstanceOfType(injectAnotation)))
+                                                (typeof(Attribute).IsAssignableFrom(parameter.ParameterType) &&
+                                                 parameter.ParameterType.IsInstanceOfType(injectAnotation))))
                 {
                     // 兼容是父类的情况
                     parameterObj.Add(injectAnotation);

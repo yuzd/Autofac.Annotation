@@ -145,6 +145,7 @@ namespace Autofac.Annotation
         /// <summary>
         ///     自定义注册顺序 越小越先注册 但是注意 相同的类型谁最后注册就会拿resolve谁
         ///     因为autofac是允许重复注册的  以最后一次注册为准
+        ///     注意： 在设置AutoActivate=true的场景，orderIndex越大的越先被初始化
         /// </summary>
         public int OrderIndex { get; set; }
 

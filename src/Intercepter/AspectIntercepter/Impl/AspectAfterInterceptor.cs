@@ -58,7 +58,8 @@ namespace Autofac.AspectIntercepter.Impl
                             aspectContext,
                             returnValue: aspectContext.Exception ?? aspectContext.ReturnValue,
                             returnParam: _pointCutMethod.PointcutBasicAttribute.Returing,
-                            injectAnotation: _pointCutMethod.PointcutInjectAnotation);
+                            injectAnotation: _pointCutMethod.PointcutInjectAnotation,
+                            pointCutAnnotation: _pointCutMethod.Pointcut);
 
                         if (typeof(Task).IsAssignableFrom(_pointCutMethod.MethodReturnType))
                         {

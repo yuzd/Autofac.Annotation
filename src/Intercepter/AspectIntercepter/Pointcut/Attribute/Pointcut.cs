@@ -21,7 +21,7 @@ namespace Autofac.Annotation
         /// 构造方法
         /// </summary>
         /// <param name="groupName">名称 唯一</param>
-        public Pointcut(string groupName):this()
+        public Pointcut(string groupName) : this()
         {
             GroupName = groupName;
         }
@@ -31,7 +31,7 @@ namespace Autofac.Annotation
         /// </summary>
         public Pointcut()
         {
-            AttributeTypeArrLazy  = new Lazy<Type[]>(getAttributeTypeArrLazy);
+            AttributeTypeArrLazy = new Lazy<Type[]>(getAttributeTypeArrLazy);
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Autofac.Annotation
         public string DestroyMethod { get; set; }
 
         /// <summary>
-        /// 值越低，优先级越高
+        /// 值越低，优先级越高,越先被调用
         /// </summary>
         public int OrderIndex { get; set; }
 
@@ -72,6 +72,7 @@ namespace Autofac.Annotation
         /// 用于匹配包类型
         /// </summary>
         private string _nameSpace = "%";
+
         /// <summary>
         /// 是否设置过
         /// </summary>
@@ -135,10 +136,11 @@ namespace Autofac.Annotation
 
             if (AttributeFlag == AssignableFlag.AssignableFrom)
             {
-                var rt = new List<Type>{AttributeType};
-                rt.AddRange(AttributeType.GetParentTypes(false).Where(r=>!r.IsAbstract).ToList());
+                var rt = new List<Type> { AttributeType };
+                rt.AddRange(AttributeType.GetParentTypes(false).Where(r => !r.IsAbstract).ToList());
                 return rt.Distinct().ToArray();
             }
+
             // 也包括是我的子类的话 需要特殊判断
             return new[] { AttributeType };
         }
@@ -223,8 +225,6 @@ namespace Autofac.Annotation
                             $"PointCut:`{GetType().FullName}` -> `AttributeType`:{type.Name} can not be set to  instance of `AspectInvokeAttribute` ! ");
                 }
 
-               
-               
 
                 if (component.CurrentClassTypeAttributes != null && component.CurrentClassTypeAttributes.Any())
                 {
@@ -317,7 +317,7 @@ namespace Autofac.Annotation
                     {
                         annotation = Tuple.Create(attr, orderIndex);
                         break;
-                    } 
+                    }
                     else if (AttributeFlag == AssignableFlag.AssignableTo && AttributeType.IsInstanceOfType(attr))
                     {
                         annotation = Tuple.Create(attr, orderIndex);
@@ -353,10 +353,12 @@ namespace Autofac.Annotation
         /// 没有
         /// </summary>
         NONE,
+
         /// <summary>
         /// 也包括是我的父类
         /// </summary>
         AssignableFrom,
+
         /// <summary>
         /// 也包括是我的实现类
         /// </summary>

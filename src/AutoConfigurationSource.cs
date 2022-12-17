@@ -92,9 +92,10 @@ namespace Autofac.Annotation
                         {
                             return typeof(Task<>).MakeGenericType(instanceType).GetProperty("Result")?.GetValue(instance);
                         }
+
                         return instance;
                     }));
-                    
+
                     if (compoment.DependsOn != null)
                     {
                         rb.ConfigurePipeline(p =>
@@ -147,10 +148,11 @@ namespace Autofac.Annotation
         /// <param name="returnValue"></param>
         /// <param name="returnParam"></param>
         /// <param name="injectAnotation"></param>
+        /// <param name="pointCutAnnotation"></param>
         /// <returns></returns>
         public static object InvokeInstanceMethod(object instance, MethodInfo methodInfo, ParameterInfo[] parameters, IComponentContext context,
             AspectContext invocation = null, AspectDelegate _next = null, object returnValue = null, string returnParam = null,
-            Attribute injectAnotation = null)
+            Attribute injectAnotation = null, Attribute pointCutAnnotation = null)
         {
             if (instance.GetType().IsGenericType && typeof(Lazy<>) == instance.GetType().GetGenericTypeDefinition())
             {
@@ -182,6 +184,12 @@ namespace Autofac.Annotation
                 if (injectAnotation != null && parameter.ParameterType == injectAnotation.GetType())
                 {
                     parameterObj.Add(injectAnotation);
+                    continue;
+                }
+
+                if (pointCutAnnotation != null && parameter.ParameterType == pointCutAnnotation.GetType())
+                {
+                    parameterObj.Add(pointCutAnnotation);
                     continue;
                 }
 

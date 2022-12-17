@@ -113,7 +113,8 @@ namespace Autofac.AspectIntercepter.Pointcut
                         MethodReturnType = pointcut.BeforeMethod.Item2.ReturnType,
                         MethodParameters = pointcut.BeforeMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.BeforeMethod.Item1,
-                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute,
+                        Pointcut = pointcut.Pointcut
                     };
 
                 if (pointcut.AfterMethod != null)
@@ -124,7 +125,8 @@ namespace Autofac.AspectIntercepter.Pointcut
                         MethodReturnType = pointcut.AfterMethod.Item2.ReturnType,
                         MethodParameters = pointcut.AfterMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AfterMethod.Item1,
-                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute,
+                        Pointcut = pointcut.Pointcut
                     };
 
                 if (pointcut.AfterReturnMethod != null)
@@ -135,7 +137,8 @@ namespace Autofac.AspectIntercepter.Pointcut
                         MethodReturnType = pointcut.AfterReturnMethod.Item2.ReturnType,
                         MethodParameters = pointcut.AfterReturnMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AfterReturnMethod.Item1,
-                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute,
+                        Pointcut = pointcut.Pointcut
                     };
 
                 if (pointcut.AroundMethod != null)
@@ -146,7 +149,8 @@ namespace Autofac.AspectIntercepter.Pointcut
                         MethodReturnType = pointcut.AroundMethod.Item2.ReturnType,
                         MethodParameters = pointcut.AroundMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AroundMethod.Item1,
-                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute,
+                        Pointcut = pointcut.Pointcut
                     };
 
                 if (pointcut.AfterThrows != null)
@@ -157,7 +161,8 @@ namespace Autofac.AspectIntercepter.Pointcut
                         MethodReturnType = pointcut.AfterThrows.Item2.ReturnType,
                         MethodParameters = pointcut.AfterThrows.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AfterThrows.Item1,
-                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute,
+                        Pointcut = pointcut.Pointcut
                     };
             }
 
@@ -208,7 +213,8 @@ namespace Autofac.AspectIntercepter.Pointcut
                         MethodReturnType = pointcut.BeforeMethod.Item2.ReturnType,
                         MethodParameters = pointcut.BeforeMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.BeforeMethod.Item1,
-                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute,
+                        Pointcut = pointcut.Pointcut
                     };
 
                 if (pointcut.AfterMethod != null)
@@ -219,7 +225,8 @@ namespace Autofac.AspectIntercepter.Pointcut
                         MethodReturnType = pointcut.AfterMethod.Item2.ReturnType,
                         MethodParameters = pointcut.AfterMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AfterMethod.Item1,
-                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute,
+                        Pointcut = pointcut.Pointcut
                     };
 
                 if (pointcut.AfterReturnMethod != null)
@@ -230,7 +237,8 @@ namespace Autofac.AspectIntercepter.Pointcut
                         MethodReturnType = pointcut.AfterReturnMethod.Item2.ReturnType,
                         MethodParameters = pointcut.AfterReturnMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AfterReturnMethod.Item1,
-                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute,
+                        Pointcut = pointcut.Pointcut
                     };
 
                 if (pointcut.AroundMethod != null)
@@ -241,7 +249,8 @@ namespace Autofac.AspectIntercepter.Pointcut
                         MethodReturnType = pointcut.AroundMethod.Item2.ReturnType,
                         MethodParameters = pointcut.AroundMethod.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AroundMethod.Item1,
-                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute,
+                        Pointcut = pointcut.Pointcut
                     };
 
                 if (pointcut.AfterThrows != null)
@@ -252,7 +261,8 @@ namespace Autofac.AspectIntercepter.Pointcut
                         MethodReturnType = pointcut.AfterThrows.Item2.ReturnType,
                         MethodParameters = pointcut.AfterThrows.Item2.GetParameters(),
                         PointcutBasicAttribute = pointcut.AfterThrows.Item1,
-                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute
+                        PointcutInjectAnotation = pointcutRunTime.MethodInjectPointcutAttribute,
+                        Pointcut = pointcut.Pointcut
                     };
             }
 

@@ -74,6 +74,11 @@ namespace Autofac.AspectIntercepter.Pointcut
         ///     被拦截方法上的指定的切面注解
         /// </summary>
         public Attribute PointcutInjectAnotation { get; set; }
+
+        /// <summary>
+        ///    PointCut注解
+        /// </summary>
+        public Annotation.Pointcut Pointcut { get; set; }
     }
 
 

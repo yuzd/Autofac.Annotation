@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -16,6 +17,7 @@ public class TestFindSelfAttributes
         var container = builder.Build();
         var test = container.Resolve<FindSelfTest1>();
         container.Dispose();
+        Thread.Sleep(500);
         Assert.Equal(2, FindSelfTestRt.result1.Count);
     }
 
@@ -33,6 +35,7 @@ public class FindSelfTestRt
 {
     public static List<string> result1 = new();
     public static List<string> result2 = new();
+    public static List<string> result3 = new();
 }
 
 [Component]

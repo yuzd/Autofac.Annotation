@@ -24,7 +24,7 @@ namespace Autofac.Annotation
         /// </summary>
         /// <param name="context"></param>
         /// <param name="invocation"></param>
-        public AspectContext(IComponentContext context, IInvocation invocation):this()
+        public AspectContext(IComponentContext context, IInvocation invocation) : this()
         {
             this.ComponentContext = context;
             this.InvocationContext = invocation;
@@ -57,7 +57,7 @@ namespace Autofac.Annotation
         /// 异步执行环节上下文
         /// </summary>
         internal IAsyncInvocation IAsyncnvocationContext { get; set; }
-        
+
         /// <summary>
         ///  临时存储,比如在多个Interceptor中传递
         /// </summary>

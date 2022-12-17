@@ -181,8 +181,10 @@ namespace Autofac.Annotation
                     continue;
                 }
 
-                if (injectAnotation != null && parameter.ParameterType == injectAnotation.GetType())
+                if (injectAnotation != null && (parameter.ParameterType == injectAnotation.GetType() ||
+                                                parameter.ParameterType.IsInstanceOfType(injectAnotation)))
                 {
+                    // 兼容是父类的情况
                     parameterObj.Add(injectAnotation);
                     continue;
                 }

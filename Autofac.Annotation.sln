@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autofac.Configuration.Test"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autofac.Annotation.Benchmark", "Autofac.Annotation.Benchmark\Autofac.Annotation.Benchmark.csproj", "{025383BC-5535-4FF3-9021-0116E8B8471E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nacosTest", "nacosTest\nacosTest.csproj", "{F1CA49D9-FBC2-4FB9-B51E-CE367F1D2E96}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nacosTest", "sample\nacosTest\nacosTest.csproj", "{F1CA49D9-FBC2-4FB9-B51E-CE367F1D2E96}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample", "sample", "{FF674887-7B00-471B-9343-36CE3CC94108}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,5 +49,8 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {53FD130B-39C4-40BF-8CD6-7F987D71F7EB}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F1CA49D9-FBC2-4FB9-B51E-CE367F1D2E96} = {FF674887-7B00-471B-9343-36CE3CC94108}
 	EndGlobalSection
 EndGlobal

@@ -36,7 +36,7 @@ namespace Autofac.Annotation
         /// <summary>
         ///     默认的DataSource 只保存1个实例
         /// </summary>
-        private readonly Lazy<MetaSourceData> DefaultMeaSourceData = new Lazy<MetaSourceData>(GetDefaultMetaSource);
+        private readonly Lazy<MetaSourceData> DefaultMetaSourceData;
 
         private List<Assembly> _assemblyList = new List<Assembly>();
         private ILifetimeScope autofacGlobalScope;
@@ -56,11 +56,6 @@ namespace Autofac.Annotation
         ///     是否开启EventBus
         /// </summary>
         public bool EnableAutofacEventBus { get; private set; } = true;
-
-        /// <summary>
-        ///     是否开启文件监听
-        /// </summary>
-        public bool EnableValueResourceReloadOnchange { get; private set; } = true;
 
         /// <summary>
         ///     自动注册父类
@@ -100,18 +95,14 @@ namespace Autofac.Annotation
         }
 
         /// <summary>
-        ///     是否开启文件监听 默认true
+        ///     设置默认Value读取的Resource
         /// </summary>
-        /// <param name="flag"></param>
+        /// <param name="configuration">配置源</param>
         /// <returns></returns>
-        public AutofacAnnotationModule SetValueResourceReloadOnChange(bool flag)
+        public AutofacAnnotationModule SetDefaultValueResource(IConfiguration configuration)
         {
-            EnableValueResourceReloadOnchange = flag;
-            DefaultMeaSourceData.Value.Reload = flag;
-            var metaSource = DefaultMeaSourceData.Value;
-            DefaultMeaSourceData.Value.ConfigurationLazy = new Lazy<IConfiguration>(() =>
-                EmbeddedConfiguration.Load(null, metaSource.Path, metaSource.MetaSourceType, metaSource.Embedded,
-                    flag));
+            DefaultMetaSourceData.Value.ConfigurationLazy = new Lazy<IConfiguration>(() =>
+                configuration);
             return this;
         }
 
@@ -1105,7 +1096,6 @@ namespace Autofac.Annotation
                                 throw new InvalidOperationException(
                                     $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType can not dependency on itself!");
                             }
-                            
                         }
 
                         bean.BeanMethodInfoList.Add(
@@ -1547,7 +1537,7 @@ namespace Autofac.Annotation
         ///     构建默认的datasource
         /// </summary>
         /// <returns></returns>
-        private static MetaSourceData GetDefaultMetaSource()
+        private MetaSourceData GetDefaultMetaSource()
         {
             var metaSource = new MetaSourceData();
             metaSource.Origin = "appsettings.json";
@@ -1581,7 +1571,7 @@ namespace Autofac.Annotation
                         DynamicSource = metaSourceAttribute.Dynamic,
                         MetaSourceType = metaSourceAttribute.MetaSourceType,
                         Order = metaSourceAttribute.OrderIndex,
-                        Reload = metaSourceAttribute._reload ?? EnableValueResourceReloadOnchange
+                        Reload = metaSourceAttribute._reload ?? true
                     };
 
                     if (metaSource.DynamicSource != null)
@@ -1632,7 +1622,7 @@ namespace Autofac.Annotation
 
                     if (string.IsNullOrEmpty(metaSourceAttribute.Path))
                     {
-                        MetaSourceList.Add(DefaultMeaSourceData.Value);
+                        MetaSourceList.Add(DefaultMetaSourceData.Value);
                         continue;
                     }
 
@@ -1655,7 +1645,7 @@ namespace Autofac.Annotation
             }
             else
             {
-                MetaSourceList.Add(DefaultMeaSourceData.Value);
+                MetaSourceList.Add(DefaultMetaSourceData.Value);
             }
 
             #endregion
@@ -1768,7 +1758,7 @@ namespace Autofac.Annotation
         ///     根据程序集来实例化
         /// </summary>
         /// <param name="assemblyList"></param>
-        public AutofacAnnotationModule(params Assembly[] assemblyList)
+        public AutofacAnnotationModule(params Assembly[] assemblyList) : this()
         {
             if (assemblyList.Length < 1) throw new ArgumentException(nameof(assemblyList));
 
@@ -1779,7 +1769,7 @@ namespace Autofac.Annotation
         ///     根据程序集的名称来实例化
         /// </summary>
         /// <param name="assemblyNameList"></param>
-        public AutofacAnnotationModule(params string[] assemblyNameList)
+        public AutofacAnnotationModule(params string[] assemblyNameList) : this()
         {
             if (assemblyNameList == null || assemblyNameList.Length == 0)
                 throw new ArgumentException(nameof(assemblyNameList));
@@ -1794,6 +1784,7 @@ namespace Autofac.Annotation
         /// </summary>
         public AutofacAnnotationModule()
         {
+            DefaultMetaSourceData = new Lazy<MetaSourceData>(GetDefaultMetaSource);
         }
 
         #endregion

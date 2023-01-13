@@ -13,7 +13,6 @@ using Autofac.Annotation;
 namespace nacosTest.Controllers;
 
 [Component]
-[PropertySource(Dynamic = typeof(IConfigurationProvider), Key = "nacos")] // 这里代表使用nacos的source源文件
 public class NacosTest
 {
     [Value("${a}")] public IValue<string> a;

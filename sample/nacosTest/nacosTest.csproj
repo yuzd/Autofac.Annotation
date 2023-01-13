@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\src\Autofac.Annotation.csproj" />
+      <ProjectReference Include="..\..\src\Autofac.Annotation.csproj" />
     </ItemGroup>
 
 </Project>

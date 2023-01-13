@@ -12,18 +12,18 @@
 
     <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netcoreapp2.0|AnyCPU'">
         <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-        <WarningsAsErrors/>
+        <WarningsAsErrors />
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Remove="TestResults\**"/>
-        <EmbeddedResource Remove="TestResults\**"/>
-        <None Remove="TestResults\**"/>
+        <Compile Remove="TestResults\**" />
+        <EmbeddedResource Remove="TestResults\**" />
+        <None Remove="TestResults\**" />
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="file\appsettings1.json"/>
-        <None Remove="file\appsettings1.xml"/>
+        <None Remove="file\appsettings1.json" />
+        <None Remove="file\appsettings1.xml" />
     </ItemGroup>
 
     <ItemGroup>
@@ -36,20 +36,20 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1"/>
-        <PackageReference Include="Moq" Version="4.18.2"/>
-        <PackageReference Include="xunit" Version="2.4.2"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
+        <PackageReference Include="Moq" Version="4.18.2" />
+        <PackageReference Include="xunit" Version="2.4.2" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-        <Reference Include="System"/>
-        <Reference Include="Microsoft.CSharp"/>
-        <Reference Include="System.Transactions"/>
+        <Reference Include="System" />
+        <Reference Include="Microsoft.CSharp" />
+        <Reference Include="System.Transactions" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\src\Autofac.Annotation.csproj"/>
+        <ProjectReference Include="..\src\Autofac.Annotation.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -28,10 +28,10 @@
         <RootNamespace>Autofac.Annotation</RootNamespace>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-        <Version>4.3.6</Version>
-        <AssemblyVersion>4.3.6.0</AssemblyVersion>
+        <Version>4.3.7</Version>
+        <AssemblyVersion>4.3.7.0</AssemblyVersion>
         <Authors>zdyu</Authors>
-        <PackageVersion>4.3.6</PackageVersion>
+        <PackageVersion>4.3.7</PackageVersion>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
 
@@ -53,6 +53,7 @@
 
     <ItemGroup>
         <PackageReference Include="Autofac" Version="6.5.0"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="3.1.0"/>
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.0"/>
         <PackageReference Include="Microsoft.Extensions.Configuration.Xml" Version="3.1.0"/>
         <PackageReference Include="Spring.EL" Version="1.0.5"/>

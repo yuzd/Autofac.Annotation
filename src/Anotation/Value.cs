@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Autofac.Core;
 using Autofac.Features.AttributeFilters;
@@ -48,6 +49,12 @@ namespace Autofac.Annotation
         /// 对应的值
         /// </summary>
         public string value { get; set; }
+
+        /// <summary>
+        /// 是否启用SPEL 默认true
+        /// 如果false，那么根据配置的value的值直接从PropertySource里面读取
+        /// </summary>
+        public bool UseSpel { get; set; } = true;
 
         /// <summary>
         /// 如果拿不到是否报错
@@ -136,6 +143,16 @@ namespace Autofac.Annotation
                 if ((typeof(IObjectFactory).IsAssignableFrom(memberType)))
                 {
                     return context.Resolve<ObjectBeanFactory>().CreateValueFactory(this, memberType, classType, parameterInfo, autoConfigurationDetail);
+                }
+
+                if (!UseSpel)
+                {
+                    // 原生的获取方式
+                    var section = GetFromResource(context, classType, this.value, autoConfigurationDetail);
+                    if (section != null)
+                    {
+                        return section.Get(memberType);
+                    }
                 }
 
                 //先把 ${} 的 placehoder 全部替换掉
@@ -257,6 +274,15 @@ namespace Autofac.Annotation
         }
 
 
+        /// <summary>
+        /// 根据placeholder去数据源取
+        /// </summary>
+        /// <param name="mode">模式</param>
+        /// <param name="context">di上下文</param>
+        /// <param name="classType">需要返回的类型</param>
+        /// <param name="placeholder">key</param>
+        /// <param name="autoConfigurationDetail"></param>
+        /// <returns></returns>
         static string ResolvePlaceholder(EnvironmentVariableMode mode, IComponentContext context, Type classType, string placeholder,
             AutoConfigurationDetail autoConfigurationDetail = null)
         {
@@ -268,41 +294,8 @@ namespace Autofac.Annotation
 
             if (propertyValue == null)
             {
-                List<MetaSourceData> MetaSourceList = null;
-                if (autoConfigurationDetail != null)
-                {
-                    MetaSourceList = autoConfigurationDetail.MetaSourceDataList;
-                }
-                else
-                {
-                    var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
-                    if (componentModelCacheSingleton.ComponentModelCache.TryGetValue(classType, out var component))
-                    {
-                        MetaSourceList = component.MetaSourceList;
-                    }
-                }
-
-                if (MetaSourceList != null)
-                {
-                    foreach (var metaSource in MetaSourceList)
-                    {
-                        if (metaSource.Configuration == null)
-                        {
-                            continue;
-                        }
-
-                        IConfigurationSection metData = metaSource.Configuration.GetSection(placeholder);
-                        var parameterValue = metData?.Value;
-                        if (parameterValue == null)
-                        {
-                            //表示key不存在 从下一个source里面去寻找
-                            continue;
-                        }
-
-                        propertyValue = parameterValue;
-                        break;
-                    }
-                }
+                var section = GetFromResource(context, classType, placeholder, autoConfigurationDetail);
+                propertyValue = section?.Value;
             }
 
             if (propertyValue == null && mode == EnvironmentVariableMode.Fallback)
@@ -311,6 +304,55 @@ namespace Autofac.Annotation
             }
 
             return propertyValue;
+        }
+
+        /// <summary>
+        /// 从PropertySource源获取
+        /// </summary>
+        /// <param name="context">上下文</param>
+        /// <param name="classType">返回类型</param>
+        /// <param name="placeholder">key</param>
+        /// <param name="autoConfigurationDetail"></param>
+        /// <returns></returns>
+        static IConfigurationSection GetFromResource(IComponentContext context, Type classType, string placeholder,
+            AutoConfigurationDetail autoConfigurationDetail = null)
+        {
+            List<MetaSourceData> MetaSourceList = null;
+            if (autoConfigurationDetail != null)
+            {
+                MetaSourceList = autoConfigurationDetail.MetaSourceDataList;
+            }
+            else
+            {
+                var componentModelCacheSingleton = context.Resolve<ComponentModelCacheSingleton>();
+                if (componentModelCacheSingleton.ComponentModelCache.TryGetValue(classType, out var component))
+                {
+                    MetaSourceList = component.MetaSourceList;
+                }
+            }
+
+            if (MetaSourceList != null)
+            {
+                foreach (var metaSource in MetaSourceList)
+                {
+                    if (metaSource.Configuration == null)
+                    {
+                        continue;
+                    }
+
+                    IConfigurationSection metData = metaSource.Configuration.GetSection(placeholder);
+                    var parameterValue = metData?.Value;
+                    if (metData == null || (string.IsNullOrEmpty(parameterValue) && !metData.GetChildren().Any()))
+                    {
+                        //表示key不存在 从下一个source里面去寻找
+                        continue;
+                    }
+
+                    return metData;
+                }
+            }
+
+            return null;
         }
 
         #endregion

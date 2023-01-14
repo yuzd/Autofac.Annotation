@@ -10,7 +10,7 @@ namespace Autofac.Annotation
     /// 获取Bean的泛型接口
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface ObjectFactory<T> : IObjectFactory
+    public interface ObjectFactory<out T> : IObjectFactory
     {
         /// <summary>
         /// Bean工厂
@@ -28,7 +28,7 @@ namespace Autofac.Annotation
         /// 获取value的包装
         /// </summary>
         /// <returns></returns>
-        internal Func<object> function;
+        internal readonly Func<object> function;
 
         /// <summary>
         /// 构造方法
@@ -55,7 +55,7 @@ namespace Autofac.Annotation
         /// 获取value的包装
         /// </summary>
         /// <returns></returns>
-        internal Func<object> function;
+        internal readonly Func<object> function;
 
         /// <summary>
         /// 构造方法
@@ -110,7 +110,7 @@ namespace Autofac.Annotation
         /// 获取value的包装
         /// </summary>
         /// <returns></returns>
-        internal Func<object> GetObject;
+        internal readonly Func<object> GetObject;
 
         /// <summary>
         /// 
@@ -129,7 +129,7 @@ namespace Autofac.Annotation
         /// <summary>
         /// 存储lazy的 CreateLazy 的方法缓存
         /// </summary>
-        private readonly ConcurrentDictionary<Type, MethodInfo> _lazyMethodCache = new ConcurrentDictionary<Type, MethodInfo>();
+        private readonly ConcurrentDictionary<Type, Lazy<MethodInfo>> _lazyMethodCache = new ConcurrentDictionary<Type, Lazy<MethodInfo>>();
 
         /// <summary>
         /// 
@@ -188,13 +188,13 @@ namespace Autofac.Annotation
         /// <param name="autoConfigurationDetail"></param>
         /// <returns></returns>
         internal object CreateAutowiredFactory(Autowired autowired, Type type, Type classType, string fieldOrPropertyName,
-            List<Parameter> Parameters,AutoConfigurationDetail autoConfigurationDetail = null)
+            List<Parameter> Parameters, AutoConfigurationDetail autoConfigurationDetail = null)
         {
             var targetType = type.GenericTypeArguments[0];
             var valueType = typeof(AutowiredObjectFactory<>);
             var valueFactoryType = valueType.MakeGenericType(targetType);
-            Func<object> function = () => autowired.Resolve(_context, classType, targetType, fieldOrPropertyName, Parameters);
-            return Activator.CreateInstance(valueFactoryType, new object[] { function });
+            object Function() => autowired.Resolve(_context, classType, targetType, fieldOrPropertyName, Parameters);
+            return Activator.CreateInstance(valueFactoryType, (Func<object>)Function);
         }
 
         /// <summary>
@@ -208,20 +208,16 @@ namespace Autofac.Annotation
         /// <param name="autoConfigurationDetail">
         /// </param>/// <returns></returns>
         internal object CreateLazyFactory(Autowired autowired, Type type, Type classType, string fieldOrPropertyName,
-            List<Parameter> Parameters,AutoConfigurationDetail autoConfigurationDetail = null)
+            List<Parameter> Parameters, AutoConfigurationDetail autoConfigurationDetail = null)
         {
             var targetType = type.GenericTypeArguments[0];
             var valueType = typeof(LazyAutowiredFactory<>);
             var valueFactoryType = valueType.MakeGenericType(targetType);
-            Func<object> function = () => autowired.Resolve(_context, classType, targetType, fieldOrPropertyName, Parameters);
-            var lazyFactory = Activator.CreateInstance(valueFactoryType, new object[] { function });
-            if (!this._lazyMethodCache.TryGetValue(valueFactoryType, out var _cache))
-            {
-                _cache = lazyFactory.GetType().GetTypeInfo().GetMethod("CreateLazy");
-                this._lazyMethodCache.TryAdd(valueFactoryType, _cache);
-            }
-
-            return _cache?.Invoke(lazyFactory,null);
+            object Function() => autowired.Resolve(_context, classType, targetType, fieldOrPropertyName, Parameters);
+            var lazyFactory = Activator.CreateInstance(valueFactoryType, (Func<object>)Function);
+            var lazyFactoryType = lazyFactory.GetType();
+            var _cache = _lazyMethodCache.GetOrAdd(valueFactoryType, _ => new Lazy<MethodInfo>(() => lazyFactoryType.GetTypeInfo().GetMethod("CreateLazy")));
+            return _cache?.Value?.Invoke(lazyFactory, null);
         }
     }
 }

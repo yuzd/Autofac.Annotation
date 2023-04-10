@@ -919,7 +919,7 @@ namespace Autofac.Annotation
                 foreach (var assembly in _assemblyList)
                 {
                     if (assembly.IsDynamic) continue;
-                    var types = assembly.GetExportedTypes();
+                    var types = assembly.GetTypes();
                     //找到类型中含有 Component 标签的类 排除掉抽象类
                     var assemblBeanTypeList = (from type in types
                         let bean = type.GetComponent(ComponentDetector)
@@ -1179,7 +1179,7 @@ namespace Autofac.Annotation
             foreach (var assembly in _assemblyList)
             {
                 if (assembly.IsDynamic) continue;
-                var types = assembly.GetExportedTypes();
+                var types = assembly.GetTypes();
                 //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
                 var typeList = (from type in types
                     let bean = type.GetCustomAttribute<AutoConfiguration>()
@@ -1218,7 +1218,7 @@ namespace Autofac.Annotation
             var result = new ConcurrentBag<PointcutConfigurationInfo>();
             Parallel.ForEach(_assemblyList.Where(r => !r.IsDynamic), assembly =>
             {
-                var types = assembly.GetExportedTypes();
+                var types = assembly.GetTypes();
                 //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
                 var typeList = (from type in types
                     let bean = type.GetCustomAttributes<Pointcut>()

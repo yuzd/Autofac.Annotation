@@ -32,6 +32,7 @@ namespace Autofac.Annotation
         internal const string _ALL_COMPOMENT = "_ALL_COMPOMENT";
         internal const string _DEFAULT_SCOPE = "_DEFAULT_SCOPE";
         internal const string _AUTOFAC_SPRING = "autofac_spring";
+        internal const string _ENUM_TYPE_DEFS = "_ENUM_TYPE_DEFS";
 
         /// <summary>
         ///     默认的DataSource 只保存1个实例
@@ -307,6 +308,8 @@ namespace Autofac.Annotation
                     r.ComponentRegistry.Properties[nameof(List<BeanPostProcessor>)] = beanPostProcessors?.ToList();
             });
             builder.Properties[_DEFAULT_SCOPE] = DefaultAutofacScope;
+            builder.Properties[_ENUM_TYPE_DEFS] = getAllTypeDefs();
+
             //解析程序集PointCut标签类和方法
             var pointCutCfg = GetPointCutConfiguration(builder);
             //解析程序集拿到打了pointcut的类 打了Compoment的类 解析Import的类
@@ -376,6 +379,7 @@ namespace Autofac.Annotation
             }
 
             DoAutofacConfiguration(builder);
+            builder.Properties.Remove(_ENUM_TYPE_DEFS);
         }
 
         /// <summary>
@@ -400,7 +404,10 @@ namespace Autofac.Annotation
                             ReflectionExtensions.AssertMethodDynamic<PostConstruct>(e.Instance.GetType());
                         var method = ReflectionExtensions.AssertMethod(e.Instance.GetType(), component.InitMethod);
                         if (postConstructs.Any())
-                            postConstructs.ForEach(r => { MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context); });
+                            postConstructs.ForEach(r =>
+                            {
+                                MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context);
+                            });
 
                         if (method != null) MethodInvokeHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
                     });
@@ -412,7 +419,10 @@ namespace Autofac.Annotation
                     registrar.OnActivated(e =>
                     {
                         if (postConstructs.Any())
-                            postConstructs.ForEach(r => { MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context); });
+                            postConstructs.ForEach(r =>
+                            {
+                                MethodInvokeHelper.InvokeInstanceMethod(e.Instance, r, e.Context);
+                            });
 
                         if (method != null) MethodInvokeHelper.InvokeInstanceMethod(e.Instance, method, e.Context);
                     });
@@ -890,7 +900,11 @@ namespace Autofac.Annotation
             try
             {
                 var result = new List<ComponentModel>();
-                var beanTypeList = new List<BeanDefination>();
+                var enumTypeAgg = builder.Properties[_ENUM_TYPE_DEFS] as EnumTypeAgg;
+                if (enumTypeAgg == null)
+                {
+                    throw new ArgumentNullException(nameof(Component));
+                }
 
                 //获取打了PointCut的标签的class注册到DI
                 foreach (var pointcutConfig in pointCutConfigurationList.PointcutConfigurationInfoList
@@ -899,7 +913,7 @@ namespace Autofac.Annotation
                                  y => y.ToList()))
                 {
                     var pointCutAtt = pointcutConfig.Value.First();
-                    beanTypeList.Add(new BeanDefination
+                    enumTypeAgg.BeanDefinationDefs.Add(new BeanDefination
                     {
                         Type = pointcutConfig.Key,
                         Bean = new Component(pointcutConfig.Key)
@@ -913,40 +927,10 @@ namespace Autofac.Annotation
                     });
                 }
 
-                var importList = new List<Tuple<Import, Type>>();
-
                 //从assembly里面解析打了Compoment标签的 或者 自定义设置了 ComponentDetector的采用ComponentDetector的方式去解析生产的Compoment
-                foreach (var assembly in _assemblyList)
-                {
-                    if (assembly.IsDynamic) continue;
-                    var types = assembly.GetTypes();
-                    //找到类型中含有 Component 标签的类 排除掉抽象类
-                    var assemblBeanTypeList = (from type in types
-                        let bean = type.GetComponent(ComponentDetector)
-                        let order = type.GetCustomAttribute<Order>()
-                        where type.IsClass && !type.IsAbstract && bean != null
-                        select new BeanDefination
-                        {
-                            Type = type,
-                            Bean = bean,
-                            OrderIndex = order?.Index ?? bean.OrderIndex
-                        }).ToList();
-                    beanTypeList.AddRange(assemblBeanTypeList);
-
-
-                    //找到类型中含有 Import 标签的类 排除掉抽象类
-                    var importBeanTypeList = (from type in types
-                        let bean = type.GetCustomAttribute<Import>()
-                        where type.IsClass && !type.IsAbstract && bean != null
-                        select new Tuple<Import, Type>(bean, type)).ToList();
-                    importList.AddRange(importBeanTypeList);
-                }
-
-                beanTypeList.AddRange(DoImportComponent(importList));
-
                 //拿到了所有的BenDefinition之后注册到DI容器里面去
                 //和Spring一致优先使用类名排序再按照从小到大的顺序注册 如果同一个Type被处理多次会被覆盖！
-                foreach (var bean in beanTypeList.OrderBy(r => r.OrderIndex).ThenBy(r => r.Type.Name))
+                foreach (var bean in enumTypeAgg.BeanDefinationDefs.OrderBy(r => r.OrderIndex).ThenBy(r => r.Type.Name))
                 {
                     var component = EnumerateComponentServices(bean.Bean, bean.Type);
                     component.MetaSourceList = new List<MetaSourceData>();
@@ -973,48 +957,59 @@ namespace Autofac.Annotation
             }
         }
 
-
         /// <summary>
         ///     解析程序集的Import标签并解析得到结果注册到DI容器
         /// </summary>
         /// <returns></returns>
-        private List<BeanDefination> DoImportComponent(List<Tuple<Import, Type>> importList)
+        private List<BeanDefination> doImportCompnent(Import import, Type type)
         {
             var result = new List<BeanDefination>();
-            foreach (var import in importList)
+            //查看当前的Type的类型是否是继承了ImportSelector
+            if (typeof(ImportSelector).IsAssignableFrom(type))
             {
-                //查看当前的Type的类型是否是继承了ImportSelector
-                if (typeof(ImportSelector).IsAssignableFrom(import.Item2))
-                    if (Activator.CreateInstance(import.Item2) is ImportSelector importSelectorInstance)
+                if (Activator.CreateInstance(type) is ImportSelector importSelectorInstance)
+                {
+                    var temp = importSelectorInstance.SelectImports();
+                    if (temp == null || !temp.Any())
                     {
-                        var temp = importSelectorInstance.SelectImports();
-                        if (temp == null || !temp.Any()) continue;
-
-                        foreach (var beanDefination in temp) beanDefination.Bean.RegisterType = RegisterType.Import;
-
-                        result.AddRange(temp);
+                        return result;
                     }
 
-                if (import.Item1.ImportTypes == null || !import.Item1.ImportTypes.Any()) continue;
+                    foreach (var beanDefination in temp) beanDefination.Bean.RegisterType = RegisterType.Import;
 
-                //直接注册进来
-                foreach (var item in import.Item1.ImportTypes)
-                    if (typeof(ImportSelector).IsAssignableFrom(item))
+                    result.AddRange(temp);
+                }
+            }
+
+            if (import.ImportTypes == null || !import.ImportTypes.Any())
+            {
+                return result;
+            }
+
+            //直接注册进来
+            foreach (var item in import.ImportTypes)
+            {
+                if (typeof(ImportSelector).IsAssignableFrom(item))
+                {
+                    if (!(Activator.CreateInstance(item) is ImportSelector importSelectorInstance)) continue;
+                    var temp = importSelectorInstance.SelectImports();
+                    if (temp == null || !temp.Any()) continue;
+
+                    foreach (var beanDefination in temp) beanDefination.Bean.RegisterType = RegisterType.Import;
+
+                    result.AddRange(temp);
+                }
+                else
+                {
+                    var temp = new BeanDefination(item)
                     {
-                        if (!(Activator.CreateInstance(item) is ImportSelector importSelectorInstance)) continue;
-                        var temp = importSelectorInstance.SelectImports();
-                        if (temp == null || !temp.Any()) continue;
-
-                        foreach (var beanDefination in temp) beanDefination.Bean.RegisterType = RegisterType.Import;
-
-                        result.AddRange(temp);
-                    }
-                    else
-                    {
-                        var temp = new BeanDefination(item);
-                        temp.Bean.RegisterType = RegisterType.Import;
-                        result.Add(temp);
-                    }
+                        Bean =
+                        {
+                            RegisterType = RegisterType.Import
+                        }
+                    };
+                    result.Add(temp);
+                }
             }
 
             return result;
@@ -1033,9 +1028,10 @@ namespace Autofac.Annotation
                 AutoConfigurationDetailList = new List<AutoConfigurationDetail>()
             };
             var cache = builder.Properties[_ALL_COMPOMENT] as ComponentModelCacheSingleton;
+            var enumTypeAgg = builder.Properties[_ENUM_TYPE_DEFS] as EnumTypeAgg;
             try
             {
-                var allConfiguration = GetAllAutofacConfiguration();
+                var allConfiguration = GetAllAutofacConfiguration(enumTypeAgg);
                 if (!allConfiguration.Any()) return;
                 if (!string.IsNullOrEmpty(AutofacConfigurationKey))
                     allConfiguration = allConfiguration.Where(r => r.Key.Equals(AutofacConfigurationKey)).ToList();
@@ -1152,7 +1148,8 @@ namespace Autofac.Annotation
             };
             try
             {
-                var allConfiguration = DoPointcutConfiguration();
+                var enumTypeAgg = builder.Properties[_ENUM_TYPE_DEFS] as EnumTypeAgg;
+                var allConfiguration = DoPointcutConfiguration(enumTypeAgg);
                 if (!allConfiguration.Any()) return list;
 
                 list.PointcutConfigurationInfoList = allConfiguration;
@@ -1170,36 +1167,21 @@ namespace Autofac.Annotation
         /// </summary>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        private List<AutofacConfigurationInfo> GetAllAutofacConfiguration()
+        private List<AutofacConfigurationInfo> GetAllAutofacConfiguration(EnumTypeAgg agg)
         {
             if (_assemblyList == null || _assemblyList.Count < 1)
                 throw new ArgumentNullException(nameof(_assemblyList));
 
             var result = new List<AutofacConfigurationInfo>();
-            foreach (var assembly in _assemblyList)
+            foreach (var configuration in agg.AutoconfigurationDefs)
             {
-                if (assembly.IsDynamic) continue;
-                var types = assembly.GetTypes();
-                //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
-                var typeList = (from type in types
-                    let bean = type.GetCustomAttribute<AutoConfiguration>()
-                    let order = type.GetCustomAttribute<Order>()
-                    where type.IsClass && !type.IsAbstract && bean != null
-                    select new
-                    {
-                        Type = type,
-                        Bean = bean,
-                        Order = order
-                    }).ToList();
-
-                foreach (var configuration in typeList)
-                    result.Add(new AutofacConfigurationInfo
-                    {
-                        Type = configuration.Type,
-                        AutofacConfiguration = configuration.Bean,
-                        Key = configuration.Bean.Key,
-                        OrderIndex = configuration.Order?.Index ?? configuration.Bean.OrderIndex
-                    });
+                result.Add(new AutofacConfigurationInfo
+                {
+                    Type = configuration.Type,
+                    AutofacConfiguration = configuration.Bean,
+                    Key = configuration.Bean.Key,
+                    OrderIndex = configuration.OrderIndex
+                });
             }
 
             return result.OrderBy(r => r.OrderIndex).ThenBy(r => r.Type.Name).ToList();
@@ -1209,184 +1191,165 @@ namespace Autofac.Annotation
         ///     获取所有打了切面的信息
         /// </summary>
         /// <returns></returns>
-        private List<PointcutConfigurationInfo> DoPointcutConfiguration()
+        private List<PointcutConfigurationInfo> DoPointcutConfiguration(EnumTypeAgg agg)
         {
-            if (_assemblyList == null || _assemblyList.Count < 1)
-                throw new ArgumentNullException(nameof(_assemblyList));
-
             //一个pointcut 对应 一个class 对应多个group method
             var result = new ConcurrentBag<PointcutConfigurationInfo>();
-            Parallel.ForEach(_assemblyList.Where(r => !r.IsDynamic), assembly =>
+            Parallel.ForEach(agg.PointCutTypeDefs, configuration =>
             {
-                var types = assembly.GetTypes();
-                //找到类型中含有 AutofacConfiguration 标签的类 排除掉抽象类
-                var typeList = (from type in types
-                    let bean = type.GetCustomAttributes<Pointcut>()
-                    let order = type.GetCustomAttribute<Order>()
-                    where type.IsClass && !type.IsAbstract && bean != null && bean.Any()
-                    select new
-                    {
-                        order?.Index,
-                        Type = type,
-                        Bean = bean.Where(r => !string.IsNullOrEmpty(r.Class) || r.AttributeType != null).ToList()
-                    }).OrderBy(r => r.Index).ThenBy(r => r.Type.Name).ToList();
+                //解析方法 pointcut配置类不支持继承的方法
+                var beanTypeMethodList = configuration.Type.GetAllInstanceMethod(false);
 
-                Parallel.ForEach(typeList, configuration =>
+                //一个point标签下 class里面 最多一组 
+                var beforeMethodInfos = new Dictionary<string, Tuple<Before, MethodInfo>>();
+                var afterReturnMethodInfos = new Dictionary<string, Tuple<AfterReturn, MethodInfo>>();
+                var afterMethodInfos = new Dictionary<string, Tuple<After, MethodInfo>>();
+                var aroundMethodInfos = new Dictionary<string, Tuple<Around, MethodInfo>>();
+                var throwMethodInfos = new Dictionary<string, Tuple<AfterThrows, MethodInfo>>();
+                foreach (var beanTypeMethod in beanTypeMethodList)
                 {
-                    //解析方法 pointcut配置类不支持继承的方法
-                    var beanTypeMethodList = configuration.Type.GetAllInstanceMethod(false);
+                    var beforeAttribute = beanTypeMethod.GetCustomAttribute<Before>();
+                    var afterReturnAttribute = beanTypeMethod.GetCustomAttribute<AfterReturn>();
+                    var afterAttribute = beanTypeMethod.GetCustomAttribute<After>();
+                    var aroundAttribute = beanTypeMethod.GetCustomAttribute<Around>();
+                    var throwAttribute = beanTypeMethod.GetCustomAttribute<AfterThrows>();
+                    if (beforeAttribute == null && afterReturnAttribute == null && aroundAttribute == null &&
+                        throwAttribute == null &&
+                        afterAttribute == null) continue;
 
-                    //一个point标签下 class里面 最多一组 
-                    var beforeMethodInfos = new Dictionary<string, Tuple<Before, MethodInfo>>();
-                    var afterReturnMethodInfos = new Dictionary<string, Tuple<AfterReturn, MethodInfo>>();
-                    var afterMethodInfos = new Dictionary<string, Tuple<After, MethodInfo>>();
-                    var aroundMethodInfos = new Dictionary<string, Tuple<Around, MethodInfo>>();
-                    var throwMethodInfos = new Dictionary<string, Tuple<AfterThrows, MethodInfo>>();
-                    foreach (var beanTypeMethod in beanTypeMethodList)
+                    if (aroundAttribute != null)
                     {
-                        var beforeAttribute = beanTypeMethod.GetCustomAttribute<Before>();
-                        var afterReturnAttribute = beanTypeMethod.GetCustomAttribute<AfterReturn>();
-                        var afterAttribute = beanTypeMethod.GetCustomAttribute<After>();
-                        var aroundAttribute = beanTypeMethod.GetCustomAttribute<Around>();
-                        var throwAttribute = beanTypeMethod.GetCustomAttribute<AfterThrows>();
-                        if (beforeAttribute == null && afterReturnAttribute == null && aroundAttribute == null &&
-                            throwAttribute == null &&
-                            afterAttribute == null) continue;
-
-                        if (aroundAttribute != null)
-                        {
-                            //检查方法的参数是否对了
-                            var parameters = beanTypeMethod.GetParameters();
-                            if (parameters.All(r => r.ParameterType != typeof(AspectContext)))
-                                throw new InvalidOperationException(
-                                    $"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register without parameter of `AspectContext`!");
-
-                            if (parameters.All(r => r.ParameterType != typeof(AspectDelegate)))
-                                throw new InvalidOperationException(
-                                    $"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register without parameter of `AspectDelegate`!");
-
-                            //必须是异步的 返回类型是Task才行
-                            if (beanTypeMethod.ReturnType != typeof(Task))
-                                throw new InvalidOperationException(
-                                    $"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` must returnType of `Task`!");
-
-                            var key = aroundAttribute.GroupName ?? "";
-                            if (aroundMethodInfos.ContainsKey(key))
-                                throw new InvalidOperationException(
-                                    $"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
-
-                            aroundMethodInfos.Add(key, new Tuple<Around, MethodInfo>(aroundAttribute, beanTypeMethod));
-                        }
-
-                        //返回类型只能是void和Task
-                        if (beanTypeMethod.ReturnType != typeof(void) && beanTypeMethod.ReturnType != typeof(Task))
+                        //检查方法的参数是否对了
+                        var parameters = beanTypeMethod.GetParameters();
+                        if (parameters.All(r => r.ParameterType != typeof(AspectContext)))
                             throw new InvalidOperationException(
-                                $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType invaild");
+                                $"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register without parameter of `AspectContext`!");
 
-                        if (beforeAttribute != null)
-                        {
-                            var key = beforeAttribute.GroupName ?? "";
-                            if (beforeMethodInfos.ContainsKey(key))
-                                throw new InvalidOperationException(
-                                    $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
+                        if (parameters.All(r => r.ParameterType != typeof(AspectDelegate)))
+                            throw new InvalidOperationException(
+                                $"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register without parameter of `AspectDelegate`!");
 
-                            beforeMethodInfos.Add(key, new Tuple<Before, MethodInfo>(beforeAttribute, beanTypeMethod));
-                        }
+                        //必须是异步的 返回类型是Task才行
+                        if (beanTypeMethod.ReturnType != typeof(Task))
+                            throw new InvalidOperationException(
+                                $"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` must returnType of `Task`!");
 
-                        if (afterAttribute != null)
-                        {
-                            var key = afterAttribute.GroupName ?? "";
-                            if (!string.IsNullOrEmpty(afterAttribute.Returing))
-                            {
-                                //查看这个指定的参数有没有在这个方法里面
-                                var parameters = beanTypeMethod.GetParameters();
-                                var returnIngParam = parameters.FirstOrDefault(r => r.Name == afterAttribute.Returing);
-                                if (returnIngParam == null)
-                                    throw new InvalidOperationException(
-                                        $"The Pointcut class `{configuration.Type.FullName}` after method `{beanTypeMethod.Name}` can not be register without special parameter of `{afterAttribute.Returing}`!");
-                            }
+                        var key = aroundAttribute.GroupName ?? "";
+                        if (aroundMethodInfos.ContainsKey(key))
+                            throw new InvalidOperationException(
+                                $"The Pointcut class `{configuration.Type.FullName}` arround method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
 
-                            if (afterMethodInfos.ContainsKey(key))
-                                throw new InvalidOperationException(
-                                    $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
-
-                            afterMethodInfos.Add(key, new Tuple<After, MethodInfo>(afterAttribute, beanTypeMethod));
-                        }
-
-                        if (afterReturnAttribute != null)
-                        {
-                            var key = afterReturnAttribute.GroupName ?? "";
-                            if (!string.IsNullOrEmpty(afterReturnAttribute.Returing))
-                            {
-                                //查看这个指定的参数有没有在这个方法里面
-                                var parameters = beanTypeMethod.GetParameters();
-                                var returnIngParam =
-                                    parameters.FirstOrDefault(r => r.Name == afterReturnAttribute.Returing);
-                                if (returnIngParam == null)
-                                    throw new InvalidOperationException(
-                                        $"The Pointcut class `{configuration.Type.FullName}` after method `{beanTypeMethod.Name}` can not be register without special parameter of `{afterReturnAttribute.Returing}`!");
-                            }
-
-                            if (afterReturnMethodInfos.ContainsKey(key))
-                                throw new InvalidOperationException(
-                                    $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
-
-                            afterReturnMethodInfos.Add(key,
-                                new Tuple<AfterReturn, MethodInfo>(afterReturnAttribute, beanTypeMethod));
-                        }
-
-                        if (throwAttribute != null)
-                        {
-                            var key = throwAttribute.GroupName ?? "";
-                            if (!string.IsNullOrEmpty(throwAttribute.Throwing))
-                            {
-                                //查看这个指定的参数有没有在这个方法里面
-                                var parameters = beanTypeMethod.GetParameters();
-                                var returnIngParam = parameters.FirstOrDefault(r => r.Name == throwAttribute.Throwing);
-                                if (returnIngParam == null)
-                                    throw new InvalidOperationException(
-                                        $"The Pointcut class `{configuration.Type.FullName}` throwing method `{beanTypeMethod.Name}` can not be register without special parameter of `{throwAttribute.Throwing}`!");
-                            }
-
-                            if (throwMethodInfos.ContainsKey(key))
-                                throw new InvalidOperationException(
-                                    $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
-
-                            throwMethodInfos.Add(key,
-                                new Tuple<AfterThrows, MethodInfo>(throwAttribute, beanTypeMethod));
-                        }
+                        aroundMethodInfos.Add(key, new Tuple<Around, MethodInfo>(aroundAttribute, beanTypeMethod));
                     }
 
-                    // PointCut 看下是否有配置name 如果有配置name就要check有没有该name对应的methodinfo
-                    foreach (var pc in configuration.Bean)
+                    //返回类型只能是void和Task
+                    if (beanTypeMethod.ReturnType != typeof(void) && beanTypeMethod.ReturnType != typeof(Task))
+                        throw new InvalidOperationException(
+                            $"The Configuration class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` returnType invaild");
+
+                    if (beforeAttribute != null)
                     {
-                        if (!beforeMethodInfos.ContainsKey(pc.GroupName)
-                            && !afterReturnMethodInfos.ContainsKey(pc.GroupName)
-                            && !aroundMethodInfos.ContainsKey(pc.GroupName)
-                            && !throwMethodInfos.ContainsKey(pc.GroupName)
-                            && !afterMethodInfos.ContainsKey(pc.GroupName)
-                           )
-                            continue;
+                        var key = beforeAttribute.GroupName ?? "";
+                        if (beforeMethodInfos.ContainsKey(key))
+                            throw new InvalidOperationException(
+                                $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
 
-                        var rr = new PointcutConfigurationInfo
-                        {
-                            PointClass = configuration.Type,
-                            Pointcut = pc,
-                            GroupName = pc.GroupName
-                        };
-                        if (beforeMethodInfos.TryGetValue(pc.GroupName, out var be)) rr.BeforeMethod = be;
-
-                        if (afterMethodInfos.TryGetValue(pc.GroupName, out var af1)) rr.AfterMethod = af1;
-
-                        if (afterReturnMethodInfos.TryGetValue(pc.GroupName, out var af)) rr.AfterReturnMethod = af;
-
-                        if (aroundMethodInfos.TryGetValue(pc.GroupName, out var ar)) rr.AroundMethod = ar;
-
-                        if (throwMethodInfos.TryGetValue(pc.GroupName, out var trr)) rr.AfterThrows = trr;
-
-                        result.Add(rr);
+                        beforeMethodInfos.Add(key, new Tuple<Before, MethodInfo>(beforeAttribute, beanTypeMethod));
                     }
-                });
+
+                    if (afterAttribute != null)
+                    {
+                        var key = afterAttribute.GroupName ?? "";
+                        if (!string.IsNullOrEmpty(afterAttribute.Returing))
+                        {
+                            //查看这个指定的参数有没有在这个方法里面
+                            var parameters = beanTypeMethod.GetParameters();
+                            var returnIngParam = parameters.FirstOrDefault(r => r.Name == afterAttribute.Returing);
+                            if (returnIngParam == null)
+                                throw new InvalidOperationException(
+                                    $"The Pointcut class `{configuration.Type.FullName}` after method `{beanTypeMethod.Name}` can not be register without special parameter of `{afterAttribute.Returing}`!");
+                        }
+
+                        if (afterMethodInfos.ContainsKey(key))
+                            throw new InvalidOperationException(
+                                $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
+
+                        afterMethodInfos.Add(key, new Tuple<After, MethodInfo>(afterAttribute, beanTypeMethod));
+                    }
+
+                    if (afterReturnAttribute != null)
+                    {
+                        var key = afterReturnAttribute.GroupName ?? "";
+                        if (!string.IsNullOrEmpty(afterReturnAttribute.Returing))
+                        {
+                            //查看这个指定的参数有没有在这个方法里面
+                            var parameters = beanTypeMethod.GetParameters();
+                            var returnIngParam =
+                                parameters.FirstOrDefault(r => r.Name == afterReturnAttribute.Returing);
+                            if (returnIngParam == null)
+                                throw new InvalidOperationException(
+                                    $"The Pointcut class `{configuration.Type.FullName}` after method `{beanTypeMethod.Name}` can not be register without special parameter of `{afterReturnAttribute.Returing}`!");
+                        }
+
+                        if (afterReturnMethodInfos.ContainsKey(key))
+                            throw new InvalidOperationException(
+                                $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
+
+                        afterReturnMethodInfos.Add(key,
+                            new Tuple<AfterReturn, MethodInfo>(afterReturnAttribute, beanTypeMethod));
+                    }
+
+                    if (throwAttribute != null)
+                    {
+                        var key = throwAttribute.GroupName ?? "";
+                        if (!string.IsNullOrEmpty(throwAttribute.Throwing))
+                        {
+                            //查看这个指定的参数有没有在这个方法里面
+                            var parameters = beanTypeMethod.GetParameters();
+                            var returnIngParam = parameters.FirstOrDefault(r => r.Name == throwAttribute.Throwing);
+                            if (returnIngParam == null)
+                                throw new InvalidOperationException(
+                                    $"The Pointcut class `{configuration.Type.FullName}` throwing method `{beanTypeMethod.Name}` can not be register without special parameter of `{throwAttribute.Throwing}`!");
+                        }
+
+                        if (throwMethodInfos.ContainsKey(key))
+                            throw new InvalidOperationException(
+                                $"The Pointcut class `{configuration.Type.FullName}` method `{beanTypeMethod.Name}` can not be register multi${(!string.IsNullOrEmpty(key) ? " with key:`" + key + "`" : "")}!");
+
+                        throwMethodInfos.Add(key,
+                            new Tuple<AfterThrows, MethodInfo>(throwAttribute, beanTypeMethod));
+                    }
+                }
+
+                // PointCut 看下是否有配置name 如果有配置name就要check有没有该name对应的methodinfo
+                foreach (var pc in configuration.Bean)
+                {
+                    if (!beforeMethodInfos.ContainsKey(pc.GroupName)
+                        && !afterReturnMethodInfos.ContainsKey(pc.GroupName)
+                        && !aroundMethodInfos.ContainsKey(pc.GroupName)
+                        && !throwMethodInfos.ContainsKey(pc.GroupName)
+                        && !afterMethodInfos.ContainsKey(pc.GroupName)
+                       )
+                        continue;
+
+                    var rr = new PointcutConfigurationInfo
+                    {
+                        PointClass = configuration.Type,
+                        Pointcut = pc,
+                        GroupName = pc.GroupName
+                    };
+                    if (beforeMethodInfos.TryGetValue(pc.GroupName, out var be)) rr.BeforeMethod = be;
+
+                    if (afterMethodInfos.TryGetValue(pc.GroupName, out var af1)) rr.AfterMethod = af1;
+
+                    if (afterReturnMethodInfos.TryGetValue(pc.GroupName, out var af)) rr.AfterReturnMethod = af;
+
+                    if (aroundMethodInfos.TryGetValue(pc.GroupName, out var ar)) rr.AroundMethod = ar;
+
+                    if (throwMethodInfos.TryGetValue(pc.GroupName, out var trr)) rr.AfterThrows = trr;
+
+                    result.Add(rr);
+                }
             });
             return result.ToList();
         }
@@ -1418,7 +1381,8 @@ namespace Autofac.Annotation
                 EnableAspect = bean.EnableAspect,
                 EnablePointcutInherited = bean.EnablePointcutInherited,
                 IsBenPostProcessor = typeof(BeanPostProcessor).IsAssignableFrom(currentType),
-                CurrentClassTypeAttributes = currentType.GetCustomAttributesIncludingBaseInterfaces<Attribute>().ToList(),
+                CurrentClassTypeAttributes =
+                    currentType.GetCustomAttributesIncludingBaseInterfaces<Attribute>().ToList(),
                 DependsOn = currentType.GetCustomAttribute<DependsOn>(),
             };
 
@@ -1723,7 +1687,8 @@ namespace Autofac.Annotation
                 InterceptorType = InterceptorType.Class,
                 InjectPropertyType = InjectPropertyType.Autowired,
                 IsBenPostProcessor = typeof(BeanPostProcessor).IsAssignableFrom(currentType),
-                CurrentClassTypeAttributes = currentType.GetCustomAttributesIncludingBaseInterfaces<Attribute>().ToList()
+                CurrentClassTypeAttributes =
+                    currentType.GetCustomAttributesIncludingBaseInterfaces<Attribute>().ToList()
             };
 
             component.MetaSourceList = new List<MetaSourceData>();

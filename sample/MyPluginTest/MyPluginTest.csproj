@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(Configuration)' == 'Release'">
+        <ProjectReference Include="..\..\src\Autofac.Annotation.csproj">
+            <Private>false</Private>
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </ProjectReference>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+        <ProjectReference Include="..\..\src\Autofac.Annotation.csproj">
+            <Private>false</Private>
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </ProjectReference>
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Plugin\Plugin.csproj" />
+    </ItemGroup>
+</Project>

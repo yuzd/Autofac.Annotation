@@ -825,7 +825,7 @@ public class TestHelloAfterThrows2 : AspectAfterThrows
     }
 }
 
-[Component(EnableAspect = true)]
+[Component]
 public class TestHello
 {
     [TestHelloAround1(GroupName = "Aspect1", OrderIndex = 10)]

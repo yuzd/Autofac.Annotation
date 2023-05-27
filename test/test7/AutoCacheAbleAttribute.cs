@@ -11,8 +11,7 @@ namespace Autofac.Configuration.Test.test7
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     public class AutoCacheAbleAttribute : AspectArround
     {
-
-        private static readonly ConcurrentDictionary<string, object> _cache  = new ConcurrentDictionary<string, object>();
+        private static readonly ConcurrentDictionary<string, object> _cache = new ConcurrentDictionary<string, object>();
 
         public override async Task OnInvocation(AspectContext aspectContext, AspectDelegate _next)
         {
@@ -20,7 +19,7 @@ namespace Autofac.Configuration.Test.test7
             if (_cache.TryGetValue(aspectContext.TargetMethod.Name, out var _cacheResult))
             {
                 Console.WriteLine("Use cache");
-                aspectContext.ReturnValue = _cacheResult+"_Cache"; 
+                aspectContext.ReturnValue = _cacheResult + "_Cache";
                 return;
             }
 
@@ -29,13 +28,11 @@ namespace Autofac.Configuration.Test.test7
 
             //缓存方法结果 
             _cache.TryAdd(aspectContext.TargetMethod.Name, aspectContext.ReturnValue);
-
         }
     }
 
 
-
-    [Component(EnableAspect = true)]
+    [Component]
     public class TestCacheAop
     {
         public string Name { get; set; } = "TestCacheAop";
@@ -54,11 +51,11 @@ namespace Autofac.Configuration.Test.test7
     {
         Task<string> TestInterceptor2();
     }
-    
-   
+
+
     // [Component]
-    [Component(typeof(ICacheAop2<>),EnableAspect = true,InterceptorType= InterceptorType.Interface)]
-    public class TestCacheAop2<T>:ICacheAop2<T>
+    [Component(typeof(ICacheAop2<>), InterceptorType = InterceptorType.Interface)]
+    public class TestCacheAop2<T> : ICacheAop2<T>
     {
         public string Name { get; set; } = "TestCacheAop";
 
@@ -70,16 +67,16 @@ namespace Autofac.Configuration.Test.test7
             return Name;
         }
     }
-    
-    
+
+
     public interface ICacheAop23<T>
     {
         Task<string> TestInterceptor2();
     }
 
-    
+
     [Component(typeof(ICacheAop23<>))]
-    public class TestCacheAop3<T>:ICacheAop23<T>
+    public class TestCacheAop3<T> : ICacheAop23<T>
     {
         public string Name { get; set; } = "TestCacheAop";
 

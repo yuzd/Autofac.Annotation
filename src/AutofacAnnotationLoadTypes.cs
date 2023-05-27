@@ -299,5 +299,79 @@ namespace Autofac.Annotation
             aspectClass.EnableAspect = true;
             return true;
         }
+
+        /**
+         * 遍历所有的dll 拿到
+         * 所有的AutoConfiguration标签的类
+         * 所有的Import标签的类
+         * 所有的GetComponent标签的类
+         */
+        private EnumTypeAgg getAllTypeDefs()
+        {
+            if (_assemblyList == null || _assemblyList.Count < 1)
+            {
+                throw new ArgumentNullException(nameof(_assemblyList));
+            }
+
+            var enumTypeAgg = new EnumTypeAgg();
+            Parallel.ForEach(_assemblyList.Where(r => !r.IsDynamic), assembly =>
+            {
+                var types = assembly.GetTypes();
+                foreach (var type in types)
+                {
+                    if (!type.IsClass || type.IsAbstract)
+                    {
+                        continue;
+                    }
+
+                    var orderAttr = type.GetCustomAttribute<Order>();
+
+
+                    var pointcutAttr = type.GetCustomAttributes<Pointcut>().ToList();
+                    if (pointcutAttr.Any())
+                    {
+                        enumTypeAgg.PointCutTypeDefs.Add(new TypeDef<List<Pointcut>>
+                        {
+                            OrderIndex = orderAttr?.Index ?? 0,
+                            Type = type,
+                            Bean = pointcutAttr.Where(r => !string.IsNullOrEmpty(r.Class) || r.AttributeType != null)
+                                .ToList()
+                        });
+                    }
+
+                    var configBean = type.GetCustomAttribute<AutoConfiguration>();
+                    if (configBean != null)
+                    {
+                        enumTypeAgg.AutoconfigurationDefs.Add(new TypeDef<AutoConfiguration>()
+                        {
+                            Type = type,
+                            Bean = configBean,
+                            OrderIndex = orderAttr?.Index ?? configBean.OrderIndex
+                        });
+                    }
+
+
+                    var componentAttr = type.GetComponent(ComponentDetector);
+                    if (componentAttr != null)
+                    {
+                        enumTypeAgg.BeanDefinationDefs.Add(new BeanDefination
+                        {
+                            Type = type,
+                            Bean = componentAttr,
+                            OrderIndex = orderAttr?.Index ?? componentAttr.OrderIndex
+                        });
+                    }
+
+
+                    var importBean = type.GetCustomAttribute<Import>();
+                    if (importBean != null)
+                    {
+                        var beanDefinations = doImportCompnent(importBean, type);
+                        beanDefinations.ForEach(enumTypeAgg.BeanDefinationDefs.Add);
+                    }
+                }
+            });
+            return enumTypeAgg;
+        }
     }
 }

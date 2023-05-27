@@ -430,4 +430,22 @@ namespace Autofac.Annotation
             return this.Type == item.Type && this.Method == item.Method;
         }
     }
+
+    internal class TypeDef<T>
+    {
+        public int OrderIndex { get; set; }
+        public Type Type { get; set; }
+        public T Bean { get; set; }
+    }
+
+    internal class EnumTypeAgg
+    {
+        public ConcurrentBag<TypeDef<List<Pointcut>>> PointCutTypeDefs { get; set; } =
+            new ConcurrentBag<TypeDef<List<Pointcut>>>();
+
+        public ConcurrentBag<BeanDefination> BeanDefinationDefs { get; set; } = new ConcurrentBag<BeanDefination>();
+
+        public ConcurrentBag<TypeDef<AutoConfiguration>> AutoconfigurationDefs { get; set; } =
+            new ConcurrentBag<TypeDef<AutoConfiguration>>();
+    }
 }

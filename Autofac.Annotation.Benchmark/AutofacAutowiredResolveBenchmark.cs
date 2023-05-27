@@ -3,10 +3,13 @@ using Autofac.Annotation.Test;
 using Autofac.Core;
 using Autofac.Features.AttributeFilters;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Engines;
 using Castle.DynamicProxy;
 
 namespace Autofac.Annotation.Benchmark
 {
+    [SimpleJob(RunStrategy.ColdStart, warmupCount: 0)]
+    [MinColumn, MaxColumn, MeanColumn, MedianColumn]
     public class AutofacAutowiredResolveBenchmark
     {
         private IContainer _container;

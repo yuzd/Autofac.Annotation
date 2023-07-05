@@ -12,26 +12,6 @@ namespace Autofac.Annotation.Condition
     /// </summary>
     internal class OnProperty : ICondition
     {
-        private static readonly Lazy<IConfiguration> DefaultJsonConfiguration;
-
-        static OnProperty()
-        {
-            string json = "appsettings.json";
-            if (!File.Exists(json))
-            {
-                return;
-            }
-
-            try
-            {
-                DefaultJsonConfiguration = new Lazy<IConfiguration>(EmbeddedConfiguration.LoadJson(json));
-            }
-            catch (Exception)
-            {
-                //ignore
-            }
-        }
-
         /// <summary>
         /// true代表要过滤
         /// </summary>
@@ -40,22 +20,12 @@ namespace Autofac.Annotation.Condition
         /// <returns></returns>
         public bool ShouldSkip(IComponentRegistryBuilder context, object config)
         {
-            if (DefaultJsonConfiguration == null)
+            return config switch
             {
-                return false;
-            }
-
-            if ((config is ConditionalOnProperty metaConfig))
-            {
-                return matchSignleProperty(context, metaConfig);
-            }
-
-            if ((config is ConditionalOnProperties metaConfig2))
-            {
-                return matchProperties(context, metaConfig2);
-            }
-
-            return false;
+                ConditionalOnProperty metaConfig => matchSignleProperty(context, metaConfig),
+                ConditionalOnProperties metaConfig2 => matchProperties(context, metaConfig2),
+                _ => false
+            };
         }
 
         private bool matchProperties(IComponentRegistryBuilder context, ConditionalOnProperties metaConfig)
@@ -67,7 +37,7 @@ namespace Autofac.Annotation.Condition
                 string value = null;
                 try
                 {
-                    value = DefaultJsonConfiguration.Value[temp];
+                    value = getConfiguration(context)[temp];
                 }
                 catch (Exception)
                 {
@@ -92,7 +62,7 @@ namespace Autofac.Annotation.Condition
             string value = null;
             try
             {
-                value = DefaultJsonConfiguration.Value[metaConfig.name];
+                value = getConfiguration(context)[metaConfig.name];
             }
             catch (Exception)
             {
@@ -105,6 +75,20 @@ namespace Autofac.Annotation.Condition
             }
 
             return !metaConfig.havingValue.Equals(value);
+        }
+
+        private IConfiguration getConfiguration(IComponentRegistryBuilder context)
+        {
+            if (context.Properties[nameof(AutofacAnnotationModule)] is AutofacAnnotationModule module)
+            {
+                var defaultValueResource = module.GetDefaultValueResource();
+                if (defaultValueResource != null)
+                {
+                    return defaultValueResource.Value.Configuration;
+                }
+            }
+
+            throw new InvalidOperationException("[OnProperty Condition] Get default configuration fail");
         }
     }
 }

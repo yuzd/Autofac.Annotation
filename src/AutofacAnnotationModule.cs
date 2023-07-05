@@ -107,6 +107,15 @@ namespace Autofac.Annotation
             return this;
         }
 
+        /// <summary>
+        ///  获取默认Value读取的Resource
+        /// </summary>
+        /// <returns></returns>
+        internal Lazy<MetaSourceData> GetDefaultValueResource()
+        {
+            return DefaultMetaSourceData;
+        }
+
 
         /// <summary>
         ///     容器注册完开始找AutofacConfiguration标签的class 有多个的时候指定Key

@@ -200,7 +200,7 @@ namespace Autofac.Annotation.Condition
         /// <summary>
         /// 是否有值
         /// </summary>
-        public string havingValue { get; set; }
+        public string havingValue { get; set; } = "";
 
         /// <summary>
         /// 表示如果没有在appsettings.json设置该属性，则默认为条件符合

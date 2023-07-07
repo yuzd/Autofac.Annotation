@@ -74,7 +74,12 @@ namespace Autofac.Annotation.Condition
                 return !string.IsNullOrEmpty(value);
             }
 
-            return !metaConfig.havingValue.Equals(value);
+            if (metaConfig.havingValue.Length > 0)
+            {
+                return !metaConfig.havingValue.Equals(value);
+            }
+
+            return "false".Equals(value, StringComparison.CurrentCultureIgnoreCase);
         }
 
         private IConfiguration getConfiguration(IComponentRegistryBuilder context)

@@ -246,7 +246,7 @@ namespace Autofac.Annotation.Condition
         /// <summary>
         /// 是否有值
         /// </summary>
-        public string havingValue { get; set; }
+        public string havingValue { get; set; } = "";
 
         /// <summary>
         /// 前缀

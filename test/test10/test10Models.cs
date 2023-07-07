@@ -222,14 +222,49 @@ namespace Autofac.Annotation.Test.test10
     public class AutoConfTest12
     {
     }
-    
+
+    [Component]
+    [ConditionalOnProperty("onproperty1")] // 存在onproperty1就注册
+    public class AutoConfTest122
+    {
+    }
+
+    [Component]
+    [ConditionalOnProperty("onproperty2")] // 存在onproperty2就注册
+    public class AutoConfTest1222
+    {
+    }
+
+    [Component]
+    [ConditionalOnProperties(new[] { "onproperty1" })] // 存在onproperty1就注册
+    public class AutoConfTestMulti1
+    {
+    }
+
+    [Component]
+    [ConditionalOnProperties(new[] { "onproperty2" })] // 存在onproperty2就注册
+    public class AutoConfTestMulti2
+    {
+    }
+
+    [Component]
+    [ConditionalOnProperties(new[] { "onproperty", "onproperty2" })] // 存在onproperty2就注册
+    public class AutoConfTestMulti3
+    {
+    }
+
+    [Component]
+    [ConditionalOnProperties(new[] { "onproperty", "onproperty1" })] // 存在onproperty2就注册
+    public class AutoConfTestMulti4
+    {
+    }
+
     [Component]
     [ConditionOnClass("Autofac.Annotation.Test.test10.Test10Model2,Autofac.Configuration.Test")]
     public class AutoConfTest13
     {
-        
     }
-    
+
     [Component]
     [ConditionOnMissingClass("Autofac.Annotation.Test.test10.Test10Model2,Autofac.Configuration.Test")]
     public class AutoConfTest14

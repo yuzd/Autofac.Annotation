@@ -53,8 +53,13 @@ namespace Autofac.Annotation.Condition
                 return bools.Count != 1 || !bools[0];
             }
 
-            var bools2 = list.Select(r => r != null && r.Equals(metaConfig.havingValue)).Distinct().ToList();
-            return bools2.Count != 1 || !bools2[0];
+            if (!string.IsNullOrEmpty(metaConfig.havingValue) && metaConfig.havingValue.Length > 0)
+            {
+                var bools2 = list.Select(r => r != null && r.Equals(metaConfig.havingValue)).Distinct().ToList();
+                return bools2.Count != 1 || !bools2[0];
+            }
+
+            return list.Count(r => r != null) != metaConfig.names.Length;
         }
 
         private bool matchSignleProperty(IComponentRegistryBuilder context, ConditionalOnProperty metaConfig)
@@ -74,12 +79,12 @@ namespace Autofac.Annotation.Condition
                 return !string.IsNullOrEmpty(value);
             }
 
-            if (metaConfig.havingValue.Length > 0)
+            if (!string.IsNullOrEmpty(metaConfig.havingValue) && metaConfig.havingValue.Length > 0)
             {
                 return !metaConfig.havingValue.Equals(value);
             }
 
-            return "false".Equals(value, StringComparison.CurrentCultureIgnoreCase);
+            return value is null;
         }
 
         private IConfiguration getConfiguration(IComponentRegistryBuilder context)

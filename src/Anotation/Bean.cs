@@ -30,7 +30,7 @@ namespace Autofac.Annotation
         public string Key { get; private set; }
 
         /// <summary>
-        /// 作用域 bean的作用域默认是单例的
+        /// 作用域
         /// </summary>
         public AutofacScope AutofacScope { get; set; } = AutofacScope.Default;
 

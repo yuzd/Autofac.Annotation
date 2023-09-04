@@ -102,7 +102,7 @@ namespace Autofac.AspectIntercepter.Pointcut
                 pointCutMethodChain.PointcutMethodChainList.Add(pointCutMethod);
                 var lazyOf = typeof(Lazy<>);
                 var lazyOfPointCutClassType = lazyOf.MakeGenericType(pointcut.PointClass);
-                //每个切换先拿到对应的实例 重复拿也没关系 因为是单例的
+                //每个切面先拿到对应的实例 重复拿也没关系 因为是单例的
                 var instance = _context.Resolve(lazyOfPointCutClassType);
 
                 if (pointcut.BeforeMethod != null)
@@ -202,7 +202,7 @@ namespace Autofac.AspectIntercepter.Pointcut
 
                 var lazyOf = typeof(Lazy<>);
                 var lazyOfPointCutClassType = lazyOf.MakeGenericType(pointcut.PointClass);
-                //每个切换先拿到对应的实例 重复拿也没关系 因为是单例的
+                //每个切面先拿到对应的实例 重复拿也没关系 因为是单例的
                 var instance = _context.Resolve(lazyOfPointCutClassType);
 
                 if (pointcut.BeforeMethod != null)

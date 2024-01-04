@@ -39,8 +39,7 @@ namespace Autofac.AspectIntercepter
             {
                 if (!_configuration.CacheList.TryGetValue(new ObjectKey(invocation.TargetType, invocation.MethodInvocationTarget), out var pointCutInherited))
                 {
-                    if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
-                        !_configuration.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(),
+                    if (!_configuration.DynamicCacheList.TryGetValue(invocation.MethodInvocationTarget.GetMethodInfoUniqueName(),
                             out var pointCutDynamic))
                     {
                         //该方法不需要拦截
@@ -96,8 +95,7 @@ namespace Autofac.AspectIntercepter
             {
                 if (!_configuration.CacheList.TryGetValue(new ObjectKey(invocation.TargetType, invocation.TargetMethod), out var pointCutInherited))
                 {
-                    if (!invocation.TargetMethod.DeclaringType.GetTypeInfo().IsGenericType ||
-                        !_configuration.DynamicCacheList.TryGetValue(invocation.TargetMethod.GetMethodInfoUniqueName(),
+                    if (!_configuration.DynamicCacheList.TryGetValue(invocation.TargetMethod.GetMethodInfoUniqueName(),
                             out var pointCutDynamic))
                     {
                         //该方法不需要拦截

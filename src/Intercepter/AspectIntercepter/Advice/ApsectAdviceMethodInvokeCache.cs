@@ -216,7 +216,7 @@ namespace Autofac.AspectIntercepter.Advice
 
                 aspectAttributeInfo.AdviceMethod = aspectAttributeInfo.AdviceMethod.OrderBy(r => r.OrderIndex).ToList();
 
-                if (aspectClass.isDynamicGeneric || isGeneric)
+                if (aspectClass.isDynamicGeneric || isGeneric || method.IsGenericMethod)
                 {
                     DynamicCacheList.TryAdd(method.GetMethodInfoUniqueName(), aspectAttributeInfo);
                     continue;

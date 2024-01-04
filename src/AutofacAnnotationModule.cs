@@ -727,7 +727,7 @@ namespace Autofac.Annotation
                     if (aspectClass.Pointcut.IsVaild(aspectClass, method, pointCutClassInjectAnotation,
                             out var pointCutMethodInjectAnotation))
                     {
-                        if (component.isDynamicGeneric || isgeneric)
+                        if (component.isDynamicGeneric || isgeneric || method.IsGenericMethod)
                         {
                             var uniqKey = method.GetMethodInfoUniqueName();
                             if (pointCutCfg.DynamicPointcutTargetInfoList.ContainsKey(uniqKey))

@@ -41,11 +41,11 @@ namespace Autofac.AspectIntercepter
 
             if (!_cache.CacheList.TryGetValue(invocation.Method, out var attribute))
             {
-                if (!_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget, out var attributeInherited))
+                if (invocation.Method == invocation.MethodInvocationTarget ||
+                    !_cache.CacheList.TryGetValue(invocation.MethodInvocationTarget, out var attributeInherited))
                 {
                     //动态泛型类
-                    if (!invocation.MethodInvocationTarget.DeclaringType.GetTypeInfo().IsGenericType ||
-                        !_cache.DynamicCacheList.TryGetValue(
+                    if (!_cache.DynamicCacheList.TryGetValue(
                             invocation.MethodInvocationTarget.GetMethodInfoUniqueName(),
                             out var AttributesDynamic))
                     {
@@ -106,11 +106,11 @@ namespace Autofac.AspectIntercepter
 
             if (!_cache.CacheList.TryGetValue(invocation.Method, out var attribute))
             {
-                if (!_cache.CacheList.TryGetValue(invocation.TargetMethod, out var attributeInherited))
+                if (invocation.Method == invocation.TargetMethod ||
+                    !_cache.CacheList.TryGetValue(invocation.TargetMethod, out var attributeInherited))
                 {
                     //动态泛型类
-                    if (!invocation.TargetMethod.DeclaringType.GetTypeInfo().IsGenericType ||
-                        !_cache.DynamicCacheList.TryGetValue(invocation.TargetMethod.GetMethodInfoUniqueName(),
+                    if (!_cache.DynamicCacheList.TryGetValue(invocation.TargetMethod.GetMethodInfoUniqueName(),
                             out var AttributesDynamic))
                     {
                         await invocation.ProceedAsync();

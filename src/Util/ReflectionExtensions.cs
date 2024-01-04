@@ -132,22 +132,23 @@ namespace Autofac.Annotation.Util
         /// <returns></returns>
         public static string GetMethodInfoUniqueName(this MethodInfo mi)
         {
-            var signatureString = string.Join(",", mi.GetParameters().Select(p => p.ParameterType.Name).ToArray());
-            var returnTypeName = mi.ReturnType.Name;
-
-            if (mi.IsGenericMethod)
-            {
-                var typeParamsString = string.Join(",",
-                    mi.GetGenericArguments().Select(g => g.AssemblyQualifiedName).ToArray());
-
-
-                // returns a string like this: "Assembly.YourSolution.YourProject.YourClass:YourMethod(Param1TypeName,...,ParamNTypeName):ReturnTypeName
-                return
-                    $"{mi.DeclaringType.Namespace+"," + mi.DeclaringType.Name}:{mi.Name}<{typeParamsString}>({signatureString}):{returnTypeName}";
-            }
-
-            return
-                $"{mi.DeclaringType.Namespace +","+ mi.DeclaringType.Name}:{mi.Name}({signatureString}):{returnTypeName}";
+            return mi.Module.Name + "-" + mi.MetadataToken;
+            // var signatureString = string.Join(",", mi.GetParameters().Select(p => p.ParameterType.Name).ToArray());
+            // var returnTypeName = mi.ReturnType.Name;
+            //
+            // if (mi.IsGenericMethod)
+            // {
+            //     var typeParamsString = string.Join(",",
+            //         mi.GetGenericArguments().Select(g => g.AssemblyQualifiedName).ToArray());
+            //
+            //
+            //     // returns a string like this: "Assembly.YourSolution.YourProject.YourClass:YourMethod(Param1TypeName,...,ParamNTypeName):ReturnTypeName
+            //     return
+            //         $"{mi.DeclaringType.Namespace+"," + mi.DeclaringType.Name}:{mi.Name}<{typeParamsString}>({signatureString}):{returnTypeName}";
+            // }
+            //
+            // return
+            //     $"{mi.DeclaringType.Namespace +","+ mi.DeclaringType.Name}:{mi.Name}({signatureString}):{returnTypeName}";
         }
 
         /// <summary>

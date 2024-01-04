@@ -75,7 +75,9 @@ namespace Autofac.Annotation
         /// <returns></returns>
         public override object ResolveParameter(ParameterInfo parameter, IComponentContext context)
         {
-            return parameter == null ? null : Resolve(context, parameter.Member.DeclaringType, parameter.ParameterType, parameter.Name);
+            return parameter == null
+                ? null
+                : Resolve(context, parameter.Member.DeclaringType, parameter.ParameterType, parameter.Name);
         }
 
         /// <summary>
@@ -96,7 +98,8 @@ namespace Autofac.Annotation
         /// <param name="parameter"></param>
         /// <param name="context"></param>
         /// <returns></returns>
-        internal object ResolveParameterWithConfiguration(AutoConfigurationDetail detail, ParameterInfo parameter, IComponentContext context)
+        internal object ResolveParameterWithConfiguration(AutoConfigurationDetail detail, ParameterInfo parameter,
+            IComponentContext context)
         {
             return Resolve(context, parameter.Member.DeclaringType, parameter.ParameterType, parameter.Name, detail);
         }
@@ -142,7 +145,8 @@ namespace Autofac.Annotation
                 //判断类型是否是IValue
                 if ((typeof(IObjectFactory).IsAssignableFrom(memberType)))
                 {
-                    return context.Resolve<ObjectBeanFactory>().CreateValueFactory(this, memberType, classType, parameterInfo, autoConfigurationDetail);
+                    return context.Resolve<ObjectBeanFactory>().CreateValueFactory(this, memberType, classType,
+                        parameterInfo, autoConfigurationDetail);
                 }
 
                 if (!UseSpel)
@@ -152,6 +156,14 @@ namespace Autofac.Annotation
                     if (section != null)
                     {
                         return section.Get(memberType);
+                    }
+                    else if (IgnoreUnresolvablePlaceholders)
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        throw new Exception($"Could not resolve placeholder '{value}' with [UseSpel:false].");
                     }
                 }
 
@@ -163,9 +175,10 @@ namespace Autofac.Annotation
             }
             catch (Exception ex)
             {
-                throw new DependencyResolutionException($"Value set error,can not resolve class type:{classType.FullName} =====>" +
-                                                        $" {parameterInfo ?? memberType.Name} "
-                                                        + (!string.IsNullOrEmpty(this.value) ? $",with value:[{this.value}]" : ""), ex);
+                throw new DependencyResolutionException(
+                    $"Value set error,can not resolve class type:{classType.FullName} =====>" +
+                    $" {parameterInfo ?? memberType.Name} "
+                    + (!string.IsNullOrEmpty(this.value) ? $",with value:[{this.value}]" : ""), ex);
             }
         }
 
@@ -196,10 +209,12 @@ namespace Autofac.Annotation
             {
                 return null;
             }
+
             int startIndex = parameterValue.ToString().IndexOf("#{", StringComparison.Ordinal);
             if (startIndex != -1)
             {
-                int endIndex = parameterValue.ToString().LastIndexOf(DefaultPlaceholderSuffix, StringComparison.Ordinal);
+                int endIndex = parameterValue.ToString()
+                    .LastIndexOf(DefaultPlaceholderSuffix, StringComparison.Ordinal);
                 if (endIndex != -1)
                 {
                     Dictionary<string, object> vars = new Dictionary<string, object>
@@ -243,21 +258,25 @@ namespace Autofac.Annotation
         #region ${xxx} 代表从配置源里面 获取属性名称为xxx的值
 
         static object ResolveEmbeddedValue(EnvironmentVariableMode mode,
-            IComponentContext context, Type classType, string strVal, AutoConfigurationDetail autoConfigurationDetail = null, bool ignoreFail = false)
+            IComponentContext context, Type classType, string strVal,
+            AutoConfigurationDetail autoConfigurationDetail = null, bool ignoreFail = false)
         {
             int startIndex = strVal.IndexOf(DefaultPlaceholderPrefix, StringComparison.Ordinal);
             while (startIndex != -1)
             {
-                int endIndex = strVal.IndexOf(DefaultPlaceholderSuffix, startIndex + DefaultPlaceholderPrefix.Length, StringComparison.Ordinal);
+                int endIndex = strVal.IndexOf(DefaultPlaceholderSuffix, startIndex + DefaultPlaceholderPrefix.Length,
+                    StringComparison.Ordinal);
                 if (endIndex != -1)
                 {
                     int pos = startIndex + DefaultPlaceholderPrefix.Length;
                     string placeholder = strVal.Substring(pos, endIndex - pos);
-                    string resolvedValue = ResolvePlaceholder(mode, context, classType, placeholder, autoConfigurationDetail);
+                    string resolvedValue =
+                        ResolvePlaceholder(mode, context, classType, placeholder, autoConfigurationDetail);
                     if (resolvedValue != null)
                     {
                         strVal = strVal.Substring(0, startIndex) + resolvedValue + strVal.Substring(endIndex + 1);
-                        startIndex = strVal.IndexOf(DefaultPlaceholderPrefix, startIndex + resolvedValue.Length, StringComparison.Ordinal);
+                        startIndex = strVal.IndexOf(DefaultPlaceholderPrefix, startIndex + resolvedValue.Length,
+                            StringComparison.Ordinal);
                     }
                     else if (ignoreFail)
                     {
@@ -287,7 +306,8 @@ namespace Autofac.Annotation
         /// <param name="placeholder">key</param>
         /// <param name="autoConfigurationDetail"></param>
         /// <returns></returns>
-        static string ResolvePlaceholder(EnvironmentVariableMode mode, IComponentContext context, Type classType, string placeholder,
+        static string ResolvePlaceholder(EnvironmentVariableMode mode, IComponentContext context, Type classType,
+            string placeholder,
             AutoConfigurationDetail autoConfigurationDetail = null)
         {
             string propertyValue = null;

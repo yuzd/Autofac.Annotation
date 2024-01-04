@@ -1,3 +1,7 @@
 ﻿{
-  "abc": "abc"
+  "abc": "abc"  ,
+  "ValueInjectModel1": {
+    "Name": "yuzd",
+    "Age": 20
+  }
 }

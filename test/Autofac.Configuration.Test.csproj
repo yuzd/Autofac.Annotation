@@ -20,6 +20,9 @@
         <Compile Remove="TestResults\**" />
         <EmbeddedResource Remove="TestResults\**" />
         <None Remove="TestResults\**" />
+        <None Update="file\testissue39.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>

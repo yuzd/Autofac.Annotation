@@ -192,6 +192,10 @@ namespace Autofac.Annotation
             //先把 ${} 的 placehoder 全部替换掉
             var parameterValue = ResolveEmbeddedValue(mode, context, classType, strVal, autoConfigurationDetail,
                 ignoreFail);
+            if (parameterValue == null)
+            {
+                return null;
+            }
             int startIndex = parameterValue.ToString().IndexOf("#{", StringComparison.Ordinal);
             if (startIndex != -1)
             {
@@ -257,7 +261,7 @@ namespace Autofac.Annotation
                     }
                     else if (ignoreFail)
                     {
-                        return strVal;
+                        return null;
                     }
                     else
                     {

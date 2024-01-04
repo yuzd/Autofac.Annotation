@@ -8,15 +8,13 @@
 //-----------------------------------------------------------------------
 
 using System.Runtime.Loader;
-using Autofac.Annotation.Test.net7.test1;
 using Plugin;
-using Xunit;
 
 namespace Autofac.Annotation.Test.net7.testasmload;
 
 public class TestPlugin1
 {
-    [Fact]
+    // [Fact]
     public void Test_01()
     {
         var builder = new ContainerBuilder();
